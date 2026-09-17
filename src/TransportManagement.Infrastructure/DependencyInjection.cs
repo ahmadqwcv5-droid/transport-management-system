@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IIdentityStore, IdentityStore>();
         services.AddScoped<ICompanyReader, CompanyReader>();
+        services.AddScoped<IOperationsStore, OperationsStore>();
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>
         {
             var connectionString = serviceProvider.GetRequiredService<IConfiguration>()
@@ -75,7 +76,9 @@ public static class DependencyInjection
         });
         services.AddAuthorizationBuilder()
             .AddPolicy("companies.read", policy => policy.RequireAuthenticatedUser())
-            .AddPolicy("companies.manage", policy => policy.RequireRole("Owner"));
+            .AddPolicy("companies.manage", policy => policy.RequireRole("Owner"))
+            .AddPolicy("operations.read", policy => policy.RequireRole("Owner", "Operations", "Accountant"))
+            .AddPolicy("operations.manage", policy => policy.RequireRole("Owner", "Operations"));
 
         return services;
     }

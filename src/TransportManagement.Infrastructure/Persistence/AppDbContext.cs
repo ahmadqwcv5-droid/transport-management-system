@@ -2,8 +2,11 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Domain.Common;
+using TransportManagement.Domain.Clients;
 using TransportManagement.Domain.Companies;
+using TransportManagement.Domain.Fleet;
 using TransportManagement.Domain.Identity;
+using TransportManagement.Domain.Trips;
 
 namespace TransportManagement.Infrastructure.Persistence;
 
@@ -13,6 +16,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurren
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Client> Clients => Set<Client>();
+    public DbSet<Truck> Trucks => Set<Truck>();
+    public DbSet<Driver> Drivers => Set<Driver>();
+    public DbSet<Trip> Trips => Set<Trip>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

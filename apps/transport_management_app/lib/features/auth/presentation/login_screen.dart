@@ -64,7 +64,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           labelText: 'Email',
                           prefixIcon: Icon(Icons.email_outlined),
                         ),
-                        validator: (value) => value != null && value.contains('@')
+                        validator: (value) =>
+                            value != null && value.contains('@')
                             ? null
                             : 'Enter a valid email address',
                       ),
@@ -96,7 +97,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: auth.isLoading
                             ? const SizedBox.square(
                                 dimension: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Text('Sign in'),
                       ),

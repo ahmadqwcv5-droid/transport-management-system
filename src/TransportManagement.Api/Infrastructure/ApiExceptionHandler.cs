@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using TransportManagement.Application.Auth;
+using TransportManagement.Application.Common;
+using TransportManagement.Domain.Common;
 
 namespace TransportManagement.Api.Infrastructure;
 
@@ -17,9 +19,14 @@ internal sealed class ApiExceptionHandler(
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        var status = exception is AuthenticationException
-            ? StatusCodes.Status401Unauthorized
-            : StatusCodes.Status500InternalServerError;
+        var status = exception switch
+        {
+            AuthenticationException => StatusCodes.Status401Unauthorized,
+            NotFoundException => StatusCodes.Status404NotFound,
+            ConflictException => StatusCodes.Status409Conflict,
+            DomainRuleException => StatusCodes.Status400BadRequest,
+            _ => StatusCodes.Status500InternalServerError
+        };
         if (status == StatusCodes.Status500InternalServerError)
             LogUnhandledException(logger, httpContext.Request.Method, httpContext.Request.Path, exception);
 
@@ -30,8 +37,15 @@ internal sealed class ApiExceptionHandler(
             ProblemDetails = new ProblemDetails
             {
                 Status = status,
-                Title = status == 401 ? "Authentication failed" : "An unexpected error occurred",
-                Detail = status == 401 ? exception.Message : "Contact support with the trace identifier.",
+                Title = status switch
+                {
+                    400 => "Business rule validation failed",
+                    401 => "Authentication failed",
+                    404 => "Resource not found",
+                    409 => "Operation conflict",
+                    _ => "An unexpected error occurred"
+                },
+                Detail = status < 500 ? exception.Message : "Contact support with the trace identifier.",
                 Instance = httpContext.Request.Path
             }
         });

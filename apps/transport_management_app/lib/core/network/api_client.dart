@@ -42,7 +42,8 @@ final class ApiClient {
     ErrorInterceptorHandler handler,
   ) async {
     final request = error.requestOptions;
-    final canRetry = error.response?.statusCode == 401 &&
+    final canRetry =
+        error.response?.statusCode == 401 &&
         request.extra['retried'] != true &&
         !request.path.endsWith('/api/auth/login') &&
         !request.path.endsWith('/api/auth/refresh');

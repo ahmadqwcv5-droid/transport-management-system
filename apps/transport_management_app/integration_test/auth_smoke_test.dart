@@ -19,7 +19,8 @@ void main() {
     expect(
       password,
       isNotEmpty,
-      reason: 'Pass the smoke-test password with --dart-define=E2E_PASSWORD=...',
+      reason:
+          'Pass the smoke-test password with --dart-define=E2E_PASSWORD=...',
     );
     await tester.pumpWidget(
       const ProviderScope(child: TransportManagementApp()),
@@ -29,14 +30,8 @@ void main() {
     expect(find.text('Sign in'), findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(2));
 
-    await tester.enterText(
-      find.byType(TextFormField).at(0),
-      email,
-    );
-    await tester.enterText(
-      find.byType(TextFormField).at(1),
-      password,
-    );
+    await tester.enterText(find.byType(TextFormField).at(0), email);
+    await tester.enterText(find.byType(TextFormField).at(1), password);
     await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
     await tester.pumpAndSettle(const Duration(milliseconds: 100));
 

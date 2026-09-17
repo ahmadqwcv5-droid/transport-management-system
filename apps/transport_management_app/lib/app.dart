@@ -4,6 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import 'features/auth/presentation/auth_controller.dart';
 import 'features/auth/presentation/login_screen.dart';
+import 'features/clients/presentation/clients_screen.dart';
+import 'features/dashboard/presentation/dashboard_screen.dart';
+import 'features/fleet/drivers/presentation/drivers_screen.dart';
+import 'features/fleet/trucks/presentation/trucks_screen.dart';
+import 'features/trips/presentation/trip_details_screen.dart';
+import 'features/trips/presentation/trips_screen.dart';
 import 'shared/widgets/app_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -20,7 +26,40 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
-      GoRoute(path: '/dashboard', builder: (_, _) => const AppShell()),
+      GoRoute(
+        path: '/dashboard',
+        builder: (_, _) =>
+            const AppShell(selectedIndex: 0, child: DashboardScreen()),
+      ),
+      GoRoute(
+        path: '/clients',
+        builder: (_, _) =>
+            const AppShell(selectedIndex: 1, child: ClientsScreen()),
+      ),
+      GoRoute(
+        path: '/trucks',
+        builder: (_, _) =>
+            const AppShell(selectedIndex: 2, child: TrucksScreen()),
+      ),
+      GoRoute(
+        path: '/drivers',
+        builder: (_, _) =>
+            const AppShell(selectedIndex: 3, child: DriversScreen()),
+      ),
+      GoRoute(
+        path: '/trips',
+        builder: (_, _) =>
+            const AppShell(selectedIndex: 4, child: TripsScreen()),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (_, state) => AppShell(
+              selectedIndex: 4,
+              child: TripDetailsScreen(tripId: state.pathParameters['id']!),
+            ),
+          ),
+        ],
+      ),
     ],
   );
 });

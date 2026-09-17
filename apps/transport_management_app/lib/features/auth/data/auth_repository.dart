@@ -34,12 +34,13 @@ final class AuthRepository {
     final refreshToken = await _tokenStore.readRefreshToken();
     if (refreshToken == null) return false;
     try {
-      final response = await Dio(
-        BaseOptions(baseUrl: _apiClient.dio.options.baseUrl),
-      ).post<Map<String, dynamic>>(
-        '/api/auth/refresh',
-        data: {'refreshToken': refreshToken},
-      );
+      final response =
+          await Dio(
+            BaseOptions(baseUrl: _apiClient.dio.options.baseUrl),
+          ).post<Map<String, dynamic>>(
+            '/api/auth/refresh',
+            data: {'refreshToken': refreshToken},
+          );
       await _saveResponse(response.data!);
       return true;
     } on DioException {

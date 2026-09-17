@@ -1,17 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/auth_controller.dart';
-import '../../features/dashboard/presentation/dashboard_screen.dart';
 
 class AppShell extends ConsumerWidget {
-  const AppShell({super.key});
+  const AppShell({required this.child, required this.selectedIndex, super.key});
+  final Widget child;
+  final int selectedIndex;
+
+  static const _paths = [
+    '/dashboard',
+    '/clients',
+    '/trucks',
+    '/drivers',
+    '/trips',
+  ];
+  static const _destinations = [
+    NavigationDestination(
+      icon: Icon(Icons.dashboard_outlined),
+      selectedIcon: Icon(Icons.dashboard),
+      label: 'Dashboard',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.business_outlined),
+      selectedIcon: Icon(Icons.business),
+      label: 'Clients',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.local_shipping_outlined),
+      selectedIcon: Icon(Icons.local_shipping),
+      label: 'Trucks',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.people_outline),
+      selectedIcon: Icon(Icons.people),
+      label: 'Drivers',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.route_outlined),
+      selectedIcon: Icon(Icons.route),
+      label: 'Trips',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => LayoutBuilder(
     builder: (context, constraints) {
       final wide = constraints.maxWidth >= 720;
-      final content = const DashboardScreen();
       return Scaffold(
         appBar: AppBar(
           title: const Text('Transport Management'),
@@ -28,31 +64,30 @@ class AppShell extends ConsumerWidget {
             ? Row(
                 children: [
                   NavigationRail(
-                    selectedIndex: 0,
-                    destinations: const [
-                      NavigationRailDestination(
-                        icon: Icon(Icons.dashboard_outlined),
-                        selectedIcon: Icon(Icons.dashboard),
-                        label: Text('Dashboard'),
-                      ),
-                    ],
+                    selectedIndex: selectedIndex,
+                    onDestinationSelected: (index) => context.go(_paths[index]),
+                    labelType: NavigationRailLabelType.all,
+                    destinations: _destinations
+                        .map(
+                          (item) => NavigationRailDestination(
+                            icon: item.icon,
+                            selectedIcon: item.selectedIcon,
+                            label: Text(item.label),
+                          ),
+                        )
+                        .toList(),
                   ),
                   const VerticalDivider(width: 1),
-                  const Expanded(child: DashboardScreen()),
+                  Expanded(child: child),
                 ],
               )
-            : content,
+            : child,
         bottomNavigationBar: wide
             ? null
             : NavigationBar(
-                selectedIndex: 0,
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.dashboard_outlined),
-                    selectedIcon: Icon(Icons.dashboard),
-                    label: 'Dashboard',
-                  ),
-                ],
+                selectedIndex: selectedIndex,
+                onDestinationSelected: (index) => context.go(_paths[index]),
+                destinations: _destinations,
               ),
       );
     },

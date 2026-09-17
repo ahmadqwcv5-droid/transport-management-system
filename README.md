@@ -1,6 +1,6 @@
 # Transport Management System
 
-A production-oriented foundation for an internal road-freight Transport Management System. Sprint 1 establishes authentication, company isolation, the backend architecture, responsive Flutter shell, local infrastructure, and automated tests. Operational modules such as trips, fleet, finance, maintenance, documents, and GPS are intentionally not implemented yet.
+A production-oriented internal road-freight Transport Management System. Sprint 1 established authentication and tenant isolation; Sprint 2 adds operational management for clients, trucks, drivers, and trips in the ASP.NET Core API and the responsive Flutter Web/Android application.
 
 ## Architecture
 
@@ -89,6 +89,11 @@ dotnet tool run dotnet-ef migrations add DescriptiveName \
 
 Production migrations are an explicit deployment step. The application never applies them automatically outside Development.
 
+Sprint 2 is represented by the committed
+`20260917030406_Sprint2OperationalCore` migration. It creates tenant-owned
+client, truck, driver, and trip tables, tenant-scoped uniqueness constraints,
+and active-trip resource reservation indexes.
+
 ## Run Flutter Web
 
 ```bash
@@ -121,9 +126,9 @@ flutter analyze
 flutter test
 ```
 
-The backend tests cover login, current-user lookup, token refresh/rotation, reuse rejection, logout, standardized authentication failures, and an ID-tampering test proving a Company A user cannot retrieve Company B.
+The backend tests cover authentication and refresh-token rotation plus operational CRUD, tenant-scoped plate/license uniqueness, cross-company ID tampering, valid and invalid trip transitions, cancellation, resource synchronization, and truck/driver double-booking prevention.
 
-### Live Flutter Web smoke test
+### Live Flutter Web smoke tests
 
 With PostgreSQL and the API running, start GeckoDriver in one terminal:
 
@@ -147,9 +152,18 @@ flutter drive \
   --dart-define=E2E_PASSWORD=YOUR_DEVELOPMENT_PASSWORD
 ```
 
-The smoke test signs in through the real API, verifies the dashboard, signs
-out, and verifies that routing returns to the login screen. Credentials are
-provided at runtime and are not stored in source control.
+The authentication test signs in through the real API, verifies the dashboard,
+signs out, and verifies the login redirect. For the complete Sprint 2 workflow,
+change the target to:
+
+```text
+--target=integration_test/sprint2_smoke_test.dart
+```
+
+That test creates a client, truck, driver, and trip, assigns the resources,
+advances the trip through `Completed`, logs out, and verifies the login redirect.
+It uses unique runtime values, so it is safe to rerun against a local development
+database. Credentials are runtime-only and are not stored in source control.
 
 ## Configuration
 
@@ -173,7 +187,24 @@ Never commit `.env`, signing keys, database passwords, or production credentials
 - `GET /api/auth/me`
 - `GET /api/companies/me`
 - `GET /api/companies/{id}` (tenant-filtered; used to prove ID-tampering resistance)
+- `/api/clients` — list/get/create/update, plus `POST /{id}/deactivate`
+- `/api/trucks` — list/get/create/update, status update, and deactivate
+- `/api/drivers` — list/get/create/update, status update, and deactivate
+- `/api/trips` — list/get/create/update Draft, assign, start, mark in transit, deliver, complete, and cancel
 - `GET /health`
+
+List endpoints support the Sprint 2 filters documented in OpenAPI. Enum values
+are serialized as readable strings. All operational endpoints require the named
+`operations.read` or `operations.manage` policy.
+
+## Flutter routes
+
+- `/dashboard` — authenticated landing screen
+- `/clients` — searchable client list and create/edit/deactivate flow
+- `/trucks` — truck list, details, create/edit, status, and deactivate flow
+- `/drivers` — driver list, details, create/edit, status, and deactivate flow
+- `/trips` — trip list and Draft creation
+- `/trips/:id` — details, Draft edit, resource assignment, and allowed status actions
 
 ## Project structure
 
@@ -192,6 +223,7 @@ docs/
 compose.yaml
 Dockerfile
 SPRINT1_IMPLEMENTATION_PLAN.md
+SPRINT2_IMPLEMENTATION_PLAN.md
 ```
 
 ## Key engineering decisions
@@ -204,7 +236,20 @@ SPRINT1_IMPLEMENTATION_PLAN.md
 - Serilog produces structured console logs suitable for later shipping to an external platform.
 - Access tokens remain in Flutter memory. Refresh tokens use `flutter_secure_storage` (Android Keystore and the plugin's WebCrypto-backed web implementation). A production web threat-model review may move refresh tokens to same-site HTTP-only cookies.
 - EF Core is already the unit-of-work/query abstraction; no generic repository layer is added.
+- Trips use explicit domain transitions: `Draft → Assigned → Started → InTransit → Delivered → Completed`, with cancellation only before delivery.
+- `Assigned`, `Started`, `InTransit`, and `Delivered` reserve resources. Application checks return useful conflicts, while PostgreSQL partial unique indexes prevent concurrent double assignment.
+
+## Authorization matrix
+
+| Role | Read Clients/Fleet/Trips | Manage Clients/Fleet/Trips |
+|---|---:|---:|
+| Owner | Yes | Yes |
+| Operations | Yes | Yes |
+| Accountant | Yes | No |
+| Employee | No | No |
+
+Named policies remain the extension point for future granular permissions.
 
 ## Sprint boundary
 
-Deferred to later sprints: trips, trucks, drivers, fleet, finance, maintenance, documents, reporting, GPS providers, granular permissions, full dashboard metrics, and a driver application.
+Deferred to later sprints: finance, expenses, payments, profitability, advanced maintenance, documents, reporting, GPS providers, granular permissions, full dashboard analytics, route optimization, AI features, and a driver application.

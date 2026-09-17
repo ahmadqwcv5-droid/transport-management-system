@@ -13,5 +13,7 @@ public abstract class Entity
         UpdatedAt = now;
     }
 
+    protected void Touch(DateTimeOffset now) => UpdatedAt = now;
+
     protected Entity() { }
 }

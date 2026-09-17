@@ -55,4 +55,53 @@ Development seeding, when explicitly enabled, applies migrations for an easy loc
 
 ## Future GPS integration
 
-Fleet is not implemented in Sprint 1. When introduced, location ingestion will depend on an application-facing tracking contract (for example, `ITrackingProvider`) and vendor adapters will live in Infrastructure. Domain truck models will not reference Traccar, Wialon, or another provider SDK.
+Fleet asset management exists as of Sprint 2, but GPS ingestion remains deferred. When introduced, location ingestion will depend on an application-facing tracking contract (for example, `ITrackingProvider`) and vendor adapters will live in Infrastructure. Domain truck models will not reference Traccar, Wialon, or another provider SDK.
+
+## ADR-007: Explicit trip state machine and resource lifecycle
+
+**Status:** Accepted
+
+Trip transitions are domain methods rather than arbitrary status setters:
+`Draft → Assigned → Started → InTransit → Delivered → Completed`. Cancellation
+is permitted before delivery. A truck and driver are selected at assignment,
+change to `OnTrip` when the trip starts, and return to `Available` when it is
+completed or an active trip is cancelled. The API publishes allowed next actions
+so the Flutter client does not duplicate transition rules.
+
+| Current status | Allowed next operation | Result |
+|---|---|---|
+| Draft | Assign; Cancel | Assigned; Cancelled |
+| Assigned | Start; Cancel | Started; Cancelled |
+| Started | Mark in transit; Cancel | InTransit; Cancelled |
+| InTransit | Deliver; Cancel | Delivered; Cancelled |
+| Delivered | Complete | Completed |
+| Completed | None | Terminal |
+| Cancelled | None | Terminal |
+
+Assignment resolves the client, truck, and driver through the current tenant
+filter. The client and both resources must be active; the truck and driver must
+be `Available`; and neither resource may be reserved by another trip. Draft
+editing is rejected after assignment, and every unsupported transition produces
+a safe domain validation response.
+
+## ADR-008: Database-backed double-assignment protection
+
+**Status:** Accepted
+
+The application checks that resources are active, available, tenant-visible,
+and not reserved before assignment. PostgreSQL partial unique indexes on
+`(CompanyId, TruckId)` and `(CompanyId, DriverId)` for reserving trip statuses
+provide the concurrency backstop. Database update conflicts are translated into
+safe HTTP 409 Problem Details responses.
+
+## ADR-009: Sprint 2 module and authorization boundaries
+
+**Status:** Accepted
+
+Clients, fleet, and trips are separate Domain/Application/API/Flutter feature
+areas but share one operational persistence port inside the modular monolith.
+Every entity implements `ITenantOwned`; all foreign resources are resolved under
+the global tenant filter. Owner and Operations can read and mutate operational
+data, Accountant is read-only, and Employee has no operational access. Named
+`operations.read` and `operations.manage` policies preserve the future permission
+seam.
