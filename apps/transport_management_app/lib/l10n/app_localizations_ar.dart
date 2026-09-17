@@ -412,4 +412,48 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get authenticationFailed =>
       'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+
+  @override
+  String get mapNotConfigured =>
+      'نمط الخريطة غير مهيأ. أضف MAP_STYLE_URL لاستخدام الخريطة الجغرافية.';
+
+  @override
+  String get loadingMap => 'جارٍ تحميل نمط الخريطة…';
+
+  @override
+  String get mapStyleLoaded => 'الخريطة جاهزة (تم تحميل النمط)';
+
+  @override
+  String get mapFailed =>
+      'تعذر تحميل نمط الخريطة. يمكنك إعادة المحاولة أو استخدام عرض التتبع المبسط.';
+
+  @override
+  String get retryMap => 'إعادة تحميل الخريطة';
+
+  @override
+  String get useFallback => 'استخدام العرض المبسط';
+
+  @override
+  String get fallbackMode => 'عرض تتبع مبسط — ليس خريطة جغرافية';
+
+  @override
+  String get step => 'خطوة';
+
+  @override
+  String get simulationSpeed => 'سرعة المحاكاة';
+
+  @override
+  String get applySpeed => 'تطبيق السرعة';
+
+  @override
+  String get selectTruck => 'اختيار الشاحنة';
+
+  @override
+  String get setOnline => 'تعيين كمتصلة';
+
+  @override
+  String get setOffline => 'تعيين كغير متصلة';
+
+  @override
+  String get simulatorCommandSucceeded => 'تم تنفيذ أمر المحاكي.';
 }

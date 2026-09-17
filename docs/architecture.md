@@ -166,16 +166,31 @@ recent trips. This avoids a fan-out of unrelated client requests. SignalR would
 add connection and deployment complexity without a current latency or scale
 requirement; the provider/query seams allow it later.
 
-## ADR-015: MapLibre with externally selected styles
+## ADR-015: MapLibre with explicit lifecycle and externally selected styles
 
 **Status:** Accepted
 
 MapLibre renders maps on Flutter Web and Android without making a commercial
 map vendor part of Domain or Application. `MAP_STYLE_URL` is a Flutter
 compile-time setting and production is responsible for choosing and licensing
-style/tile hosting. With no style URL or a tile outage, the dashboard still
-renders an offline surface, current markers, details, and controls. Automated
-smoke tests therefore verify operational state without external network tiles.
+style/tile hosting. The UI models `unconfigured`, `loading`, `loaded`, `failed`,
+and `fallback` explicitly. Only MapLibre's style-loaded callback enters loaded;
+a configurable timeout enters failed and offers a genuine retry or an explicit
+simplified fallback. The package does not provide a complete tile-rendered/error
+signal, so style readiness is never documented as proof that all tiles rendered.
+Fallback markers use distinct test identifiers, and real-map browser evidence
+includes separate callback/annotation assertions and visual inspection.
+
+## ADR-016: Event-aware tracking history writes
+
+**Status:** Accepted
+
+Provider polling refreshes current fleet state but is not itself a telemetry
+event. `TrackingService` compares each sample with the latest tenant-filtered
+row and appends only for coordinate movement, meaningful speed/heading change,
+online/source change, or a configurable heartbeat. This bounds history growth
+while paused without changing the provider or weakening tenant isolation.
+High-volume retention, partitioning, and archival remain deferred.
 
 ## Sprint 3 authorization matrix
 

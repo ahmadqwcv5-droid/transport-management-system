@@ -28,17 +28,19 @@ void main() {
     // A previous interrupted local run may have left the persisted preference
     // in Arabic. Normalize to English so the language transition is exercised.
     if (find.text('لوحة التشغيل').evaluate().isNotEmpty) {
-      await tester.tap(find.byKey(const Key('nav-settings')));
+      await tester.tap(find.byKey(const Key('nav-settings')).last);
       await _waitFor(tester, find.byKey(const Key('language-selector')));
       await tester.tap(find.byKey(const Key('language-selector')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('English').last);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.byKey(const Key('nav-dashboard')).last);
       await _waitFor(tester, find.byKey(const Key('fleet-dashboard')));
     }
 
     // Always create a fresh truck so this smoke test does not depend on seed
     // data or positions left by a previous run.
-    await tester.tap(find.byKey(const Key('nav-trucks')));
+    await tester.tap(find.byKey(const Key('nav-trucks')).last);
     await _waitFor(tester, find.byKey(const Key('add-truck')));
     await tester.tap(find.byKey(const Key('add-truck')));
     await tester.pumpAndSettle();
@@ -47,11 +49,13 @@ void main() {
     await tester.tap(find.byKey(const Key('save-truck')));
     await tester.pump(const Duration(seconds: 1));
 
-    await tester.tap(find.byKey(const Key('nav-settings')));
+    await tester.tap(find.byKey(const Key('nav-settings')).last);
     await _waitFor(tester, find.byKey(const Key('language-selector')));
     await tester.tap(find.byKey(const Key('language-selector')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('العربية').last);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.byKey(const Key('nav-dashboard')).last);
     await _waitFor(tester, find.byKey(const Key('fleet-dashboard')));
     final dashboardContext = tester.element(
       find.byKey(const Key('fleet-dashboard')),
@@ -59,12 +63,18 @@ void main() {
     expect(Directionality.of(dashboardContext), TextDirection.rtl);
     expect(find.text('لوحة التشغيل'), findsWidgets);
 
+    await tester.tap(find.byKey(const Key('map-use-fallback')));
+    await tester.pump();
+    expect(find.byKey(const Key('map-status-fallback')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('sim-start')));
     await tester.tap(find.byKey(const Key('sim-start')));
     final marker = find.byWidgetPredicate(
       (widget) =>
           widget.key is ValueKey<String> &&
-          (widget.key! as ValueKey<String>).value.startsWith('truck-marker-'),
-      description: 'tracked truck marker',
+          (widget.key! as ValueKey<String>).value.startsWith(
+            'fallback-truck-marker-',
+          ),
+      description: 'simplified fallback truck marker',
     );
     await _waitFor(tester, marker);
     await tester.tap(marker.first);
@@ -76,11 +86,27 @@ void main() {
 
     await tester.tap(find.byKey(const Key('sim-pause')));
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.tap(find.byKey(const Key('nav-settings')));
+    await tester.tap(find.byKey(const Key('sim-step')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byKey(const Key('sim-speed')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byKey(const Key('sim-offline')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byKey(const Key('sim-online')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byKey(const Key('sim-resume')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byKey(const Key('sim-stop')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byKey(const Key('sim-reset')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byKey(const Key('nav-settings')).last);
     await _waitFor(tester, find.byKey(const Key('language-selector')));
     await tester.tap(find.byKey(const Key('language-selector')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('English').last);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.byKey(const Key('nav-dashboard')).last);
     await _waitFor(tester, find.text('Dashboard'));
     expect(
       Directionality.of(tester.element(find.byKey(const Key('logout-button')))),

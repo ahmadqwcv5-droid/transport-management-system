@@ -15,12 +15,16 @@ import 'l10n/app_localizations.dart';
 import 'shared/widgets/app_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authControllerProvider);
-  final signedIn = auth.value != null;
+  final authRouteState = ref.watch(
+    authControllerProvider.select(
+      (auth) => (isLoading: auth.isLoading, signedIn: auth.value != null),
+    ),
+  );
+  final signedIn = authRouteState.signedIn;
   return GoRouter(
     initialLocation: signedIn ? '/dashboard' : '/login',
     redirect: (context, state) {
-      if (auth.isLoading) return null;
+      if (authRouteState.isLoading) return null;
       final onLogin = state.matchedLocation == '/login';
       if (!signedIn && !onLogin) return '/login';
       if (signedIn && onLogin) return '/dashboard';

@@ -16,15 +16,25 @@ public sealed class TrackingService(
     {
         var trucks = await operationsStore.ListTrucksAsync(null, true, null, cancellationToken);
         var samples = provider.GetCurrent(currentUser.CompanyId, trucks.Select(x => x.Id).ToArray(), clock.UtcNow);
+        var latest = await trackingStore.LatestPositionsAsync(cancellationToken);
         if (samples.Count > 0)
         {
-            trackingStore.AddPositions(samples.Select(sample => new TruckPosition(
-                Guid.NewGuid(), currentUser.CompanyId, sample.TruckId, sample.Latitude,
-                sample.Longitude, sample.Speed, sample.Heading, sample.IsOnline,
-                sample.RecordedAt, sample.Source)));
-            await trackingStore.SaveChangesAsync(cancellationToken);
+            var latestByTruck = latest.ToDictionary(position => position.TruckId);
+            var changed = samples
+                .Where(sample => !latestByTruck.TryGetValue(sample.TruckId, out var previous)
+                    || ShouldPersist(sample, previous))
+                .Select(sample => new TruckPosition(
+                    Guid.NewGuid(), currentUser.CompanyId, sample.TruckId, sample.Latitude,
+                    sample.Longitude, sample.Speed, sample.Heading, sample.IsOnline,
+                    sample.RecordedAt, sample.Source))
+                .ToArray();
+            if (changed.Length > 0)
+            {
+                trackingStore.AddPositions(changed);
+                await trackingStore.SaveChangesAsync(cancellationToken);
+                latest = await trackingStore.LatestPositionsAsync(cancellationToken);
+            }
         }
-        var latest = await trackingStore.LatestPositionsAsync(cancellationToken);
         var trips = await operationsStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var drivers = await operationsStore.ListDriversAsync(null, null, null, cancellationToken);
         return latest.Join(trucks, p => p.TruckId, t => t.Id, (p, t) => Map(p, t.PlateNumber, t.Status.ToString(), trips, drivers)).ToArray();
@@ -73,5 +83,18 @@ public sealed class TrackingService(
         return new(position.TruckId, plate, status, position.Latitude, position.Longitude,
             position.Speed, position.Heading, position.RecordedAt, isOnline,
             isOnline ? "Online" : "Offline", trip?.Id, driver?.FullName);
+    }
+
+    private bool ShouldPersist(TrackingSample sample, TruckPosition previous)
+    {
+        var headingDelta = Math.Abs(sample.Heading - previous.Heading);
+        headingDelta = Math.Min(headingDelta, 360 - headingDelta);
+        return Math.Abs(sample.Latitude - previous.Latitude) > policy.CoordinateTolerance
+            || Math.Abs(sample.Longitude - previous.Longitude) > policy.CoordinateTolerance
+            || Math.Abs(sample.Speed - previous.Speed) > policy.SpeedTolerance
+            || headingDelta > policy.HeadingTolerance
+            || sample.IsOnline != previous.IsOnline
+            || !string.Equals(sample.Source, previous.Source, StringComparison.Ordinal)
+            || sample.RecordedAt - previous.RecordedAt >= policy.HistoryHeartbeat;
     }
 }

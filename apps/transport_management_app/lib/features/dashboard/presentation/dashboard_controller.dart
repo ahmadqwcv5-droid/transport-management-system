@@ -40,9 +40,17 @@ class DashboardController extends AsyncNotifier<DashboardData> {
     if (ref.mounted) state = result;
   }
 
-  Future<bool> control(String action, {String? truckId}) async {
+  Future<bool> control(
+    String action, {
+    String? truckId,
+    double? speedMultiplier,
+  }) async {
     try {
-      await _repository.simulator(action, truckId: truckId);
+      await _repository.simulator(
+        action,
+        truckId: truckId,
+        speedMultiplier: speedMultiplier,
+      );
       await refresh(silent: true);
       return true;
     } catch (error, stack) {

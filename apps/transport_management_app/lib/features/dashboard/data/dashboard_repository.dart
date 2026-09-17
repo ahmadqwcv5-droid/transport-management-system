@@ -16,11 +16,19 @@ final class DashboardRepository {
     }
   }
 
-  Future<void> simulator(String action, {String? truckId}) async {
+  Future<void> simulator(
+    String action, {
+    String? truckId,
+    double? speedMultiplier,
+  }) async {
     try {
       await _client.dio.post<void>(
         '/api/tracking/simulator/control',
-        data: {'action': action, 'truckId': ?truckId},
+        data: {
+          'action': action,
+          'truckId': ?truckId,
+          'speedMultiplier': ?speedMultiplier,
+        },
       );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);

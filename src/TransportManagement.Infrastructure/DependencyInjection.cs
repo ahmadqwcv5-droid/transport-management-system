@@ -44,8 +44,13 @@ public static class DependencyInjection
         services.AddScoped<ITrackingStore, TrackingStore>();
         var offlineThresholdSeconds = Math.Max(
             1, configuration.GetValue<int>("Tracking:OfflineThresholdSeconds", 30));
+        var historyHeartbeatSeconds = Math.Max(
+            offlineThresholdSeconds,
+            configuration.GetValue<int>("Tracking:HistoryHeartbeatSeconds", 300));
         services.AddSingleton(
-            new TrackingPolicy(TimeSpan.FromSeconds(offlineThresholdSeconds)));
+            new TrackingPolicy(
+                TimeSpan.FromSeconds(offlineThresholdSeconds),
+                TimeSpan.FromSeconds(historyHeartbeatSeconds)));
         var simulatorEnabled = configuration.GetValue<bool>("Tracking:SimulatorEnabled")
             && (environment.IsDevelopment() || environment.IsEnvironment("Testing"))
             && configuration["Tracking:Provider"]?.Equals("Simulator", StringComparison.OrdinalIgnoreCase) == true;

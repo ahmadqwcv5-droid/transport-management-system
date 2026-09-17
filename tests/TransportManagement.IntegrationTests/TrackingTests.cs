@@ -49,4 +49,43 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         var dashboard = await companyA.GetJsonAsync<JsonElement>("/api/dashboard");
         Assert.DoesNotContain(dashboard.GetProperty("positions").EnumerateArray(), x => x.GetProperty("truckId").GetGuid() == foreignTruckId);
     }
+
+    [Fact]
+    public async Task StationaryPollingIsDeduplicatedWhileMovementAndStateChangesPersist()
+    {
+        using var client = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
+        var truck = await (await client.PostJsonAsync("/api/trucks", new
+        {
+            plateNumber = $"DEDUP-{Guid.NewGuid():N}"[..20]
+        })).RequiredJsonAsync();
+        var truckId = truck.GetProperty("id").GetGuid();
+
+        await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "reset" });
+        await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "start" });
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "pause" });
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        var pausedCount = await HistoryCountAsync(client, truckId);
+        Assert.Equal(2, pausedCount);
+
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        Assert.Equal(pausedCount, await HistoryCountAsync(client, truckId));
+
+        await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "step" });
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        Assert.Equal(pausedCount + 1, await HistoryCountAsync(client, truckId));
+
+        await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "offline", truckId });
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        Assert.Equal(pausedCount + 2, await HistoryCountAsync(client, truckId));
+
+        await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "online", truckId });
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        Assert.Equal(pausedCount + 3, await HistoryCountAsync(client, truckId));
+    }
+
+    private static async Task<int> HistoryCountAsync(HttpClient client, Guid truckId) =>
+        (await client.GetJsonAsync<JsonElement[]>($"/api/tracking/trucks/{truckId}/history?limit=200"))!.Length;
 }

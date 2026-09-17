@@ -110,7 +110,33 @@ flutter pub get
 flutter run -d chrome --web-port=3000 \
   --dart-define=API_BASE_URL=http://localhost:5080 \
   --dart-define=MAP_STYLE_URL=https://demotiles.maplibre.org/style.json \
-  --dart-define=TRACKING_POLLING_INTERVAL_SECONDS=5
+  --dart-define=TRACKING_POLLING_INTERVAL_SECONDS=5 \
+  --dart-define=MAP_LOADING_TIMEOUT_SECONDS=12 \
+  --dart-define=ENABLE_SIMULATOR_CONTROLS=true
+```
+
+`MAP_STYLE_URL` and the other Flutter values above are compile-time
+`--dart-define` values. The MapLibre demo style is legal public demonstration
+infrastructure, not a production hosting recommendation or SLA. Build the same
+configuration for deployment with:
+
+```bash
+flutter build web --release \
+  --dart-define=API_BASE_URL=https://api.example.com \
+  --dart-define=MAP_STYLE_URL=https://your-provider.example/style.json \
+  --dart-define=TRACKING_POLLING_INTERVAL_SECONDS=5 \
+  --dart-define=MAP_LOADING_TIMEOUT_SECONDS=12
+```
+
+To intentionally exercise the tile-independent fallback path, omit
+`MAP_STYLE_URL`, launch the app, and choose **Use simplified fallback** from the
+localized **Map not configured** state:
+
+```bash
+flutter run -d chrome --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=TRACKING_POLLING_INTERVAL_SECONDS=5 \
+  --dart-define=ENABLE_SIMULATOR_CONTROLS=true
 ```
 
 Port `3000` matches the development CORS configuration. If you use another
@@ -119,9 +145,19 @@ Web port, add that exact origin to `Cors__AllowedOrigins`.
 Open **Settings → Language** to select English or العربية. The preference is
 validated and stored on the server, follows the user between devices, and
 updates the entire app between LTR and RTL. MapLibre is the rendering layer;
-`MAP_STYLE_URL` selects the style/tile provider. If it is omitted or tiles are
-unavailable, the dashboard keeps its deterministic local map surface, markers,
-details, and tracking controls so operations are not hidden by a tile outage.
+`MAP_STYLE_URL` selects the replaceable style/tile provider. A missing value is
+shown as an intentional unconfigured state. A configured map remains loading
+until MapLibre's genuine style-loaded callback fires. If it does not fire before
+`MAP_LOADING_TIMEOUT_SECONDS`, the map shows a localized failure with **Retry
+map** and **Use simplified fallback**. Retry creates a new MapLibre attempt.
+Fallback remains clearly labeled as a simplified, non-geographic tracking view
+and retains truck details.
+
+The style callback proves that MapLibre accepted and loaded the style; it does
+not prove that every geographic tile visibly rendered. Visual tile evidence is
+therefore recorded separately from automated style-readiness assertions.
+Docker Compose in this repository serves PostgreSQL and the API only—it does
+not serve or inject runtime configuration into Flutter Web.
 
 ## Run Flutter Android
 
@@ -188,21 +224,53 @@ For the complete Sprint 3 workflow, use:
 --target=integration_test/sprint3_smoke_test.dart
 ```
 
-It logs in, normalizes any preference left by an interrupted local run, creates
-a unique truck, switches to Arabic and verifies RTL, opens the dashboard, starts
-the simulator, selects a truck marker and verifies its truck/driver/trip details,
-pauses the simulator, switches back to English/LTR, and logs out. The test does
-not require real GPS hardware or external map tiles.
+This is specifically the fallback workflow. It logs in, creates a truck,
+verifies Arabic/RTL and English/LTR, explicitly selects fallback, checks fallback
+markers/details, exercises every simulator command, and logs out. It does not
+claim to verify MapLibre. Run the separate real-map and failure paths with the
+commands below (the public demo style is non-production):
+
+```bash
+# Real MapLibre style/callback/annotation path, with screenshot evidence.
+flutter drive \
+  --driver=test_driver/integration_test_screenshot.dart \
+  --target=integration_test/maplibre_smoke_test.dart \
+  -d web-server --browser-name=firefox --driver-port=4444 --headless \
+  --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=MAP_STYLE_URL=https://demotiles.maplibre.org/style.json \
+  --dart-define=MAP_LOADING_TIMEOUT_SECONDS=25 \
+  --dart-define=ENABLE_SIMULATOR_CONTROLS=true \
+  --dart-define=E2E_PASSWORD=YOUR_DEVELOPMENT_PASSWORD
+
+# Invalid style: timeout, genuine retry, then explicit fallback.
+flutter drive \
+  --driver=test_driver/integration_test.dart \
+  --target=integration_test/map_failure_smoke_test.dart \
+  -d web-server --browser-name=firefox --driver-port=4444 --headless \
+  --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=MAP_STYLE_URL=http://127.0.0.1:9/missing-style.json \
+  --dart-define=MAP_LOADING_TIMEOUT_SECONDS=2 \
+  --dart-define=E2E_PASSWORD=YOUR_DEVELOPMENT_PASSWORD
+```
 
 ### Tracking simulator and dashboard
 
 The simulator is available only when the API environment is Development (or
 Testing), `Tracking__Provider=Simulator`, and
-`Tracking__SimulatorEnabled=true`. An Owner can Start, Pause, Resume, Stop, and
-Reset it from the dashboard. Each dashboard poll advances a deterministic route
-while running and persists a UTC position sample. Stop marks trucks offline;
+`Tracking__SimulatorEnabled=true`. Flutter additionally requires the explicit
+compile-time `ENABLE_SIMULATOR_CONTROLS=true` development flag; production builds
+should omit it. An Owner can Start, Pause, Resume, Stop, Reset, Step, change
+speed, and set an individual truck online/offline from the dashboard. Stop marks trucks offline;
 samples older than `Tracking__OfflineThresholdSeconds` are also presented as
 offline. Do not enable this provider in Production.
+
+Reading current positions no longer inserts a duplicate row merely because the
+dashboard polled. History is appended when coordinates, online state, source,
+speed (0.5 km/h tolerance), or heading (1 degree tolerance) changes, or when the
+`Tracking__HistoryHeartbeatSeconds` heartbeat elapses. Latest/history queries
+remain tenant-filtered. Long-term retention and partitioning remain deferred.
 
 The dashboard uses one tenant-scoped endpoint for fleet status totals, active
 and completed-today trip totals, online/offline tracking totals, current
@@ -224,8 +292,11 @@ pull-to-refresh remains available.
 | `Tracking__SimulatorEnabled` | API | Explicit Development simulator gate |
 | `Tracking__PollingIntervalSeconds` | API/Compose | Documented polling default for clients |
 | `Tracking__OfflineThresholdSeconds` | API | Age after which the latest sample is reported offline |
-| `MAP_STYLE_URL` (`--dart-define`) | Flutter | Optional MapLibre style URL; blank uses the resilient local surface |
+| `Tracking__HistoryHeartbeatSeconds` | API | Maximum unchanged interval before a heartbeat history row, default 300 |
+| `MAP_STYLE_URL` (`--dart-define`) | Flutter | Optional MapLibre style URL; blank shows the intentional unconfigured state |
 | `TRACKING_POLLING_INTERVAL_SECONDS` (`--dart-define`) | Flutter | Dashboard refresh interval, default 5 seconds |
+| `MAP_LOADING_TIMEOUT_SECONDS` (`--dart-define`) | Flutter | Time to await the genuine MapLibre style callback, default 12 seconds |
+| `ENABLE_SIMULATOR_CONTROLS` (`--dart-define`) | Flutter | Explicit development-only simulator panel gate, default false |
 
 Never commit `.env`, signing keys, database passwords, or production credentials. The committed values are non-secret placeholders.
 
@@ -282,6 +353,7 @@ Dockerfile
 SPRINT1_IMPLEMENTATION_PLAN.md
 SPRINT2_IMPLEMENTATION_PLAN.md
 SPRINT3_IMPLEMENTATION_PLAN.md
+SPRINT3_1_IMPLEMENTATION_PLAN.md
 ```
 
 ## Key engineering decisions
@@ -318,10 +390,12 @@ Employee cannot.
 
 ## Sprint boundary
 
-Known Sprint 3 limitations: the simulator is process-local and development-only;
-polling is used instead of push; map style/tile availability belongs to the
-configured provider; stored position history is intentionally simple and has no
-retention/partitioning pipeline yet. Android execution requires a local Android
-SDK and emulator/device.
+Known Sprint 3.1 limitations: the simulator is process-local and
+development-only; polling is used instead of push; the current MapLibre Flutter
+API exposes style readiness but no complete tile-rendered/error signal, so a
+timeout supplies deterministic recovery and visual tile rendering is checked
+separately; map availability belongs to the configured provider; stored
+position history remains intentionally simple and has no retention/partitioning
+pipeline. Android execution requires a local Android SDK and emulator/device.
 
 Deferred to later sprints: finance, expenses, payments, profitability, advanced maintenance, documents, reporting, real GPS providers, granular permissions, advanced dashboard analytics, route optimization, AI features, and a driver application.

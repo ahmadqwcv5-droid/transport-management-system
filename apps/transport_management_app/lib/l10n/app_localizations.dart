@@ -901,6 +901,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The email address or password is incorrect.'**
   String get authenticationFailed;
+
+  /// No description provided for @mapNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Map style is not configured. Add MAP_STYLE_URL to use the geographic map.'**
+  String get mapNotConfigured;
+
+  /// No description provided for @loadingMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading map style…'**
+  String get loadingMap;
+
+  /// No description provided for @mapStyleLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Map ready (style loaded)'**
+  String get mapStyleLoaded;
+
+  /// No description provided for @mapFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The map style could not be loaded. You can retry or use the simplified tracking view.'**
+  String get mapFailed;
+
+  /// No description provided for @retryMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry map'**
+  String get retryMap;
+
+  /// No description provided for @useFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Use simplified fallback'**
+  String get useFallback;
+
+  /// No description provided for @fallbackMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Simplified tracking view — not a geographic map'**
+  String get fallbackMode;
+
+  /// No description provided for @step.
+  ///
+  /// In en, this message translates to:
+  /// **'Step'**
+  String get step;
+
+  /// No description provided for @simulationSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulation speed'**
+  String get simulationSpeed;
+
+  /// No description provided for @applySpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply speed'**
+  String get applySpeed;
+
+  /// No description provided for @selectTruck.
+  ///
+  /// In en, this message translates to:
+  /// **'Select truck'**
+  String get selectTruck;
+
+  /// No description provided for @setOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Set online'**
+  String get setOnline;
+
+  /// No description provided for @setOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Set offline'**
+  String get setOffline;
+
+  /// No description provided for @simulatorCommandSucceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulator command completed.'**
+  String get simulatorCommandSucceeded;
 }
 
 class _AppLocalizationsDelegate

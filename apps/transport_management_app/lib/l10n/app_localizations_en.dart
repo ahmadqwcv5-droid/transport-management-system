@@ -415,4 +415,48 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get authenticationFailed =>
       'The email address or password is incorrect.';
+
+  @override
+  String get mapNotConfigured =>
+      'Map style is not configured. Add MAP_STYLE_URL to use the geographic map.';
+
+  @override
+  String get loadingMap => 'Loading map style…';
+
+  @override
+  String get mapStyleLoaded => 'Map ready (style loaded)';
+
+  @override
+  String get mapFailed =>
+      'The map style could not be loaded. You can retry or use the simplified tracking view.';
+
+  @override
+  String get retryMap => 'Retry map';
+
+  @override
+  String get useFallback => 'Use simplified fallback';
+
+  @override
+  String get fallbackMode => 'Simplified tracking view — not a geographic map';
+
+  @override
+  String get step => 'Step';
+
+  @override
+  String get simulationSpeed => 'Simulation speed';
+
+  @override
+  String get applySpeed => 'Apply speed';
+
+  @override
+  String get selectTruck => 'Select truck';
+
+  @override
+  String get setOnline => 'Set online';
+
+  @override
+  String get setOffline => 'Set offline';
+
+  @override
+  String get simulatorCommandSucceeded => 'Simulator command completed.';
 }

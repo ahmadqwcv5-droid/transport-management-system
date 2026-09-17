@@ -12,4 +12,9 @@ public sealed record SimulatorControlRequest(
 public sealed record SimulatorStateResponse(
     bool Enabled, bool Running, double SpeedMultiplier, int Step);
 
-public sealed record TrackingPolicy(TimeSpan OfflineThreshold);
+public sealed record TrackingPolicy(
+    TimeSpan OfflineThreshold,
+    TimeSpan HistoryHeartbeat,
+    decimal CoordinateTolerance = 0.00001m,
+    decimal SpeedTolerance = 0.5m,
+    decimal HeadingTolerance = 1m);
