@@ -1,0 +1,11 @@
+.git
+.tooling
+.env
+**/bin
+**/obj
+**/build
+**/.dart_tool
+apps
+tests
+docs
+*.md

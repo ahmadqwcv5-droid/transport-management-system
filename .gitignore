@@ -1,0 +1,25 @@
+# Secrets
+.env
+appsettings.Local.json
+
+# .NET
+**/bin/
+**/obj/
+*.user
+TestResults/
+.tooling/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins*
+.packages
+build/
+coverage/
+**/android/.gradle/
+**/android/local.properties
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
