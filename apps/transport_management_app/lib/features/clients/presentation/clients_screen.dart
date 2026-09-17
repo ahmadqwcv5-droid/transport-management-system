@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../operations/domain/operations_models.dart';
 import '../../operations/presentation/operations_controller.dart';
 import '../../operations/presentation/operations_view.dart';
+import '../../../l10n/l10n_extensions.dart';
 
 class ClientsScreen extends ConsumerStatefulWidget {
   const ClientsScreen({super.key});
@@ -29,7 +30,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
           ),
           Expanded(
             child: items.isEmpty
-                ? const EmptyState('clients')
+                ? EmptyState(context.l10n.noClients)
                 : RefreshIndicator(
                     onRefresh: ref
                         .read(operationsControllerProvider.notifier)
@@ -75,9 +76,9 @@ class _Header extends StatelessWidget {
         Expanded(
           child: TextField(
             key: const Key('clients-search'),
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search),
-              labelText: 'Search clients',
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search),
+              labelText: context.l10n.searchClients,
             ),
             onChanged: onSearch,
           ),
@@ -88,7 +89,7 @@ class _Header extends StatelessWidget {
             key: const Key('add-client'),
             onPressed: onAdd,
             icon: const Icon(Icons.add),
-            label: const Text('New client'),
+            label: Text(context.l10n.newClient),
           ),
         ],
       ],
@@ -108,7 +109,7 @@ class _ClientTile extends ConsumerWidget {
         [
           client.contactPerson,
           client.email,
-          client.isActive ? 'Active' : 'Inactive',
+          client.isActive ? context.l10n.active : context.l10n.inactive,
         ].whereType<String>().join(' • '),
       ),
       trailing: onEdit == null
@@ -125,17 +126,17 @@ class _ClientTile extends ConsumerWidget {
                     showResult(
                       context,
                       ok,
-                      successMessage: 'Client deactivated.',
+                      successMessage: context.l10n.clientDeactivated,
                     );
                   }
                 }
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(value: 'edit', child: Text(context.l10n.edit)),
                 if (client.isActive)
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'deactivate',
-                    child: Text('Deactivate'),
+                    child: Text(context.l10n.deactivate),
                   ),
               ],
             ),
@@ -161,7 +162,11 @@ class _ClientFormState extends State<_ClientForm> {
   late final address = TextEditingController(text: widget.client?.address);
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(widget.client == null ? 'Create client' : 'Edit client'),
+    title: Text(
+      widget.client == null
+          ? context.l10n.createClient
+          : context.l10n.editClient,
+    ),
     content: SizedBox(
       width: 480,
       child: Form(
@@ -173,28 +178,30 @@ class _ClientFormState extends State<_ClientForm> {
               TextFormField(
                 key: const Key('client-name'),
                 controller: name,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: requiredText,
+                decoration: InputDecoration(labelText: context.l10n.name),
+                validator: (value) => requiredText(context, value),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: contact,
-                decoration: const InputDecoration(labelText: 'Contact person'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.contactPerson,
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: phone,
-                decoration: const InputDecoration(labelText: 'Phone'),
+                decoration: InputDecoration(labelText: context.l10n.phone),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: email,
-                decoration: const InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(labelText: context.l10n.email),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: address,
-                decoration: const InputDecoration(labelText: 'Address'),
+                decoration: InputDecoration(labelText: context.l10n.address),
               ),
             ],
           ),
@@ -204,7 +211,7 @@ class _ClientFormState extends State<_ClientForm> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: Text(context.l10n.cancel),
       ),
       FilledButton(
         key: const Key('save-client'),
@@ -220,7 +227,7 @@ class _ClientFormState extends State<_ClientForm> {
             });
           }
         },
-        child: const Text('Save'),
+        child: Text(context.l10n.save),
       ),
     ],
   );

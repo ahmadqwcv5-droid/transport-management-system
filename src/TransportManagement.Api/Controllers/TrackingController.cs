@@ -1,0 +1,30 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TransportManagement.Application.Tracking;
+
+namespace TransportManagement.Api.Controllers;
+
+[ApiController]
+[Authorize(Policy = "operations.read")]
+[Route("api/tracking")]
+public sealed class TrackingController(TrackingService service) : ControllerBase
+{
+    [HttpGet("positions")]
+    public Task<IReadOnlyList<TruckPositionResponse>> Positions(CancellationToken cancellationToken) =>
+        service.CurrentAsync(cancellationToken);
+
+    [HttpGet("trucks/{truckId:guid}/position")]
+    public Task<TruckPositionResponse> Position(Guid truckId, CancellationToken cancellationToken) =>
+        service.CurrentForTruckAsync(truckId, cancellationToken);
+
+    [HttpGet("trucks/{truckId:guid}/history")]
+    public Task<IReadOnlyList<TruckPositionResponse>> History(
+        Guid truckId, [FromQuery] int limit = 50, CancellationToken cancellationToken = default) =>
+        service.HistoryAsync(truckId, limit, cancellationToken);
+
+    [HttpPost("simulator/control")]
+    [Authorize(Roles = "Owner")]
+    public Task<SimulatorStateResponse> Control(
+        SimulatorControlRequest request, CancellationToken cancellationToken) =>
+        service.ControlAsync(request, cancellationToken);
+}

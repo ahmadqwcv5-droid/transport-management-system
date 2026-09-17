@@ -31,6 +31,14 @@ internal sealed class ApiExceptionHandler(
             LogUnhandledException(logger, httpContext.Request.Method, httpContext.Request.Path, exception);
 
         httpContext.Response.StatusCode = status;
+        var code = exception switch
+        {
+            ConflictException conflict => conflict.Code,
+            NotFoundException notFound => notFound.Code,
+            DomainRuleException domain => domain.Code,
+            AuthenticationException => "AUTHENTICATION_FAILED",
+            _ => "UNEXPECTED_ERROR"
+        };
         return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = httpContext,
@@ -46,7 +54,8 @@ internal sealed class ApiExceptionHandler(
                     _ => "An unexpected error occurred"
                 },
                 Detail = status < 500 ? exception.Message : "Contact support with the trace identifier.",
-                Instance = httpContext.Request.Path
+                Instance = httpContext.Request.Path,
+                Extensions = { ["errorCode"] = code }
             }
         });
     }

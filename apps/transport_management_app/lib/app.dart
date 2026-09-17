@@ -10,6 +10,8 @@ import 'features/fleet/drivers/presentation/drivers_screen.dart';
 import 'features/fleet/trucks/presentation/trucks_screen.dart';
 import 'features/trips/presentation/trip_details_screen.dart';
 import 'features/trips/presentation/trips_screen.dart';
+import 'features/settings/presentation/settings_screen.dart';
+import 'l10n/app_localizations.dart';
 import 'shared/widgets/app_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -30,6 +32,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/dashboard',
         builder: (_, _) =>
             const AppShell(selectedIndex: 0, child: DashboardScreen()),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (_, _) =>
+            const AppShell(selectedIndex: 5, child: SettingsScreen()),
       ),
       GoRoute(
         path: '/clients',
@@ -68,16 +75,23 @@ class TransportManagementApp extends ConsumerWidget {
   const TransportManagementApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => MaterialApp.router(
-    title: 'Transport Management',
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF175CD3)),
-      useMaterial3: true,
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final preferredLocale =
+        ref.watch(authControllerProvider).value?.user.preferredLocale ?? 'en';
+    return MaterialApp.router(
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+      debugShowCheckedModeBanner: false,
+      locale: Locale(preferredLocale),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF175CD3)),
+        useMaterial3: true,
+        inputDecorationTheme: const InputDecorationTheme(
+          border: OutlineInputBorder(),
+        ),
       ),
-    ),
-    routerConfig: ref.watch(routerProvider),
-  );
+      routerConfig: ref.watch(routerProvider),
+    );
+  }
 }

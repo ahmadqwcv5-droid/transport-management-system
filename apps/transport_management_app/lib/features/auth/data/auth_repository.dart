@@ -72,6 +72,18 @@ final class AuthRepository {
     }
   }
 
+  Future<AuthSession> updateLocale(String locale) async {
+    try {
+      final response = await _apiClient.dio.put<Map<String, dynamic>>(
+        '/api/auth/me/preferences',
+        data: {'preferredLocale': locale},
+      );
+      return AuthSession(user: CurrentUser.fromJson(response.data!));
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
   Future<AuthSession> _saveResponse(Map<String, dynamic> data) async {
     _tokenStore.setAccessToken(data['accessToken'] as String);
     await _tokenStore.setRefreshToken(data['refreshToken'] as String);

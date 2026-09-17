@@ -111,7 +111,9 @@ internal sealed class OperationsStore(AppDbContext dbContext) : IOperationsStore
         }
         catch (DbUpdateException exception)
         {
-            throw new ConflictException("The operation conflicts with existing company data or a concurrent assignment.", exception);
+            throw new ConflictException(
+                "The operation conflicts with existing company data or a concurrent assignment.",
+                innerException: exception);
         }
     }
 }

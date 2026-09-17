@@ -15,6 +15,7 @@ public sealed class User : Entity, ITenantOwned
         DisplayName = displayName.Trim();
         PasswordHash = passwordHash;
         Role = role;
+        PreferredLocale = "en";
         IsActive = true;
     }
 
@@ -23,5 +24,14 @@ public sealed class User : Entity, ITenantOwned
     public string DisplayName { get; private set; } = string.Empty;
     public string PasswordHash { get; private set; } = string.Empty;
     public string Role { get; private set; } = string.Empty;
+    public string PreferredLocale { get; private set; } = "en";
     public bool IsActive { get; private set; }
+
+    public void ChangePreferredLocale(string locale, DateTimeOffset now)
+    {
+        if (locale is not ("en" or "ar"))
+            throw new DomainRuleException("Only English and Arabic locales are supported.", "UNSUPPORTED_LOCALE");
+        PreferredLocale = locale;
+        Touch(now);
+    }
 }

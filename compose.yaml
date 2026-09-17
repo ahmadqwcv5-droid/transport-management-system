@@ -28,6 +28,10 @@ services:
       Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in .env}
       DevelopmentSeed__Enabled: "true"
       DevelopmentSeed__OwnerPassword: ${DEMO_OWNER_PASSWORD:?Set DEMO_OWNER_PASSWORD in .env}
+      Tracking__Provider: ${TRACKING_PROVIDER:-Simulator}
+      Tracking__SimulatorEnabled: ${TRACKING_SIMULATOR_ENABLED:-true}
+      Tracking__PollingIntervalSeconds: ${TRACKING_POLLING_INTERVAL_SECONDS:-5}
+      Tracking__OfflineThresholdSeconds: ${TRACKING_OFFLINE_THRESHOLD_SECONDS:-30}
     ports:
       - "5080:8080"
     depends_on:

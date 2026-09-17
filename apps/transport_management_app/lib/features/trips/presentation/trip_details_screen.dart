@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../operations/domain/operations_models.dart';
 import '../../operations/presentation/operations_controller.dart';
 import '../../operations/presentation/operations_view.dart';
+import '../../../l10n/l10n_extensions.dart';
 import 'trips_screen.dart';
 
 class TripDetailsScreen extends ConsumerWidget {
@@ -19,10 +20,10 @@ class TripDetailsScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Trip not found.'),
+              Text(context.l10n.tripNotFound),
               TextButton(
                 onPressed: () => context.go('/trips'),
-                child: const Text('Back to trips'),
+                child: Text(context.l10n.backToTrips),
               ),
             ],
           ),
@@ -43,7 +44,7 @@ class TripDetailsScreen extends ConsumerWidget {
           Row(
             children: [
               IconButton(
-                tooltip: 'Back to trips',
+                tooltip: context.l10n.backToTrips,
                 onPressed: () => context.go('/trips'),
                 icon: const Icon(Icons.arrow_back),
               ),
@@ -53,7 +54,7 @@ class TripDetailsScreen extends ConsumerWidget {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ),
-              Chip(label: Text(trip.status)),
+              Chip(label: Text(localizedStatus(context.l10n, trip.status))),
             ],
           ),
           const SizedBox(height: 16),
@@ -64,18 +65,27 @@ class TripDetailsScreen extends ConsumerWidget {
                 spacing: 32,
                 runSpacing: 16,
                 children: [
-                  _Fact('Client', client?.name ?? 'Unknown'),
-                  _Fact('Cargo', trip.cargoDescription),
-                  _Fact('Truck', truck?.plateNumber ?? 'Not assigned'),
-                  _Fact('Driver', driver?.fullName ?? 'Not assigned'),
-                  _Fact('Planned', trip.plannedStartAt),
-                  _Fact('Price', trip.price.toStringAsFixed(2)),
+                  _Fact(
+                    context.l10n.client,
+                    client?.name ?? context.l10n.unknown,
+                  ),
+                  _Fact(context.l10n.cargo, trip.cargoDescription),
+                  _Fact(
+                    context.l10n.truck,
+                    truck?.plateNumber ?? context.l10n.notAssigned,
+                  ),
+                  _Fact(
+                    context.l10n.driver,
+                    driver?.fullName ?? context.l10n.notAssigned,
+                  ),
+                  _Fact(context.l10n.planned, trip.plannedStartAt),
+                  _Fact(context.l10n.price, trip.price.toStringAsFixed(2)),
                   if (trip.actualStartAt != null)
-                    _Fact('Started', trip.actualStartAt!),
+                    _Fact(context.l10n.started, trip.actualStartAt!),
                   if (trip.deliveredAt != null)
-                    _Fact('Delivered', trip.deliveredAt!),
+                    _Fact(context.l10n.delivered, trip.deliveredAt!),
                   if (trip.completedAt != null)
-                    _Fact('Completed', trip.completedAt!),
+                    _Fact(context.l10n.completed, trip.completedAt!),
                 ],
               ),
             ),
@@ -90,7 +100,7 @@ class TripDetailsScreen extends ConsumerWidget {
                   OutlinedButton.icon(
                     onPressed: () => editTrip(context, ref, data, trip),
                     icon: const Icon(Icons.edit),
-                    label: const Text('Edit draft'),
+                    label: Text(context.l10n.editDraft),
                   ),
                 for (final action in trip.allowedActions)
                   FilledButton(
@@ -98,7 +108,7 @@ class TripDetailsScreen extends ConsumerWidget {
                     onPressed: () => action == 'assign'
                         ? _assign(context, ref, data, trip)
                         : _act(context, ref, trip, action),
-                    child: Text(_label(action)),
+                    child: Text(_label(context, action)),
                   ),
               ],
             ),
@@ -106,9 +116,14 @@ class TripDetailsScreen extends ConsumerWidget {
       );
     },
   );
-  static String _label(String value) => switch (value) {
-    'mark-in-transit' => 'Mark in transit',
-    _ => '${value[0].toUpperCase()}${value.substring(1)}',
+  static String _label(BuildContext context, String value) => switch (value) {
+    'assign' => context.l10n.assign,
+    'start' => context.l10n.start,
+    'mark-in-transit' => context.l10n.markInTransit,
+    'deliver' => context.l10n.deliver,
+    'complete' => context.l10n.complete,
+    'cancel' => context.l10n.cancel,
+    _ => value,
   };
   static Future<void> _act(
     BuildContext context,
@@ -120,7 +135,7 @@ class TripDetailsScreen extends ConsumerWidget {
         .read(operationsControllerProvider.notifier)
         .mutate((repo) => repo.tripAction(trip.id, action));
     if (context.mounted) {
-      showResult(context, ok, successMessage: 'Trip status updated.');
+      showResult(context, ok, successMessage: context.l10n.tripStatusUpdated);
     }
   }
 
@@ -141,7 +156,7 @@ class TripDetailsScreen extends ConsumerWidget {
           (repo) => repo.assignTrip(trip.id, assignment[0], assignment[1]),
         );
     if (context.mounted) {
-      showResult(context, ok, successMessage: 'Truck and driver assigned.');
+      showResult(context, ok, successMessage: context.l10n.resourcesAssigned);
     }
   }
 }
@@ -181,7 +196,7 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
       ?.id;
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Assign resources'),
+    title: Text(context.l10n.assignResources),
     content: SizedBox(
       width: 440,
       child: Column(
@@ -190,7 +205,7 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
           DropdownButtonFormField<String>(
             key: const Key('assign-truck'),
             initialValue: truckId,
-            decoration: const InputDecoration(labelText: 'Truck'),
+            decoration: InputDecoration(labelText: context.l10n.truck),
             items: widget.data.trucks
                 .where((item) => item.isActive && item.status == 'Available')
                 .map(
@@ -206,7 +221,7 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
           DropdownButtonFormField<String>(
             key: const Key('assign-driver'),
             initialValue: driverId,
-            decoration: const InputDecoration(labelText: 'Driver'),
+            decoration: InputDecoration(labelText: context.l10n.driver),
             items: widget.data.drivers
                 .where((item) => item.isActive && item.status == 'Available')
                 .map(
@@ -224,14 +239,14 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: Text(context.l10n.cancel),
       ),
       FilledButton(
         key: const Key('confirm-assignment'),
         onPressed: truckId == null || driverId == null
             ? null
             : () => Navigator.pop(context, [truckId!, driverId!]),
-        child: const Text('Assign'),
+        child: Text(context.l10n.assign),
       ),
     ],
   );

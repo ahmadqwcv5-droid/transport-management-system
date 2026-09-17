@@ -53,9 +53,12 @@ The access token is memory-only. The refresh token uses platform secure storage.
 
 Development seeding, when explicitly enabled, applies migrations for an easy local Compose startup. Non-Development environments never migrate at process startup. Deployment automation must run `dotnet ef database update` (or reviewed idempotent migration scripts) as a controlled release step.
 
-## Future GPS integration
+## Tracking integration
 
-Fleet asset management exists as of Sprint 2, but GPS ingestion remains deferred. When introduced, location ingestion will depend on an application-facing tracking contract (for example, `ITrackingProvider`) and vendor adapters will live in Infrastructure. Domain truck models will not reference Traccar, Wialon, or another provider SDK.
+Fleet location reads depend on the application-facing `ITrackingProvider`.
+Vendor and simulator adapters live in Infrastructure; Domain truck models do
+not reference Traccar, Wialon, MapLibre, or another provider SDK. Real GPS
+ingestion remains deferred, but it can implement the existing port.
 
 ## ADR-007: Explicit trip state machine and resource lifecycle
 
@@ -105,3 +108,82 @@ the global tenant filter. Owner and Operations can read and mutate operational
 data, Accountant is read-only, and Employee has no operational access. Named
 `operations.read` and `operations.manage` policies preserve the future permission
 seam.
+
+## ADR-010: Generated localization with server-backed locale
+
+**Status:** Accepted
+
+Flutter uses `flutter_localizations`, ARB sources, and generated localization
+classes for English and Arabic. Internal enum/error values remain stable English
+identifiers and a centralized UI mapping renders localized labels. Material's
+locale-derived direction plus directional padding/positioning provides LTR/RTL
+behavior. `User.PreferredLocale` stores only validated `en` or `ar`; login,
+current-user, and the preference endpoint carry it so the setting follows the
+user across devices.
+
+## ADR-011: Stable API error codes in Problem Details
+
+**Status:** Accepted
+
+Domain, conflict, and not-found exceptions expose a stable machine code through
+the `errorCode` Problem Details extension. Flutter localizes recognized codes
+and uses a safe generic localized fallback for unknown codes. Human-readable
+server details remain useful for logs and API clients but are never translated
+or shown as the localization source of truth.
+
+## ADR-012: Provider-neutral tracking with a gated simulator
+
+**Status:** Accepted
+
+Application owns `ITrackingProvider`; Infrastructure selects an implementation
+from configuration. The deterministic simulator is registered only in
+Development/Testing when both provider selection and the explicit enable flag
+permit it. Its state is isolated by company, control is Owner-only, and tests
+advance it through commands instead of timing-sensitive sleeps. Production
+defaults to an unconfigured provider and cannot accidentally enable simulation.
+
+## ADR-013: Tenant-owned current and historical positions
+
+**Status:** Accepted
+
+Every `TruckPosition` stores `CompanyId`, `TruckId`, numeric latitude/longitude,
+speed/heading, source, online signal, and UTC recorded time. EF's tenant filter
+applies to all reads. Indexes support company queries and per-truck newest/history
+queries. The latest sample is online only when both the provider signal is online
+and its age is within `Tracking:OfflineThresholdSeconds`. This append-only,
+query-limited model is deliberately sufficient for the current fleet scale;
+retention, partitioning, and high-volume telemetry ingestion are deferred.
+
+## ADR-014: Polling before SignalR and one dashboard query
+
+**Status:** Accepted
+
+Flutter owns one Riverpod dashboard controller and polls at the compile-time
+configured interval (five seconds by default), with explicit refresh after
+simulator controls. The API exposes one tenant-scoped dashboard use case that
+aggregates fleet totals, trip totals, tracking state/current positions, and
+recent trips. This avoids a fan-out of unrelated client requests. SignalR would
+add connection and deployment complexity without a current latency or scale
+requirement; the provider/query seams allow it later.
+
+## ADR-015: MapLibre with externally selected styles
+
+**Status:** Accepted
+
+MapLibre renders maps on Flutter Web and Android without making a commercial
+map vendor part of Domain or Application. `MAP_STYLE_URL` is a Flutter
+compile-time setting and production is responsible for choosing and licensing
+style/tile hosting. With no style URL or a tile outage, the dashboard still
+renders an offline surface, current markers, details, and controls. Automated
+smoke tests therefore verify operational state without external network tiles.
+
+## Sprint 3 authorization matrix
+
+| Capability | Owner | Operations | Accountant | Employee |
+|---|---:|---:|---:|---:|
+| Read dashboard/tracking | Yes | Yes | Yes | No |
+| Manage operational records | Yes | Yes | No | No |
+| Control Development simulator | Yes | No | No | No |
+
+Controllers enforce named policies/roles, while all dashboard, current-position,
+history, and simulator truck resolution remains behind tenant-filtered stores.

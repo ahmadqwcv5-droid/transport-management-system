@@ -21,7 +21,7 @@ final authRepositoryProvider = Provider<AuthRepository>(
 final authControllerProvider =
     AsyncNotifierProvider<AuthController, AuthSession?>(AuthController.new);
 
-final class AuthController extends AsyncNotifier<AuthSession?> {
+class AuthController extends AsyncNotifier<AuthSession?> {
   AuthRepository get _repository => ref.read(authRepositoryProvider);
 
   @override
@@ -44,6 +44,20 @@ final class AuthController extends AsyncNotifier<AuthSession?> {
       await _repository.logout();
     } finally {
       state = const AsyncData(null);
+    }
+  }
+
+  Future<bool> updateLocale(String locale) async {
+    final previous = state.value;
+    if (previous == null || previous.user.preferredLocale == locale) {
+      return true;
+    }
+    try {
+      state = AsyncData(await _repository.updateLocale(locale));
+      return true;
+    } on Object catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      return false;
     }
   }
 }

@@ -16,4 +16,8 @@ public sealed record AuthResponse(
     DateTimeOffset RefreshTokenExpiresAt,
     CurrentUserResponse User);
 
-public sealed record CurrentUserResponse(Guid Id, Guid CompanyId, string Email, string DisplayName, string Role);
+public sealed record CurrentUserResponse(
+    Guid Id, Guid CompanyId, string Email, string DisplayName, string Role, string PreferredLocale);
+
+public sealed record LocalePreferenceRequest(
+    [param: Required, RegularExpression("^(en|ar)$")] string PreferredLocale);

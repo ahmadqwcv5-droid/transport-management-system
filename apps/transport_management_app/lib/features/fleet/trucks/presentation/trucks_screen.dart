@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../operations/domain/operations_models.dart';
 import '../../../operations/presentation/operations_controller.dart';
 import '../../../operations/presentation/operations_view.dart';
+import '../../../../l10n/l10n_extensions.dart';
 
 class TrucksScreen extends ConsumerWidget {
   const TrucksScreen({super.key});
@@ -16,7 +17,7 @@ class TrucksScreen extends ConsumerWidget {
           child: Row(
             children: [
               Text(
-                'Fleet trucks',
+                context.l10n.trucks,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const Spacer(),
@@ -25,14 +26,14 @@ class TrucksScreen extends ConsumerWidget {
                   key: const Key('add-truck'),
                   onPressed: () => _edit(context, ref),
                   icon: const Icon(Icons.add),
-                  label: const Text('New truck'),
+                  label: Text(context.l10n.newTruck),
                 ),
             ],
           ),
         ),
         Expanded(
           child: data.trucks.isEmpty
-              ? const EmptyState('trucks')
+              ? EmptyState(context.l10n.noTrucks)
               : RefreshIndicator(
                   onRefresh: ref
                       .read(operationsControllerProvider.notifier)
@@ -75,17 +76,17 @@ class _TruckTile extends ConsumerWidget {
         builder: (_) => AlertDialog(
           title: Text(truck.plateNumber),
           content: Text(
-            'Make: ${truck.make ?? '—'}\n'
-            'Model: ${truck.model ?? '—'}\n'
-            'Year: ${truck.year ?? '—'}\n'
-            'Status: ${truck.status}\n'
-            'Active: ${truck.isActive ? 'Yes' : 'No'}\n'
-            'Notes: ${truck.notes ?? '—'}',
+            '${context.l10n.make}: ${truck.make ?? '—'}\n'
+            '${context.l10n.model}: ${truck.model ?? '—'}\n'
+            '${context.l10n.year}: ${truck.year ?? '—'}\n'
+            '${context.l10n.status}: ${localizedStatus(context.l10n, truck.status)}\n'
+            '${context.l10n.active}: ${truck.isActive ? context.l10n.yes : context.l10n.no}\n'
+            '${context.l10n.notes}: ${truck.notes ?? '—'}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text(context.l10n.close),
             ),
           ],
         ),
@@ -93,7 +94,7 @@ class _TruckTile extends ConsumerWidget {
       leading: const CircleAvatar(child: Icon(Icons.local_shipping_outlined)),
       title: Text(truck.plateNumber),
       subtitle: Text(
-        '${[truck.make, truck.model, truck.year?.toString()].whereType<String>().join(' ')} • ${truck.status}${truck.isActive ? '' : ' • Inactive'}',
+        '${[truck.make, truck.model, truck.year?.toString()].whereType<String>().join(' ')} • ${localizedStatus(context.l10n, truck.status)}${truck.isActive ? '' : ' • ${context.l10n.inactive}'}',
       ),
       trailing: !canManageOperations(ref)
           ? null
@@ -112,21 +113,21 @@ class _TruckTile extends ConsumerWidget {
                 if (context.mounted) showResult(context, ok);
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(value: 'edit', child: Text(context.l10n.edit)),
                 if (truck.status != 'Available')
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'Available',
-                    child: Text('Set available'),
+                    child: Text(context.l10n.setAvailable),
                   ),
                 if (truck.status != 'Maintenance')
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'Maintenance',
-                    child: Text('Set maintenance'),
+                    child: Text(context.l10n.setMaintenance),
                   ),
                 if (truck.isActive)
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'deactivate',
-                    child: Text('Deactivate'),
+                    child: Text(context.l10n.deactivate),
                   ),
               ],
             ),
@@ -149,7 +150,9 @@ class _TruckFormState extends State<_TruckForm> {
   late final year = TextEditingController(text: widget.truck?.year?.toString());
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(widget.truck == null ? 'Create truck' : 'Edit truck'),
+    title: Text(
+      widget.truck == null ? context.l10n.createTruck : context.l10n.editTruck,
+    ),
     content: SizedBox(
       width: 440,
       child: Form(
@@ -160,24 +163,24 @@ class _TruckFormState extends State<_TruckForm> {
             TextFormField(
               key: const Key('truck-plate'),
               controller: plate,
-              decoration: const InputDecoration(labelText: 'Plate number'),
-              validator: requiredText,
+              decoration: InputDecoration(labelText: context.l10n.plateNumber),
+              validator: (value) => requiredText(context, value),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: make,
-              decoration: const InputDecoration(labelText: 'Make'),
+              decoration: InputDecoration(labelText: context.l10n.make),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: model,
-              decoration: const InputDecoration(labelText: 'Model'),
+              decoration: InputDecoration(labelText: context.l10n.model),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: year,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Year'),
+              decoration: InputDecoration(labelText: context.l10n.year),
             ),
           ],
         ),
@@ -186,7 +189,7 @@ class _TruckFormState extends State<_TruckForm> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: Text(context.l10n.cancel),
       ),
       FilledButton(
         key: const Key('save-truck'),
@@ -195,9 +198,9 @@ class _TruckFormState extends State<_TruckForm> {
           final parsedYear = int.tryParse(year.text);
           if (year.text.isNotEmpty &&
               (parsedYear == null || parsedYear < 1900 || parsedYear > 2100)) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Enter a valid year.')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(context.l10n.validYear)));
             return;
           }
           Navigator.pop(context, {
@@ -208,7 +211,7 @@ class _TruckFormState extends State<_TruckForm> {
             'notes': widget.truck?.notes,
           });
         },
-        child: const Text('Save'),
+        child: Text(context.l10n.save),
       ),
     ],
   );

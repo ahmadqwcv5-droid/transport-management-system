@@ -5,10 +5,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Infrastructure.Auth;
 using TransportManagement.Infrastructure.Persistence;
+using TransportManagement.Infrastructure.Tracking;
+using TransportManagement.Application.Tracking;
 
 namespace TransportManagement.Infrastructure;
 
@@ -20,7 +23,8 @@ public static class DependencyInjection
             new EventId(4010, "JwtValidationFailure"),
             "JWT validation failed: {Reason}");
 
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
@@ -37,6 +41,18 @@ public static class DependencyInjection
         services.AddScoped<IIdentityStore, IdentityStore>();
         services.AddScoped<ICompanyReader, CompanyReader>();
         services.AddScoped<IOperationsStore, OperationsStore>();
+        services.AddScoped<ITrackingStore, TrackingStore>();
+        var offlineThresholdSeconds = Math.Max(
+            1, configuration.GetValue<int>("Tracking:OfflineThresholdSeconds", 30));
+        services.AddSingleton(
+            new TrackingPolicy(TimeSpan.FromSeconds(offlineThresholdSeconds)));
+        var simulatorEnabled = configuration.GetValue<bool>("Tracking:SimulatorEnabled")
+            && (environment.IsDevelopment() || environment.IsEnvironment("Testing"))
+            && configuration["Tracking:Provider"]?.Equals("Simulator", StringComparison.OrdinalIgnoreCase) == true;
+        if (simulatorEnabled)
+            services.AddSingleton<ITrackingProvider, SimulatedTrackingProvider>();
+        else
+            services.AddSingleton<ITrackingProvider, UnconfiguredTrackingProvider>();
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>
         {
             var connectionString = serviceProvider.GetRequiredService<IConfiguration>()

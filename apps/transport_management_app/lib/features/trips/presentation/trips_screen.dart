@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../operations/domain/operations_models.dart';
 import '../../operations/presentation/operations_controller.dart';
 import '../../operations/presentation/operations_view.dart';
+import '../../../l10n/l10n_extensions.dart';
 
 class TripsScreen extends ConsumerWidget {
   const TripsScreen({super.key});
@@ -16,21 +17,24 @@ class TripsScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Text('Trips', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                context.l10n.trips,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const Spacer(),
               if (canManageOperations(ref))
                 FilledButton.icon(
                   key: const Key('add-trip'),
                   onPressed: () => editTrip(context, ref, data),
                   icon: const Icon(Icons.add),
-                  label: const Text('New trip'),
+                  label: Text(context.l10n.newTrip),
                 ),
             ],
           ),
         ),
         Expanded(
           child: data.trips.isEmpty
-              ? const EmptyState('trips')
+              ? EmptyState(context.l10n.noTrips)
               : RefreshIndicator(
                   onRefresh: ref
                       .read(operationsControllerProvider.notifier)
@@ -49,7 +53,7 @@ class TripsScreen extends ConsumerWidget {
                           leading: const CircleAvatar(child: Icon(Icons.route)),
                           title: Text('${trip.origin} → ${trip.destination}'),
                           subtitle: Text(
-                            '${client?.name ?? 'Unknown client'} • ${trip.status}',
+                            '${client?.name ?? context.l10n.unknownClient} • ${localizedStatus(context.l10n, trip.status)}',
                           ),
                           trailing: const Icon(Icons.chevron_right),
                         ),
@@ -108,7 +112,11 @@ class _TripFormState extends State<TripForm> {
   );
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(widget.trip == null ? 'Create trip' : 'Edit draft trip'),
+    title: Text(
+      widget.trip == null
+          ? context.l10n.createTrip
+          : context.l10n.editDraftTrip,
+    ),
     content: SizedBox(
       width: 520,
       child: Form(
@@ -120,7 +128,7 @@ class _TripFormState extends State<TripForm> {
               DropdownButtonFormField<String>(
                 key: const Key('trip-client'),
                 initialValue: clientId,
-                decoration: const InputDecoration(labelText: 'Client'),
+                decoration: InputDecoration(labelText: context.l10n.client),
                 items: widget.data.clients
                     .where((c) => c.isActive)
                     .map(
@@ -128,37 +136,40 @@ class _TripFormState extends State<TripForm> {
                     )
                     .toList(),
                 onChanged: (value) => clientId = value,
-                validator: (value) => value == null ? 'Required' : null,
+                validator: (value) =>
+                    value == null ? context.l10n.required : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 key: const Key('trip-origin'),
                 controller: origin,
-                decoration: const InputDecoration(labelText: 'Origin'),
-                validator: requiredText,
+                decoration: InputDecoration(labelText: context.l10n.origin),
+                validator: (value) => requiredText(context, value),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 key: const Key('trip-destination'),
                 controller: destination,
-                decoration: const InputDecoration(labelText: 'Destination'),
-                validator: requiredText,
+                decoration: InputDecoration(
+                  labelText: context.l10n.destination,
+                ),
+                validator: (value) => requiredText(context, value),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 key: const Key('trip-cargo'),
                 controller: cargo,
-                decoration: const InputDecoration(labelText: 'Cargo'),
-                validator: requiredText,
+                decoration: InputDecoration(labelText: context.l10n.cargo),
+                validator: (value) => requiredText(context, value),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: planned,
-                decoration: const InputDecoration(
-                  labelText: 'Planned start (ISO 8601)',
+                decoration: InputDecoration(
+                  labelText: context.l10n.plannedStart,
                 ),
                 validator: (value) => DateTime.tryParse(value ?? '') == null
-                    ? 'Enter a valid date'
+                    ? context.l10n.validDate
                     : null,
               ),
               const SizedBox(height: 12),
@@ -168,11 +179,11 @@ class _TripFormState extends State<TripForm> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: const InputDecoration(labelText: 'Price'),
+                decoration: InputDecoration(labelText: context.l10n.price),
                 validator: (value) {
                   final amount = num.tryParse(value ?? '');
                   return amount == null || amount < 0
-                      ? 'Enter a valid price'
+                      ? context.l10n.validPrice
                       : null;
                 },
               ),
@@ -184,7 +195,7 @@ class _TripFormState extends State<TripForm> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: Text(context.l10n.cancel),
       ),
       FilledButton(
         key: const Key('save-trip'),
@@ -203,7 +214,7 @@ class _TripFormState extends State<TripForm> {
             });
           }
         },
-        child: const Text('Save'),
+        child: Text(context.l10n.save),
       ),
     ],
   );

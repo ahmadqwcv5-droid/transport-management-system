@@ -37,4 +37,10 @@ public sealed class AuthController(AuthService authService) : ControllerBase
         var result = await authService.GetCurrentAsync(cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }
+
+    [Authorize]
+    [HttpPut("me/preferences")]
+    public Task<CurrentUserResponse> UpdatePreferences(
+        LocalePreferenceRequest request, CancellationToken cancellationToken) =>
+        authService.UpdateLocaleAsync(request, cancellationToken);
 }

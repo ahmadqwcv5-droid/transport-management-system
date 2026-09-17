@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../operations/domain/operations_models.dart';
 import '../../../operations/presentation/operations_controller.dart';
 import '../../../operations/presentation/operations_view.dart';
+import '../../../../l10n/l10n_extensions.dart';
 
 class DriversScreen extends ConsumerWidget {
   const DriversScreen({super.key});
@@ -15,21 +16,24 @@ class DriversScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Text('Drivers', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                context.l10n.drivers,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const Spacer(),
               if (canManageOperations(ref))
                 FilledButton.icon(
                   key: const Key('add-driver'),
                   onPressed: () => _edit(context, ref),
                   icon: const Icon(Icons.add),
-                  label: const Text('New driver'),
+                  label: Text(context.l10n.newDriver),
                 ),
             ],
           ),
         ),
         Expanded(
           child: data.drivers.isEmpty
-              ? const EmptyState('drivers')
+              ? EmptyState(context.l10n.noDrivers)
               : RefreshIndicator(
                   onRefresh: ref
                       .read(operationsControllerProvider.notifier)
@@ -71,17 +75,17 @@ class _DriverTile extends ConsumerWidget {
         builder: (_) => AlertDialog(
           title: Text(driver.fullName),
           content: Text(
-            'Phone: ${driver.phone ?? '—'}\n'
-            'License: ${driver.licenseNumber}\n'
-            'License expiry: ${driver.licenseExpiryDate ?? '—'}\n'
-            'Status: ${driver.status}\n'
-            'Active: ${driver.isActive ? 'Yes' : 'No'}\n'
-            'Notes: ${driver.notes ?? '—'}',
+            '${context.l10n.phone}: ${driver.phone ?? '—'}\n'
+            '${context.l10n.license}: ${driver.licenseNumber}\n'
+            '${context.l10n.licenseExpiry}: ${driver.licenseExpiryDate ?? '—'}\n'
+            '${context.l10n.status}: ${localizedStatus(context.l10n, driver.status)}\n'
+            '${context.l10n.active}: ${driver.isActive ? context.l10n.yes : context.l10n.no}\n'
+            '${context.l10n.notes}: ${driver.notes ?? '—'}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text(context.l10n.close),
             ),
           ],
         ),
@@ -89,7 +93,7 @@ class _DriverTile extends ConsumerWidget {
       leading: const CircleAvatar(child: Icon(Icons.person_outline)),
       title: Text(driver.fullName),
       subtitle: Text(
-        '${driver.licenseNumber} • ${driver.status}${driver.isActive ? '' : ' • Inactive'}',
+        '${driver.licenseNumber} • ${localizedStatus(context.l10n, driver.status)}${driver.isActive ? '' : ' • ${context.l10n.inactive}'}',
       ),
       trailing: !canManageOperations(ref)
           ? null
@@ -108,21 +112,21 @@ class _DriverTile extends ConsumerWidget {
                 if (context.mounted) showResult(context, ok);
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(value: 'edit', child: Text(context.l10n.edit)),
                 if (driver.status != 'Available')
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'Available',
-                    child: Text('Set available'),
+                    child: Text(context.l10n.setAvailable),
                   ),
                 if (driver.status != 'Unavailable')
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'Unavailable',
-                    child: Text('Set unavailable'),
+                    child: Text(context.l10n.setUnavailable),
                   ),
                 if (driver.isActive)
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'deactivate',
-                    child: Text('Deactivate'),
+                    child: Text(context.l10n.deactivate),
                   ),
               ],
             ),
@@ -149,7 +153,11 @@ class _DriverFormState extends State<_DriverForm> {
   );
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(widget.driver == null ? 'Create driver' : 'Edit driver'),
+    title: Text(
+      widget.driver == null
+          ? context.l10n.createDriver
+          : context.l10n.editDriver,
+    ),
     content: SizedBox(
       width: 440,
       child: Form(
@@ -160,26 +168,28 @@ class _DriverFormState extends State<_DriverForm> {
             TextFormField(
               key: const Key('driver-name'),
               controller: name,
-              decoration: const InputDecoration(labelText: 'Full name'),
-              validator: requiredText,
+              decoration: InputDecoration(labelText: context.l10n.fullName),
+              validator: (value) => requiredText(context, value),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: phone,
-              decoration: const InputDecoration(labelText: 'Phone'),
+              decoration: InputDecoration(labelText: context.l10n.phone),
             ),
             const SizedBox(height: 12),
             TextFormField(
               key: const Key('driver-license'),
               controller: license,
-              decoration: const InputDecoration(labelText: 'License number'),
-              validator: requiredText,
+              decoration: InputDecoration(
+                labelText: context.l10n.licenseNumber,
+              ),
+              validator: (value) => requiredText(context, value),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: expiry,
-              decoration: const InputDecoration(
-                labelText: 'License expiry (YYYY-MM-DD)',
+              decoration: InputDecoration(
+                labelText: context.l10n.licenseExpiry,
               ),
             ),
           ],
@@ -189,7 +199,7 @@ class _DriverFormState extends State<_DriverForm> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: Text(context.l10n.cancel),
       ),
       FilledButton(
         key: const Key('save-driver'),
@@ -206,7 +216,7 @@ class _DriverFormState extends State<_DriverForm> {
             });
           }
         },
-        child: const Text('Save'),
+        child: Text(context.l10n.save),
       ),
     ],
   );

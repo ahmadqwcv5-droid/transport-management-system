@@ -8,6 +8,7 @@ import 'package:transport_management_app/features/operations/domain/operations_m
 import 'package:transport_management_app/features/operations/presentation/operations_controller.dart';
 import 'package:transport_management_app/features/trips/presentation/trip_details_screen.dart';
 import 'package:transport_management_app/shared/widgets/app_shell.dart';
+import 'package:transport_management_app/l10n/app_localizations.dart';
 
 const emptyData = OperationsData(
   clients: [],
@@ -31,7 +32,11 @@ Widget testApp(Widget child, OperationsData data, {bool canManage = true}) =>
         ),
         operationsCanManageProvider.overrideWithValue(canManage),
       ],
-      child: MaterialApp(home: Scaffold(body: child)),
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: child),
+      ),
     );
 
 void main() {

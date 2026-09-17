@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/auth_controller.dart';
+import '../../l10n/l10n_extensions.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({required this.child, required this.selectedIndex, super.key});
@@ -15,32 +16,38 @@ class AppShell extends ConsumerWidget {
     '/trucks',
     '/drivers',
     '/trips',
+    '/settings',
   ];
-  static const _destinations = [
+  List<NavigationDestination> _destinations(BuildContext context) => [
     NavigationDestination(
-      icon: Icon(Icons.dashboard_outlined),
+      icon: Icon(Icons.dashboard_outlined, key: Key('nav-dashboard')),
       selectedIcon: Icon(Icons.dashboard),
-      label: 'Dashboard',
+      label: context.l10n.dashboard,
     ),
     NavigationDestination(
-      icon: Icon(Icons.business_outlined),
+      icon: Icon(Icons.business_outlined, key: Key('nav-clients')),
       selectedIcon: Icon(Icons.business),
-      label: 'Clients',
+      label: context.l10n.clients,
     ),
     NavigationDestination(
-      icon: Icon(Icons.local_shipping_outlined),
+      icon: Icon(Icons.local_shipping_outlined, key: Key('nav-trucks')),
       selectedIcon: Icon(Icons.local_shipping),
-      label: 'Trucks',
+      label: context.l10n.trucks,
     ),
     NavigationDestination(
-      icon: Icon(Icons.people_outline),
+      icon: Icon(Icons.people_outline, key: Key('nav-drivers')),
       selectedIcon: Icon(Icons.people),
-      label: 'Drivers',
+      label: context.l10n.drivers,
     ),
     NavigationDestination(
-      icon: Icon(Icons.route_outlined),
+      icon: Icon(Icons.route_outlined, key: Key('nav-trips')),
       selectedIcon: Icon(Icons.route),
-      label: 'Trips',
+      label: context.l10n.trips,
+    ),
+    NavigationDestination(
+      icon: const Icon(Icons.settings_outlined, key: Key('nav-settings')),
+      selectedIcon: const Icon(Icons.settings),
+      label: context.l10n.settings,
     ),
   ];
 
@@ -50,10 +57,11 @@ class AppShell extends ConsumerWidget {
       final wide = constraints.maxWidth >= 720;
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Transport Management'),
+          title: Text(context.l10n.appTitle),
           actions: [
             IconButton(
-              tooltip: 'Sign out',
+              key: const Key('logout-button'),
+              tooltip: context.l10n.signOut,
               onPressed: () =>
                   ref.read(authControllerProvider.notifier).logout(),
               icon: const Icon(Icons.logout),
@@ -67,7 +75,7 @@ class AppShell extends ConsumerWidget {
                     selectedIndex: selectedIndex,
                     onDestinationSelected: (index) => context.go(_paths[index]),
                     labelType: NavigationRailLabelType.all,
-                    destinations: _destinations
+                    destinations: _destinations(context)
                         .map(
                           (item) => NavigationRailDestination(
                             icon: item.icon,
@@ -87,7 +95,7 @@ class AppShell extends ConsumerWidget {
             : NavigationBar(
                 selectedIndex: selectedIndex,
                 onDestinationSelected: (index) => context.go(_paths[index]),
-                destinations: _destinations,
+                destinations: _destinations(context),
               ),
       );
     },

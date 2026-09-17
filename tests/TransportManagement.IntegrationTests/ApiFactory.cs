@@ -9,6 +9,7 @@ using TransportManagement.Application.Abstractions;
 using TransportManagement.Domain.Companies;
 using TransportManagement.Domain.Identity;
 using TransportManagement.Infrastructure.Persistence;
+using TransportManagement.Infrastructure.Tracking;
 
 namespace TransportManagement.IntegrationTests;
 
@@ -31,12 +32,16 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 ["Jwt:SigningKey"] = "integration-test-signing-key-at-least-32-bytes-long",
                 ["Jwt:AccessTokenMinutes"] = "15",
                 ["Jwt:RefreshTokenDays"] = "14"
+                , ["Tracking:Provider"] = "Simulator"
+                , ["Tracking:SimulatorEnabled"] = "true"
             }));
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<AppDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
             services.RemoveAll<AppDbContext>();
+            services.RemoveAll<ITrackingProvider>();
+            services.AddSingleton<ITrackingProvider, SimulatedTrackingProvider>();
             services.AddDbContext<AppDbContext>(options =>
                 options.UseInMemoryDatabase(_databaseName));
         });

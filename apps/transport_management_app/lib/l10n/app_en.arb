@@ -1,0 +1,136 @@
+{
+  "appTitle": "Transport Management",
+  "signIn": "Sign in",
+  "signInPrompt": "Sign in to your company workspace",
+  "email": "Email",
+  "password": "Password",
+  "signOut": "Sign out",
+  "dashboard": "Dashboard",
+  "clients": "Clients",
+  "trucks": "Trucks",
+  "drivers": "Drivers",
+  "trips": "Trips",
+  "settings": "Settings",
+  "language": "Language",
+  "english": "English",
+  "arabic": "العربية",
+  "fleetMap": "Fleet map",
+  "simulator": "Tracking simulator",
+  "start": "Start",
+  "pause": "Pause",
+  "resume": "Resume",
+  "stop": "Stop",
+  "reset": "Reset",
+  "refresh": "Refresh",
+  "retry": "Retry",
+  "required": "Required",
+  "save": "Save",
+  "cancel": "Cancel",
+  "close": "Close",
+  "loading": "Loading…",
+  "genericError": "Unable to complete the request.",
+  "invalidTripTransition": "This trip action is not allowed in its current status.",
+  "truckAlreadyAssigned": "This truck is already assigned to another active trip.",
+  "driverAlreadyAssigned": "This driver is already assigned to another active trip.",
+  "truckNotAvailable": "The selected truck is not available.",
+  "driverNotAvailable": "The selected driver is not available.",
+  "clientNotFound": "The selected client was not found.",
+  "noTrackedTrucks": "No tracked trucks yet. Start the simulator to create positions.",
+  "totalTrucks": "Total trucks",
+  "availableTrucks": "Available",
+  "onTripTrucks": "On trip",
+  "maintenanceTrucks": "Maintenance",
+  "outOfServiceTrucks": "Out of service",
+  "activeTrips": "Active trips",
+  "completedToday": "Completed today",
+  "onlineTracked": "Online tracked",
+  "offlineTracked": "Offline tracked",
+  "recentTrips": "Recent trips",
+  "online": "Online",
+  "offline": "Offline",
+  "speed": "Speed",
+  "lastUpdate": "Last update",
+  "driver": "Driver",
+  "activeTrip": "Active trip",
+  "notAssigned": "Not assigned",
+  "available": "Available",
+  "onTrip": "On trip",
+  "maintenance": "Maintenance",
+  "outOfService": "Out of service",
+  "unavailable": "Unavailable",
+  "draft": "Draft",
+  "assigned": "Assigned",
+  "started": "Started",
+  "inTransit": "In transit",
+  "delivered": "Delivered",
+  "completed": "Completed",
+  "cancelled": "Cancelled",
+  "localeSaved": "Language updated.",
+  "simulatorDisabled": "The simulator is disabled in this environment.",
+  "noClients": "No clients yet.",
+  "noTrucks": "No trucks yet.",
+  "noDrivers": "No drivers yet.",
+  "noTrips": "No trips yet.",
+  "newClient": "New client",
+  "newTruck": "New truck",
+  "newDriver": "New driver",
+  "newTrip": "New trip",
+  "searchClients": "Search clients",
+  "name": "Name",
+  "fullName": "Full name",
+  "phone": "Phone",
+  "contactPerson": "Contact person",
+  "address": "Address",
+  "plateNumber": "Plate number",
+  "make": "Make",
+  "model": "Model",
+  "year": "Year",
+  "licenseNumber": "License number",
+  "licenseExpiry": "License expiry (YYYY-MM-DD)",
+  "origin": "Origin",
+  "destination": "Destination",
+  "cargo": "Cargo",
+  "plannedStart": "Planned start (ISO 8601)",
+  "price": "Price",
+  "assign": "Assign",
+  "markInTransit": "Mark in transit",
+  "deliver": "Deliver",
+  "complete": "Complete",
+  "edit": "Edit",
+  "deactivate": "Deactivate",
+  "active": "Active",
+  "inactive": "Inactive"
+  ,"createClient": "Create client"
+  ,"editClient": "Edit client"
+  ,"createTruck": "Create truck"
+  ,"editTruck": "Edit truck"
+  ,"createDriver": "Create driver"
+  ,"editDriver": "Edit driver"
+  ,"createTrip": "Create trip"
+  ,"editDraftTrip": "Edit draft trip"
+  ,"editDraft": "Edit draft"
+  ,"setAvailable": "Set available"
+  ,"setUnavailable": "Set unavailable"
+  ,"setMaintenance": "Set maintenance"
+  ,"status": "Status"
+  ,"notes": "Notes"
+  ,"license": "License"
+  ,"planned": "Planned"
+  ,"client": "Client"
+  ,"truck": "Truck"
+  ,"unknownClient": "Unknown client"
+  ,"unknown": "Unknown"
+  ,"yes": "Yes"
+  ,"no": "No"
+  ,"validYear": "Enter a valid year."
+  ,"validDate": "Enter a valid date."
+  ,"validPrice": "Enter a valid price."
+  ,"savedSuccessfully": "Saved successfully."
+  ,"clientDeactivated": "Client deactivated."
+  ,"tripStatusUpdated": "Trip status updated."
+  ,"resourcesAssigned": "Truck and driver assigned."
+  ,"tripNotFound": "Trip not found."
+  ,"backToTrips": "Back to trips"
+  ,"assignResources": "Assign resources"
+  ,"authenticationFailed": "The email address or password is incorrect."
+}

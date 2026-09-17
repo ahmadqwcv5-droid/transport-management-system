@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth_controller.dart';
+import '../../../core/network/api_exception.dart';
+import '../../../l10n/l10n_extensions.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -46,13 +48,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Transport Management',
+                        context.l10n.appTitle,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Sign in to your company workspace',
+                      Text(
+                        context.l10n.signInPrompt,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 28),
@@ -60,32 +62,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         controller: _email,
                         keyboardType: TextInputType.emailAddress,
                         autofillHints: const [AutofillHints.username],
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined),
+                        decoration: InputDecoration(
+                          labelText: context.l10n.email,
+                          prefixIcon: const Icon(Icons.email_outlined),
                         ),
                         validator: (value) =>
                             value != null && value.contains('@')
                             ? null
-                            : 'Enter a valid email address',
+                            : context.l10n.required,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _password,
                         obscureText: true,
                         autofillHints: const [AutofillHints.password],
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock_outline),
+                        decoration: InputDecoration(
+                          labelText: context.l10n.password,
+                          prefixIcon: const Icon(Icons.lock_outline),
                         ),
                         validator: (value) => (value?.length ?? 0) >= 8
                             ? null
-                            : 'Password must contain at least 8 characters',
+                            : context.l10n.required,
                       ),
                       if (auth.hasError) ...[
                         const SizedBox(height: 16),
                         Text(
-                          auth.error.toString(),
+                          auth.error is ApiException
+                              ? localizedErrorCode(
+                                  context.l10n,
+                                  (auth.error! as ApiException).code,
+                                )
+                              : context.l10n.genericError,
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.error,
                           ),
@@ -101,7 +108,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text('Sign in'),
+                            : Text(context.l10n.signIn),
                       ),
                     ],
                   ),

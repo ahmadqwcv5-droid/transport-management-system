@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../l10n/l10n_extensions.dart';
 import '../domain/operations_models.dart';
 import 'operations_controller.dart';
 
@@ -22,15 +23,15 @@ class OperationsView extends ConsumerWidget {
               children: [
                 Text(
                   error is ApiException
-                      ? error.message
-                      : 'Unable to load operational data.',
+                      ? localizedApiError(context, error)
+                      : context.l10n.genericError,
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: () =>
                       ref.read(operationsControllerProvider.notifier).reload(),
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
+                  label: Text(context.l10n.retry),
                 ),
               ],
             ),
@@ -40,35 +41,31 @@ class OperationsView extends ConsumerWidget {
       );
 }
 
-void showResult(
-  BuildContext context,
-  bool success, {
-  String successMessage = 'Saved successfully.',
-}) {
+void showResult(BuildContext context, bool success, {String? successMessage}) {
   final state = ProviderScope.containerOf(
     context,
   ).read(operationsControllerProvider);
   final message = success
-      ? successMessage
+      ? successMessage ?? context.l10n.savedSuccessfully
       : state.error is ApiException
-      ? (state.error! as ApiException).message
-      : 'Unable to complete the request.';
+      ? localizedApiError(context, state.error! as ApiException)
+      : context.l10n.genericError;
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
-String? requiredText(String? value) =>
-    value == null || value.trim().isEmpty ? 'Required' : null;
+String? requiredText(BuildContext context, String? value) =>
+    value == null || value.trim().isEmpty ? context.l10n.required : null;
+
+String localizedApiError(BuildContext context, ApiException error) =>
+    localizedErrorCode(context.l10n, error.code);
 
 String? blankToNull(String value) => value.trim().isEmpty ? null : value.trim();
 
 class EmptyState extends StatelessWidget {
-  const EmptyState(this.label, {super.key});
-  final String label;
+  const EmptyState(this.message, {super.key});
+  final String message;
   @override
   Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(32),
-      child: Text('No $label yet.'),
-    ),
+    child: Padding(padding: const EdgeInsets.all(32), child: Text(message)),
   );
 }

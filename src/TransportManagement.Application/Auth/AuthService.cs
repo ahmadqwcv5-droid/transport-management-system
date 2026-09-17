@@ -58,6 +58,16 @@ public sealed class AuthService(
         return user is null ? null : Map(user);
     }
 
+    public async Task<CurrentUserResponse> UpdateLocaleAsync(
+        LocalePreferenceRequest request, CancellationToken cancellationToken)
+    {
+        var user = await store.FindUserByIdAsync(currentUser.UserId, cancellationToken)
+            ?? throw new Common.NotFoundException("User was not found.", "USER_NOT_FOUND");
+        user.ChangePreferredLocale(request.PreferredLocale, clock.UtcNow);
+        await store.SaveChangesAsync(cancellationToken);
+        return Map(user);
+    }
+
     private async Task<AuthResponse> IssueTokensAsync(
         User user,
         RefreshToken? tokenToReplace,
@@ -78,5 +88,5 @@ public sealed class AuthService(
     }
 
     private static CurrentUserResponse Map(User user) =>
-        new(user.Id, user.CompanyId, user.Email, user.DisplayName, user.Role);
+        new(user.Id, user.CompanyId, user.Email, user.DisplayName, user.Role, user.PreferredLocale);
 }

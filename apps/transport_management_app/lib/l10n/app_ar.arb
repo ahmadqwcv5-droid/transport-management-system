@@ -1,0 +1,136 @@
+{
+  "appTitle": "إدارة النقل",
+  "signIn": "تسجيل الدخول",
+  "signInPrompt": "سجّل الدخول إلى مساحة عمل شركتك",
+  "email": "البريد الإلكتروني",
+  "password": "كلمة المرور",
+  "signOut": "تسجيل الخروج",
+  "dashboard": "لوحة التشغيل",
+  "clients": "العملاء",
+  "trucks": "الشاحنات",
+  "drivers": "السائقون",
+  "trips": "الرحلات",
+  "settings": "الإعدادات",
+  "language": "اللغة",
+  "english": "English",
+  "arabic": "العربية",
+  "fleetMap": "خريطة الأسطول",
+  "simulator": "محاكي التتبع",
+  "start": "بدء",
+  "pause": "إيقاف مؤقت",
+  "resume": "متابعة",
+  "stop": "إيقاف",
+  "reset": "إعادة ضبط",
+  "refresh": "تحديث",
+  "retry": "إعادة المحاولة",
+  "required": "مطلوب",
+  "save": "حفظ",
+  "cancel": "إلغاء",
+  "close": "إغلاق",
+  "loading": "جارٍ التحميل…",
+  "genericError": "تعذر إكمال الطلب.",
+  "invalidTripTransition": "هذا الإجراء غير متاح في حالة الرحلة الحالية.",
+  "truckAlreadyAssigned": "هذه الشاحنة مرتبطة برحلة نشطة أخرى.",
+  "driverAlreadyAssigned": "هذا السائق مرتبط برحلة نشطة أخرى.",
+  "truckNotAvailable": "الشاحنة المحددة غير متاحة.",
+  "driverNotAvailable": "السائق المحدد غير متاح.",
+  "clientNotFound": "لم يتم العثور على العميل المحدد.",
+  "noTrackedTrucks": "لا توجد شاحنات متتبعة. شغّل المحاكي لإنشاء المواقع.",
+  "totalTrucks": "إجمالي الشاحنات",
+  "availableTrucks": "متاحة",
+  "onTripTrucks": "في رحلة",
+  "maintenanceTrucks": "صيانة",
+  "outOfServiceTrucks": "خارج الخدمة",
+  "activeTrips": "الرحلات النشطة",
+  "completedToday": "المكتملة اليوم",
+  "onlineTracked": "متصلة",
+  "offlineTracked": "غير متصلة",
+  "recentTrips": "أحدث الرحلات",
+  "online": "متصل",
+  "offline": "غير متصل",
+  "speed": "السرعة",
+  "lastUpdate": "آخر تحديث",
+  "driver": "السائق",
+  "activeTrip": "الرحلة النشطة",
+  "notAssigned": "غير معين",
+  "available": "متاحة",
+  "onTrip": "في رحلة",
+  "maintenance": "صيانة",
+  "outOfService": "خارج الخدمة",
+  "unavailable": "غير متاح",
+  "draft": "مسودة",
+  "assigned": "معينة",
+  "started": "بدأت",
+  "inTransit": "قيد النقل",
+  "delivered": "تم التسليم",
+  "completed": "مكتملة",
+  "cancelled": "ملغاة",
+  "localeSaved": "تم تحديث اللغة.",
+  "simulatorDisabled": "المحاكي معطل في هذه البيئة.",
+  "noClients": "لا يوجد عملاء بعد.",
+  "noTrucks": "لا توجد شاحنات بعد.",
+  "noDrivers": "لا يوجد سائقون بعد.",
+  "noTrips": "لا توجد رحلات بعد.",
+  "newClient": "عميل جديد",
+  "newTruck": "شاحنة جديدة",
+  "newDriver": "سائق جديد",
+  "newTrip": "رحلة جديدة",
+  "searchClients": "بحث عن العملاء",
+  "name": "الاسم",
+  "fullName": "الاسم الكامل",
+  "phone": "الهاتف",
+  "contactPerson": "جهة الاتصال",
+  "address": "العنوان",
+  "plateNumber": "رقم اللوحة",
+  "make": "الشركة المصنعة",
+  "model": "الطراز",
+  "year": "السنة",
+  "licenseNumber": "رقم الرخصة",
+  "licenseExpiry": "انتهاء الرخصة (YYYY-MM-DD)",
+  "origin": "نقطة الانطلاق",
+  "destination": "الوجهة",
+  "cargo": "الحمولة",
+  "plannedStart": "موعد البدء المخطط",
+  "price": "السعر",
+  "assign": "تعيين",
+  "markInTransit": "بدء النقل",
+  "deliver": "تسليم",
+  "complete": "إكمال",
+  "edit": "تعديل",
+  "deactivate": "تعطيل",
+  "active": "نشط",
+  "inactive": "غير نشط"
+  ,"createClient": "إنشاء عميل"
+  ,"editClient": "تعديل العميل"
+  ,"createTruck": "إنشاء شاحنة"
+  ,"editTruck": "تعديل الشاحنة"
+  ,"createDriver": "إنشاء سائق"
+  ,"editDriver": "تعديل السائق"
+  ,"createTrip": "إنشاء رحلة"
+  ,"editDraftTrip": "تعديل مسودة الرحلة"
+  ,"editDraft": "تعديل المسودة"
+  ,"setAvailable": "تعيين كمتاح"
+  ,"setUnavailable": "تعيين كغير متاح"
+  ,"setMaintenance": "تعيين للصيانة"
+  ,"status": "الحالة"
+  ,"notes": "ملاحظات"
+  ,"license": "الرخصة"
+  ,"planned": "الموعد المخطط"
+  ,"client": "العميل"
+  ,"truck": "الشاحنة"
+  ,"unknownClient": "عميل غير معروف"
+  ,"unknown": "غير معروف"
+  ,"yes": "نعم"
+  ,"no": "لا"
+  ,"validYear": "أدخل سنة صحيحة."
+  ,"validDate": "أدخل تاريخًا صحيحًا."
+  ,"validPrice": "أدخل سعرًا صحيحًا."
+  ,"savedSuccessfully": "تم الحفظ بنجاح."
+  ,"clientDeactivated": "تم تعطيل العميل."
+  ,"tripStatusUpdated": "تم تحديث حالة الرحلة."
+  ,"resourcesAssigned": "تم تعيين الشاحنة والسائق."
+  ,"tripNotFound": "لم يتم العثور على الرحلة."
+  ,"backToTrips": "العودة إلى الرحلات"
+  ,"assignResources": "تعيين الموارد"
+  ,"authenticationFailed": "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+}

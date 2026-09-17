@@ -7,6 +7,7 @@ using TransportManagement.Domain.Companies;
 using TransportManagement.Domain.Fleet;
 using TransportManagement.Domain.Identity;
 using TransportManagement.Domain.Trips;
+using TransportManagement.Domain.Tracking;
 
 namespace TransportManagement.Infrastructure.Persistence;
 
@@ -20,6 +21,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurren
     public DbSet<Truck> Trucks => Set<Truck>();
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<Trip> Trips => Set<Trip>();
+    public DbSet<TruckPosition> TruckPositions => Set<TruckPosition>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

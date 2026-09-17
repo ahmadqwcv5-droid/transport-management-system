@@ -5,6 +5,7 @@ using TransportManagement.Domain.Companies;
 using TransportManagement.Domain.Fleet;
 using TransportManagement.Domain.Identity;
 using TransportManagement.Domain.Trips;
+using TransportManagement.Domain.Tracking;
 
 namespace TransportManagement.Infrastructure.Persistence;
 
@@ -20,6 +21,24 @@ internal sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
     }
 }
 
+internal sealed class TruckPositionConfiguration : IEntityTypeConfiguration<TruckPosition>
+{
+    public void Configure(EntityTypeBuilder<TruckPosition> builder)
+    {
+        builder.ToTable("truck_positions");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Latitude).HasPrecision(9, 6);
+        builder.Property(x => x.Longitude).HasPrecision(9, 6);
+        builder.Property(x => x.Speed).HasPrecision(8, 2);
+        builder.Property(x => x.Heading).HasPrecision(6, 2);
+        builder.Property(x => x.Source).HasMaxLength(50).IsRequired();
+        builder.HasIndex(x => x.CompanyId);
+        builder.HasIndex(x => new { x.CompanyId, x.TruckId, x.RecordedAt });
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Truck>().WithMany().HasForeignKey(x => x.TruckId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
 internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
@@ -30,6 +49,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.DisplayName).HasMaxLength(200).IsRequired();
         builder.Property(x => x.PasswordHash).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Role).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.PreferredLocale).HasMaxLength(5).HasDefaultValue("en").IsRequired();
         // Email is the login identifier and must therefore be globally unambiguous.
         builder.HasIndex(x => x.Email).IsUnique();
         builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);

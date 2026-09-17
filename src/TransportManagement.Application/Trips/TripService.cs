@@ -52,13 +52,13 @@ public sealed class TripService(IOperationsStore store, ICurrentUser currentUser
         var truck = await RequiredTruckAsync(request.TruckId, cancellationToken);
         var driver = await RequiredDriverAsync(request.DriverId, cancellationToken);
         if (!truck.IsActive || truck.Status != TruckStatus.Available)
-            throw new ConflictException("The selected truck is not active and available.");
+            throw new ConflictException("The selected truck is not active and available.", "TRUCK_NOT_AVAILABLE");
         if (!driver.IsActive || driver.Status != DriverStatus.Available)
-            throw new ConflictException("The selected driver is not active and available.");
+            throw new ConflictException("The selected driver is not active and available.", "DRIVER_NOT_AVAILABLE");
         if (await store.TruckReservedAsync(truck.Id, trip.Id, cancellationToken))
-            throw new ConflictException("The selected truck is already reserved by an active trip.");
+            throw new ConflictException("The selected truck is already reserved by an active trip.", "TRUCK_ALREADY_ASSIGNED");
         if (await store.DriverReservedAsync(driver.Id, trip.Id, cancellationToken))
-            throw new ConflictException("The selected driver is already reserved by an active trip.");
+            throw new ConflictException("The selected driver is already reserved by an active trip.", "DRIVER_ALREADY_ASSIGNED");
         trip.Assign(truck.Id, driver.Id, clock.UtcNow);
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
@@ -68,7 +68,7 @@ public sealed class TripService(IOperationsStore store, ICurrentUser currentUser
     {
         var (trip, truck, driver) = await RequiredAssignedResourcesAsync(id, cancellationToken);
         if (truck.Status != TruckStatus.Available || driver.Status != DriverStatus.Available)
-            throw new ConflictException("Assigned resources are no longer available.");
+            throw new ConflictException("Assigned resources are no longer available.", "ASSIGNED_RESOURCES_NOT_AVAILABLE");
         var now = clock.UtcNow;
         trip.Start(now);
         truck.ChangeStatus(TruckStatus.OnTrip, now);
@@ -133,23 +133,23 @@ public sealed class TripService(IOperationsStore store, ICurrentUser currentUser
     private async Task<Client> RequiredActiveClientAsync(Guid id, CancellationToken cancellationToken)
     {
         var client = await store.GetClientAsync(id, cancellationToken)
-            ?? throw new NotFoundException("Client was not found in the current company.");
+            ?? throw new NotFoundException("Client was not found in the current company.", "CLIENT_NOT_FOUND");
         if (!client.IsActive)
-            throw new ConflictException("The selected client is inactive.");
+            throw new ConflictException("The selected client is inactive.", "CLIENT_INACTIVE");
         return client;
     }
 
     private async Task<Trip> RequiredTripAsync(Guid id, CancellationToken cancellationToken) =>
         await store.GetTripAsync(id, cancellationToken)
-        ?? throw new NotFoundException("Trip was not found.");
+        ?? throw new NotFoundException("Trip was not found.", "TRIP_NOT_FOUND");
 
     private async Task<Truck> RequiredTruckAsync(Guid id, CancellationToken cancellationToken) =>
         await store.GetTruckAsync(id, cancellationToken)
-        ?? throw new NotFoundException("Truck was not found in the current company.");
+        ?? throw new NotFoundException("Truck was not found in the current company.", "TRUCK_NOT_FOUND");
 
     private async Task<Driver> RequiredDriverAsync(Guid id, CancellationToken cancellationToken) =>
         await store.GetDriverAsync(id, cancellationToken)
-        ?? throw new NotFoundException("Driver was not found in the current company.");
+        ?? throw new NotFoundException("Driver was not found in the current company.", "DRIVER_NOT_FOUND");
 
     private static TripResponse Map(Trip trip) => new(
         trip.Id, trip.ClientId, trip.TruckId, trip.DriverId, trip.Origin, trip.Destination,

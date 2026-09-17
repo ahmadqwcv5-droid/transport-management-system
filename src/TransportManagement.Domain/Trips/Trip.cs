@@ -100,7 +100,7 @@ public sealed class Trip : Entity, ITenantOwned
     public void Cancel(DateTimeOffset now)
     {
         if (Status is TripStatus.Delivered or TripStatus.Completed or TripStatus.Cancelled)
-            throw new DomainRuleException($"A {Status} trip cannot be cancelled.");
+            throw new DomainRuleException($"A {Status} trip cannot be cancelled.", "INVALID_TRIP_TRANSITION");
         Status = TripStatus.Cancelled;
         Touch(now);
     }
@@ -132,6 +132,6 @@ public sealed class Trip : Entity, ITenantOwned
     private void EnsureStatus(TripStatus expected)
     {
         if (Status != expected)
-            throw new DomainRuleException($"Trip transition requires status {expected}; current status is {Status}.");
+            throw new DomainRuleException($"Trip transition requires status {expected}; current status is {Status}.", "INVALID_TRIP_TRANSITION");
     }
 }

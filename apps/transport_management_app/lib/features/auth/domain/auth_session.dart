@@ -5,6 +5,7 @@ final class CurrentUser {
     required this.email,
     required this.displayName,
     required this.role,
+    required this.preferredLocale,
   });
 
   final String id;
@@ -12,6 +13,7 @@ final class CurrentUser {
   final String email;
   final String displayName;
   final String role;
+  final String preferredLocale;
 
   factory CurrentUser.fromJson(Map<String, dynamic> json) => CurrentUser(
     id: json['id'] as String,
@@ -19,6 +21,7 @@ final class CurrentUser {
     email: json['email'] as String,
     displayName: json['displayName'] as String,
     role: json['role'] as String,
+    preferredLocale: json['preferredLocale'] as String? ?? 'en',
   );
 }
 
