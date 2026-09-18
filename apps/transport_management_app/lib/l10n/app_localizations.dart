@@ -985,6 +985,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Simulator command completed.'**
   String get simulatorCommandSucceeded;
+
+  /// No description provided for @planTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan trip'**
+  String get planTrip;
+
+  /// No description provided for @pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup'**
+  String get pickup;
+
+  /// No description provided for @delivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery'**
+  String get delivery;
+
+  /// No description provided for @locationName.
+  ///
+  /// In en, this message translates to:
+  /// **'Location name'**
+  String get locationName;
+
+  /// No description provided for @searchLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Search location'**
+  String get searchLocation;
+
+  /// No description provided for @searchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Location results'**
+  String get searchResults;
+
+  /// No description provided for @noLocationResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching locations were found. You can enter coordinates manually.'**
+  String get noLocationResults;
+
+  /// No description provided for @latitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Latitude'**
+  String get latitude;
+
+  /// No description provided for @longitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Longitude'**
+  String get longitude;
+
+  /// No description provided for @invalidCoordinate.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid coordinate.'**
+  String get invalidCoordinate;
+
+  /// No description provided for @routePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Route preview'**
+  String get routePreview;
+
+  /// No description provided for @calculateRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculate route'**
+  String get calculateRoute;
+
+  /// No description provided for @calculatingRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating route…'**
+  String get calculatingRoute;
+
+  /// No description provided for @calculateRouteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose pickup and delivery locations, then calculate the road route.'**
+  String get calculateRouteHint;
+
+  /// No description provided for @routeProviderUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The route could not be calculated. Check the routing provider and try again.'**
+  String get routeProviderUnavailable;
+
+  /// No description provided for @saveTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Save trip'**
+  String get saveTrip;
+
+  /// No description provided for @onlineOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Online only'**
+  String get onlineOnly;
+
+  /// No description provided for @movingOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Moving only'**
+  String get movingOnly;
+
+  /// No description provided for @routeProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Route progress'**
+  String get routeProgress;
+
+  /// No description provided for @remainingDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining distance'**
+  String get remainingDistance;
+
+  /// No description provided for @eta.
+  ///
+  /// In en, this message translates to:
+  /// **'ETA'**
+  String get eta;
+
+  /// No description provided for @offRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Off route'**
+  String get offRoute;
+
+  /// No description provided for @onRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'On route'**
+  String get onRoute;
+
+  /// No description provided for @legacyTripRouteWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This legacy trip has location labels only. Select pickup and delivery locations before assignment.'**
+  String get legacyTripRouteWarning;
+
+  /// No description provided for @routeDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Route distance'**
+  String get routeDistance;
+
+  /// No description provided for @routeDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated duration'**
+  String get routeDuration;
+
+  /// No description provided for @routeProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing provider'**
+  String get routeProvider;
+
+  /// No description provided for @selectOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Select on map'**
+  String get selectOnMap;
+
+  /// No description provided for @tapMapToSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the map to select this location'**
+  String get tapMapToSelect;
 }
 
 class _AppLocalizationsDelegate

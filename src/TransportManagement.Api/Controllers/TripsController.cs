@@ -2,13 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransportManagement.Application.Trips;
 using TransportManagement.Domain.Trips;
+using TransportManagement.Application.Routing;
 
 namespace TransportManagement.Api.Controllers;
 
 [ApiController]
 [Authorize(Policy = "operations.read")]
 [Route("api/trips")]
-public sealed class TripsController(TripService service) : ControllerBase
+public sealed class TripsController(TripService service, RouteProgressService progressService) : ControllerBase
 {
     [HttpGet]
     public async Task<IReadOnlyList<TripResponse>> List(
@@ -24,6 +25,10 @@ public sealed class TripsController(TripService service) : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<TripResponse> Get(Guid id, CancellationToken cancellationToken) =>
         await service.GetAsync(id, cancellationToken);
+
+    [HttpGet("{id:guid}/route-progress")]
+    public Task<RouteProgressResponse> Progress(Guid id, CancellationToken cancellationToken) =>
+        progressService.GetAsync(id, cancellationToken);
 
     [HttpPost]
     [Authorize(Policy = "operations.manage")]

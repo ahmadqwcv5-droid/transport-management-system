@@ -202,3 +202,33 @@ High-volume retention, partitioning, and archival remain deferred.
 
 Controllers enforce named policies/roles, while all dashboard, current-position,
 history, and simulator truck resolution remains behind tenant-filtered stores.
+
+## ADR-017: Application-owned route planning and immutable trip snapshots
+
+**Status:** Accepted
+
+`TripStop` stores tenant-owned ordered pickup/delivery data. `TripRoutePlan`
+stores normalized GeoJSON road geometry, distance, duration, provider,
+general-driving profile, timestamp, and stop fingerprint. Route-aware writes
+derive compatibility origin/destination labels from the stops. Assignment
+freezes the snapshot so an operational route cannot change under an active trip.
+
+`IRoutingProvider`, `IGeocodingProvider`, and `ITrackingProvider` are separate
+Application ports. Infrastructure owns OSRM-compatible and configurable
+geocoder adapters; Flutter receives application contracts and no provider
+credential. Preview/save calculations are cached by stop fingerprint, provider
+timeouts are bounded, geocoding is rate-limited, and failures expose stable safe
+codes.
+
+The simulator interpolates by cumulative distance along each stored geometry.
+Reads are observational; elapsed time or explicit controls change position.
+Progress projects the latest sample onto the geometry and derives clamped
+travelled/remaining distance, ETA only while moving, phase, and off-route state.
+Planned geometry and actual history remain separate and are rendered together
+only for the selected vehicle.
+
+The migration preserves legacy text labels as nullable-coordinate stops without
+inventing geography. Such trips remain readable but cannot be assigned until a
+Draft is replanned. General OSRM driving is explicitly not an HGV routing model;
+truck restrictions, traffic, rerouting, and optimization require a later
+provider/product decision.

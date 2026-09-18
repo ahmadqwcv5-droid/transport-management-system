@@ -459,4 +459,95 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get simulatorCommandSucceeded => 'Simulator command completed.';
+
+  @override
+  String get planTrip => 'Plan trip';
+
+  @override
+  String get pickup => 'Pickup';
+
+  @override
+  String get delivery => 'Delivery';
+
+  @override
+  String get locationName => 'Location name';
+
+  @override
+  String get searchLocation => 'Search location';
+
+  @override
+  String get searchResults => 'Location results';
+
+  @override
+  String get noLocationResults =>
+      'No matching locations were found. You can enter coordinates manually.';
+
+  @override
+  String get latitude => 'Latitude';
+
+  @override
+  String get longitude => 'Longitude';
+
+  @override
+  String get invalidCoordinate => 'Enter a valid coordinate.';
+
+  @override
+  String get routePreview => 'Route preview';
+
+  @override
+  String get calculateRoute => 'Calculate route';
+
+  @override
+  String get calculatingRoute => 'Calculating route…';
+
+  @override
+  String get calculateRouteHint =>
+      'Choose pickup and delivery locations, then calculate the road route.';
+
+  @override
+  String get routeProviderUnavailable =>
+      'The route could not be calculated. Check the routing provider and try again.';
+
+  @override
+  String get saveTrip => 'Save trip';
+
+  @override
+  String get onlineOnly => 'Online only';
+
+  @override
+  String get movingOnly => 'Moving only';
+
+  @override
+  String get routeProgress => 'Route progress';
+
+  @override
+  String get remainingDistance => 'Remaining distance';
+
+  @override
+  String get eta => 'ETA';
+
+  @override
+  String get offRoute => 'Off route';
+
+  @override
+  String get onRoute => 'On route';
+
+  @override
+  String get legacyTripRouteWarning =>
+      'This legacy trip has location labels only. Select pickup and delivery locations before assignment.';
+
+  @override
+  String get routeDistance => 'Route distance';
+
+  @override
+  String get routeDuration => 'Estimated duration';
+
+  @override
+  String get routeProvider => 'Routing provider';
+
+  @override
+  String get selectOnMap => 'Select on map';
+
+  @override
+  String get tapMapToSelect => 'Tap the map to select this location';
 }

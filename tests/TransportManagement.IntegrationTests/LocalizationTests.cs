@@ -23,11 +23,8 @@ public sealed class LocalizationTests(ApiFactory factory) : IClassFixture<ApiFac
     public async Task DomainProblemContainsStableErrorCode()
     {
         using var client = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
-        var response = await client.PostJsonAsync("/api/trips", new
-        {
-            clientId = Guid.NewGuid(), origin = "A", destination = "B", cargoDescription = "Cargo",
-            plannedStartAt = DateTimeOffset.UtcNow.AddDays(1), price = 1
-        });
+        var response = await client.PostJsonAsync(
+            "/api/trips", RouteTestData.TripPayload(Guid.NewGuid()));
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
         Assert.Equal("CLIENT_NOT_FOUND", problem.GetProperty("errorCode").GetString());

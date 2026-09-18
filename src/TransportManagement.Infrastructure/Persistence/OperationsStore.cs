@@ -80,7 +80,8 @@ internal sealed class OperationsStore(AppDbContext dbContext) : IOperationsStore
     public void AddDriver(Driver driver) => dbContext.Drivers.Add(driver);
 
     public Task<Trip?> GetTripAsync(Guid id, CancellationToken cancellationToken) =>
-        dbContext.Trips.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+        dbContext.Trips.Include(x => x.Stops).Include(x => x.RoutePlan)
+            .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
 
     public async Task<IReadOnlyList<Trip>> ListTripsAsync(
         TripStatus? status,
@@ -91,7 +92,7 @@ internal sealed class OperationsStore(AppDbContext dbContext) : IOperationsStore
         DateTimeOffset? plannedTo,
         CancellationToken cancellationToken)
     {
-        var query = dbContext.Trips.AsNoTracking();
+        IQueryable<Trip> query = dbContext.Trips.AsNoTracking().Include(x => x.Stops).Include(x => x.RoutePlan);
         if (status.HasValue) query = query.Where(x => x.Status == status.Value);
         if (clientId.HasValue) query = query.Where(x => x.ClientId == clientId.Value);
         if (truckId.HasValue) query = query.Where(x => x.TruckId == truckId.Value);

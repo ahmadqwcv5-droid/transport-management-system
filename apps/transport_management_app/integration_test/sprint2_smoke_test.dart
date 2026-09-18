@@ -69,13 +69,36 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('add-trip')));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('trip-origin')), origin);
+    await tester.enterText(find.byKey(const Key('trip-pickup-name')), origin);
     await tester.enterText(
-      find.byKey(const Key('trip-destination')),
+      find.byKey(const Key('trip-pickup-latitude')),
+      '39.9334',
+    );
+    await tester.enterText(
+      find.byKey(const Key('trip-pickup-longitude')),
+      '32.8597',
+    );
+    await tester.enterText(
+      find.byKey(const Key('trip-delivery-name')),
       destination,
+    );
+    await tester.enterText(
+      find.byKey(const Key('trip-delivery-latitude')),
+      '41.0082',
+    );
+    await tester.enterText(
+      find.byKey(const Key('trip-delivery-longitude')),
+      '28.9784',
     );
     await tester.enterText(find.byKey(const Key('trip-cargo')), 'E2E cargo');
     await tester.enterText(find.byKey(const Key('trip-price')), '2500');
+    ScaffoldMessenger.of(
+      tester.element(find.byType(Scaffold).first),
+    ).hideCurrentSnackBar();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('calculate-route')));
+    await tester.pumpAndSettle(const Duration(milliseconds: 250));
+    expect(find.textContaining('km'), findsWidgets);
     await tester.tap(find.byKey(const Key('save-trip')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('$origin → $destination'));

@@ -33,6 +33,17 @@ services:
       Tracking__PollingIntervalSeconds: ${TRACKING_POLLING_INTERVAL_SECONDS:-5}
       Tracking__OfflineThresholdSeconds: ${TRACKING_OFFLINE_THRESHOLD_SECONDS:-30}
       Tracking__HistoryHeartbeatSeconds: ${TRACKING_HISTORY_HEARTBEAT_SECONDS:-300}
+      Tracking__SimulatorSpeedKilometersPerHour: ${TRACKING_SIMULATOR_SPEED_KMH:-65}
+      Tracking__SimulatorStepDistanceMeters: ${TRACKING_SIMULATOR_STEP_DISTANCE_METERS:-1000}
+      Routing__Provider: ${ROUTING_PROVIDER:-Osrm}
+      Routing__BaseUrl: ${ROUTING_BASE_URL:-https://router.project-osrm.org}
+      Routing__UserAgent: ${ROUTING_USER_AGENT:-TransportManagementDevelopment/0.1}
+      Routing__TimeoutSeconds: ${ROUTING_TIMEOUT_SECONDS:-20}
+      Routing__OffRouteThresholdMeters: ${ROUTING_OFF_ROUTE_THRESHOLD_METERS:-150}
+      Routing__ArrivalThresholdMeters: ${ROUTING_ARRIVAL_THRESHOLD_METERS:-30}
+      Geocoding__Provider: ${GEOCODING_PROVIDER:-}
+      Geocoding__BaseUrl: ${GEOCODING_BASE_URL:-}
+      Geocoding__UserAgent: ${GEOCODING_USER_AGENT:-TransportManagement-Development}
     ports:
       - "5080:8080"
     depends_on:

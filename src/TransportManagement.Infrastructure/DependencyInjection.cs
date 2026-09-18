@@ -12,6 +12,8 @@ using TransportManagement.Infrastructure.Auth;
 using TransportManagement.Infrastructure.Persistence;
 using TransportManagement.Infrastructure.Tracking;
 using TransportManagement.Application.Tracking;
+using TransportManagement.Application.Routing;
+using TransportManagement.Infrastructure.Routing;
 
 namespace TransportManagement.Infrastructure;
 
@@ -42,6 +44,36 @@ public static class DependencyInjection
         services.AddScoped<ICompanyReader, CompanyReader>();
         services.AddScoped<IOperationsStore, OperationsStore>();
         services.AddScoped<ITrackingStore, TrackingStore>();
+        services.AddSingleton(new RouteProgressPolicy(
+            Math.Max(10, configuration.GetValue<decimal>("Routing:OffRouteThresholdMeters", 150)),
+            Math.Max(5, configuration.GetValue<decimal>("Routing:ArrivalThresholdMeters", 30))));
+
+        if (environment.IsEnvironment("Testing"))
+        {
+            services.AddSingleton<IRoutingProvider, DeterministicRoutingProvider>();
+            services.AddSingleton<IGeocodingProvider, DeterministicGeocodingProvider>();
+        }
+        else
+        {
+            var routingProvider = configuration["Routing:Provider"];
+            if (string.Equals(routingProvider, "Osrm", StringComparison.OrdinalIgnoreCase))
+            {
+                services.AddHttpClient<OsrmRoutingProvider>(client =>
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd(
+                        configuration["Routing:UserAgent"]
+                        ?? "TransportManagementDevelopment/0.1"));
+                services.AddSingleton<IRoutingProvider>(provider => provider.GetRequiredService<OsrmRoutingProvider>());
+            }
+            else services.AddSingleton<IRoutingProvider, UnconfiguredRoutingProvider>();
+
+            var geocodingProvider = configuration["Geocoding:Provider"];
+            if (string.Equals(geocodingProvider, "Nominatim", StringComparison.OrdinalIgnoreCase))
+            {
+                services.AddHttpClient<NominatimGeocodingProvider>();
+                services.AddSingleton<IGeocodingProvider>(provider => provider.GetRequiredService<NominatimGeocodingProvider>());
+            }
+            else services.AddSingleton<IGeocodingProvider, UnconfiguredGeocodingProvider>();
+        }
         var offlineThresholdSeconds = Math.Max(
             1, configuration.GetValue<int>("Tracking:OfflineThresholdSeconds", 30));
         var historyHeartbeatSeconds = Math.Max(

@@ -6,7 +6,6 @@ import '../../operations/domain/operations_models.dart';
 import '../../operations/presentation/operations_controller.dart';
 import '../../operations/presentation/operations_view.dart';
 import '../../../l10n/l10n_extensions.dart';
-import 'trips_screen.dart';
 
 class TripDetailsScreen extends ConsumerWidget {
   const TripDetailsScreen({required this.tripId, super.key});
@@ -91,6 +90,45 @@ class TripDetailsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: trip.routePlan == null
+                  ? Row(
+                      children: [
+                        const Icon(Icons.warning_amber, color: Colors.orange),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(context.l10n.legacyTripRouteWarning),
+                        ),
+                      ],
+                    )
+                  : Wrap(
+                      spacing: 32,
+                      runSpacing: 16,
+                      children: [
+                        _Fact(
+                          context.l10n.routeDistance,
+                          '${(trip.routePlan!.distanceMeters / 1000).toStringAsFixed(1)} km',
+                        ),
+                        _Fact(
+                          context.l10n.routeDuration,
+                          '${Duration(seconds: trip.routePlan!.estimatedDurationSeconds).inMinutes} min',
+                        ),
+                        _Fact(
+                          context.l10n.routeProvider,
+                          trip.routePlan!.providerName,
+                        ),
+                        for (final stop in trip.stops)
+                          _Fact(
+                            localizedStatus(context.l10n, stop.type),
+                            stop.name,
+                          ),
+                      ],
+                    ),
+            ),
+          ),
+          const SizedBox(height: 16),
           if (canManageOperations(ref))
             Wrap(
               spacing: 10,
@@ -98,7 +136,7 @@ class TripDetailsScreen extends ConsumerWidget {
               children: [
                 if (trip.status == 'Draft')
                   OutlinedButton.icon(
-                    onPressed: () => editTrip(context, ref, data, trip),
+                    onPressed: () => context.go('/trips/${trip.id}/edit'),
                     icon: const Icon(Icons.edit),
                     label: Text(context.l10n.editDraft),
                   ),

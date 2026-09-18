@@ -87,7 +87,7 @@ public sealed class TripsTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var resourcesB = await CreateResourcesAsync(companyB);
         var tripId = await CreateTripAsync(companyA, resourcesA.ClientId);
 
-        var foreignClient = await companyA.PostJsonAsync("/api/trips", TripPayload(resourcesB.ClientId));
+        var foreignClient = await companyA.PostJsonAsync("/api/trips", RouteTestData.TripPayload(resourcesB.ClientId));
         Assert.Equal(HttpStatusCode.NotFound, foreignClient.StatusCode);
 
         var foreignTruck = await companyA.PostJsonAsync($"/api/trips/{tripId}/assign", new
@@ -131,20 +131,11 @@ public sealed class TripsTests(ApiFactory factory) : IClassFixture<ApiFactory>
 
     private static async Task<Guid> CreateTripAsync(HttpClient client, Guid clientId)
     {
-        var response = await client.PostJsonAsync("/api/trips", TripPayload(clientId));
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var response = await client.PostJsonAsync("/api/trips", RouteTestData.TripPayload(clientId));
+        Assert.True(response.StatusCode == HttpStatusCode.Created,
+            await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         return (await response.RequiredJsonAsync()).GetProperty("id").GetGuid();
     }
-
-    private static object TripPayload(Guid clientId) => new
-    {
-        clientId,
-        origin = "Factory A",
-        destination = "Warehouse B",
-        cargoDescription = "Palletized goods",
-        plannedStartAt = DateTimeOffset.UtcNow.AddDays(1),
-        price = 1250.50m
-    };
 
     private static async Task AssertTransitionAsync(HttpClient client, string path, string expectedStatus, object? body = null)
     {

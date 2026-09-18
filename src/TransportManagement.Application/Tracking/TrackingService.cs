@@ -1,6 +1,8 @@
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Application.Common;
 using TransportManagement.Domain.Tracking;
+using TransportManagement.Application.Routing;
+using TransportManagement.Domain.Trips;
 
 namespace TransportManagement.Application.Tracking;
 
@@ -15,7 +17,9 @@ public sealed class TrackingService(
     public async Task<IReadOnlyList<TruckPositionResponse>> CurrentAsync(CancellationToken cancellationToken)
     {
         var trucks = await operationsStore.ListTrucksAsync(null, true, null, cancellationToken);
-        var samples = provider.GetCurrent(currentUser.CompanyId, trucks.Select(x => x.Id).ToArray(), clock.UtcNow);
+        var trips = await operationsStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
+        var targets = BuildTargets(trucks.Select(x => x.Id), trips);
+        var samples = provider.GetCurrent(currentUser.CompanyId, targets, clock.UtcNow);
         var latest = await trackingStore.LatestPositionsAsync(cancellationToken);
         if (samples.Count > 0)
         {
@@ -35,7 +39,6 @@ public sealed class TrackingService(
                 latest = await trackingStore.LatestPositionsAsync(cancellationToken);
             }
         }
-        var trips = await operationsStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var drivers = await operationsStore.ListDriversAsync(null, null, null, cancellationToken);
         return latest.Join(trucks, p => p.TruckId, t => t.Id, (p, t) => Map(p, t.PlateNumber, t.Status.ToString(), trips, drivers)).ToArray();
     }
@@ -69,7 +72,8 @@ public sealed class TrackingService(
         var trucks = await operationsStore.ListTrucksAsync(null, true, null, cancellationToken);
         if (request.TruckId.HasValue && trucks.All(x => x.Id != request.TruckId.Value))
             throw new NotFoundException("Truck was not found in the current company.", "TRUCK_NOT_FOUND");
-        var state = provider.Control(currentUser.CompanyId, trucks.Select(x => x.Id).ToArray(),
+        var trips = await operationsStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
+        var state = provider.Control(currentUser.CompanyId, BuildTargets(trucks.Select(x => x.Id), trips),
             new SimulatorCommand(request.Action, request.TruckId, request.SpeedMultiplier), clock.UtcNow);
         return new(state.Enabled, state.Running, state.SpeedMultiplier, state.Step);
     }
@@ -97,4 +101,20 @@ public sealed class TrackingService(
             || !string.Equals(sample.Source, previous.Source, StringComparison.Ordinal)
             || sample.RecordedAt - previous.RecordedAt >= policy.HistoryHeartbeat;
     }
+
+    private static TrackingTarget[] BuildTargets(
+        IEnumerable<Guid> truckIds, IReadOnlyList<Trip> trips) =>
+        truckIds.Select(truckId =>
+        {
+            var trip = trips.FirstOrDefault(x => x.TruckId == truckId && x.ReservesResources && x.RoutePlan is not null);
+            var coordinates = trip?.RoutePlan is null
+                ? (IReadOnlyList<GeoCoordinate>)[]
+                : RouteGeometry.FromGeoJson(trip.RoutePlan.Geometry);
+            return new TrackingTarget(
+                truckId,
+                trip?.Id,
+                trip?.RoutePlan?.StopsFingerprint,
+                coordinates,
+                trip?.Status is TripStatus.Started or TripStatus.InTransit);
+        }).ToArray();
 }

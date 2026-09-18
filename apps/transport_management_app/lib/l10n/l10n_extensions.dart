@@ -21,6 +21,8 @@ String localizedStatus(AppLocalizations l10n, String value) => switch (value) {
   'Cancelled' => l10n.cancelled,
   'Online' => l10n.online,
   'Offline' => l10n.offline,
+  'Pickup' => l10n.pickup,
+  'Delivery' => l10n.delivery,
   _ => value,
 };
 

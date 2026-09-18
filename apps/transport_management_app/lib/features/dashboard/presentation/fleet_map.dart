@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import '../../../l10n/l10n_extensions.dart';
 import '../domain/dashboard_models.dart';
+import 'dashboard_controller.dart';
 
 enum FleetMapMode { unconfigured, loading, loaded, failed, fallback }
 
@@ -19,7 +21,7 @@ typedef FleetMapBuilder =
       required ValueChanged<TrackedTruck> onTruckSelected,
     });
 
-class FleetMap extends StatefulWidget {
+class FleetMap extends ConsumerStatefulWidget {
   const FleetMap({
     required this.positions,
     this.styleUrlOverride,
@@ -40,14 +42,29 @@ class FleetMap extends StatefulWidget {
   final FleetMapBuilder? mapBuilder;
 
   @override
-  State<FleetMap> createState() => _FleetMapState();
+  ConsumerState<FleetMap> createState() => _FleetMapState();
 }
 
-class _FleetMapState extends State<FleetMap> {
+class _FleetMapState extends ConsumerState<FleetMap> {
   late FleetMapMode _mode;
   Timer? _loadingTimer;
   int _attempt = 0;
   bool _annotationsReady = false;
+  bool _onlineOnly = false;
+  bool _movingOnly = false;
+  String? _selectedTruckId;
+  FleetTripDetail? _tripDetail;
+  bool _loadingDetail = false;
+
+  List<TrackedTruck> get _visiblePositions => widget.positions.where((item) {
+    if (_onlineOnly && !item.isOnline) return false;
+    if (_movingOnly && item.speed <= 0) return false;
+    return true;
+  }).toList();
+
+  TrackedTruck? get _selected => widget.positions
+      .where((item) => item.truckId == _selectedTruckId)
+      .firstOrNull;
 
   String get _styleUrl =>
       widget.styleUrlOverride ?? FleetMap.configuredStyleUrl;
@@ -100,9 +117,26 @@ class _FleetMapState extends State<FleetMap> {
         children: [
           Padding(
             padding: const EdgeInsetsDirectional.all(12),
-            child: Text(
-              context.l10n.fleetMap,
-              style: Theme.of(context).textTheme.titleLarge,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    context.l10n.fleetMap,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                FilterChip(
+                  label: Text(context.l10n.onlineOnly),
+                  selected: _onlineOnly,
+                  onSelected: (value) => setState(() => _onlineOnly = value),
+                ),
+                const SizedBox(width: 8),
+                FilterChip(
+                  label: Text(context.l10n.movingOnly),
+                  selected: _movingOnly,
+                  onSelected: (value) => setState(() => _movingOnly = value),
+                ),
+              ],
             ),
           ),
           Expanded(child: _buildState(context)),
@@ -141,28 +175,56 @@ class _FleetMapState extends State<FleetMap> {
         ),
       ],
     ),
-    FleetMapMode.fallback => _FallbackMap(
-      positions: widget.positions,
-      onTruckSelected: (position) => _showTruckDetails(context, position),
+    FleetMapMode.fallback => Stack(
+      fit: StackFit.expand,
+      children: [
+        _FallbackMap(
+          positions: _visiblePositions,
+          onTruckSelected: _selectTruck,
+        ),
+        if (_selected != null)
+          PositionedDirectional(
+            end: 12,
+            top: 12,
+            child: _SelectedTruckCard(
+              position: _selected!,
+              detail: _tripDetail,
+              loading: _loadingDetail,
+              onClose: () => setState(() => _selectedTruckId = null),
+            ),
+          ),
+      ],
     ),
     FleetMapMode.loading || FleetMapMode.loaded => _buildRealMap(context),
   };
 
   Widget _buildRealMap(BuildContext context) {
-    final builder = widget.mapBuilder ?? _productionMapBuilder;
     final attempt = _attempt;
+    final map = widget.mapBuilder == null
+        ? _productionMapBuilder(
+            key: ValueKey('maplibre-attempt-$_attempt'),
+            styleUrl: _styleUrl,
+            positions: _visiblePositions,
+            onStyleLoaded: () => _onStyleLoaded(attempt),
+            onAnnotationsReady: () => _onAnnotationsReady(attempt),
+            onFailure: () => _onFailure(attempt),
+            onTruckSelected: _selectTruck,
+            tripDetail: _tripDetail,
+            selectedTruckId: _selectedTruckId,
+          )
+        : widget.mapBuilder!(
+            key: ValueKey('maplibre-attempt-$_attempt'),
+            styleUrl: _styleUrl,
+            positions: _visiblePositions,
+            onStyleLoaded: () => _onStyleLoaded(attempt),
+            onAnnotationsReady: () => _onAnnotationsReady(attempt),
+            onFailure: () => _onFailure(attempt),
+            onTruckSelected: _selectTruck,
+          );
     return Stack(
       fit: StackFit.expand,
       children: [
-        builder(
-          key: ValueKey('maplibre-attempt-$_attempt'),
-          styleUrl: _styleUrl,
-          positions: widget.positions,
-          onStyleLoaded: () => _onStyleLoaded(attempt),
-          onAnnotationsReady: () => _onAnnotationsReady(attempt),
-          onFailure: () => _onFailure(attempt),
-          onTruckSelected: (position) => _showTruckDetails(context, position),
-        ),
+        map,
         if (_mode == FleetMapMode.loading)
           ColoredBox(
             key: const Key('map-status-loading'),
@@ -209,9 +271,9 @@ class _FleetMapState extends State<FleetMap> {
                   key: const Key('map-annotations-ready'),
                   spacing: 6,
                   runSpacing: 4,
-                  children: widget.positions.isEmpty
+                  children: _visiblePositions.isEmpty
                       ? [Text(context.l10n.noTrackedTrucks)]
-                      : widget.positions
+                      : _visiblePositions
                             .map(
                               (position) => ActionChip(
                                 key: Key('real-map-truck-${position.truckId}'),
@@ -222,8 +284,7 @@ class _FleetMapState extends State<FleetMap> {
                                       : Colors.grey,
                                 ),
                                 label: Text(position.plateNumber),
-                                onPressed: () =>
-                                    _showTruckDetails(context, position),
+                                onPressed: () => _selectTruck(position),
                               ),
                             )
                             .toList(),
@@ -231,8 +292,42 @@ class _FleetMapState extends State<FleetMap> {
               ),
             ),
           ),
+        if (_selected != null)
+          PositionedDirectional(
+            end: 12,
+            top: 12,
+            child: _SelectedTruckCard(
+              position: _selected!,
+              detail: _tripDetail,
+              loading: _loadingDetail,
+              onClose: () => setState(() => _selectedTruckId = null),
+            ),
+          ),
       ],
     );
+  }
+
+  Future<void> _selectTruck(TrackedTruck position) async {
+    setState(() {
+      _selectedTruckId = position.truckId;
+      _tripDetail = null;
+      _loadingDetail = position.currentTripId != null;
+    });
+    if (position.currentTripId == null) return;
+    try {
+      final detail = await ref
+          .read(dashboardRepositoryProvider)
+          .tripDetail(position.currentTripId!, position.truckId);
+      if (mounted && _selectedTruckId == position.truckId) {
+        setState(() => _tripDetail = detail);
+      }
+    } on Object {
+      // The truck card remains useful when route details are temporarily unavailable.
+    } finally {
+      if (mounted && _selectedTruckId == position.truckId) {
+        setState(() => _loadingDetail = false);
+      }
+    }
   }
 
   void _armTimeout() {
@@ -289,6 +384,8 @@ Widget _productionMapBuilder({
   required VoidCallback onAnnotationsReady,
   required VoidCallback onFailure,
   required ValueChanged<TrackedTruck> onTruckSelected,
+  FleetTripDetail? tripDetail,
+  String? selectedTruckId,
 }) => _ConfiguredFleetMap(
   key: key,
   styleUrl: styleUrl,
@@ -297,6 +394,8 @@ Widget _productionMapBuilder({
   onAnnotationsReady: onAnnotationsReady,
   onFailure: onFailure,
   onTruckSelected: onTruckSelected,
+  tripDetail: tripDetail,
+  selectedTruckId: selectedTruckId,
 );
 
 class _ConfiguredFleetMap extends StatefulWidget {
@@ -307,6 +406,8 @@ class _ConfiguredFleetMap extends StatefulWidget {
     required this.onAnnotationsReady,
     required this.onFailure,
     required this.onTruckSelected,
+    this.tripDetail,
+    this.selectedTruckId,
     super.key,
   });
 
@@ -316,6 +417,8 @@ class _ConfiguredFleetMap extends StatefulWidget {
   final VoidCallback onAnnotationsReady;
   final VoidCallback onFailure;
   final ValueChanged<TrackedTruck> onTruckSelected;
+  final FleetTripDetail? tripDetail;
+  final String? selectedTruckId;
 
   @override
   State<_ConfiguredFleetMap> createState() => _ConfiguredFleetMapState();
@@ -323,7 +426,7 @@ class _ConfiguredFleetMap extends StatefulWidget {
 
 class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
   MapLibreMapController? _controller;
-  void Function(Circle)? _circleTapListener;
+  void Function(Symbol)? _symbolTapListener;
   bool _styleLoaded = false;
   int _syncGeneration = 0;
 
@@ -337,9 +440,9 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
   void dispose() {
     _syncGeneration++;
     final controller = _controller;
-    final listener = _circleTapListener;
+    final listener = _symbolTapListener;
     if (controller != null && listener != null) {
-      controller.onCircleTapped.remove(listener);
+      controller.onSymbolTapped.remove(listener);
     }
     super.dispose();
   }
@@ -359,16 +462,16 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
     ),
     onMapCreated: (controller) {
       _controller = controller;
-      void listener(Circle circle) {
-        final truckId = circle.data?['truckId'] as String?;
+      void listener(Symbol symbol) {
+        final truckId = symbol.data?['truckId'] as String?;
         final position = widget.positions
             .where((item) => item.truckId == truckId)
             .firstOrNull;
         if (position != null && mounted) widget.onTruckSelected(position);
       }
 
-      _circleTapListener = listener;
-      controller.onCircleTapped.add(listener);
+      _symbolTapListener = listener;
+      controller.onSymbolTapped.add(listener);
     },
     onStyleLoadedCallback: () {
       if (!mounted) return;
@@ -383,17 +486,23 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
     if (controller == null || !_styleLoaded) return;
     final generation = ++_syncGeneration;
     try {
+      await controller.clearSymbols();
+      await controller.clearLines();
       await controller.clearCircles();
       if (!mounted || generation != _syncGeneration) return;
-      await controller.addCircles(
+      await controller.addSymbols(
         widget.positions
             .map(
-              (position) => CircleOptions(
+              (position) => SymbolOptions(
                 geometry: LatLng(position.latitude, position.longitude),
-                circleRadius: 9,
-                circleColor: position.isOnline ? '#16A34A' : '#6B7280',
-                circleStrokeColor: '#FFFFFF',
-                circleStrokeWidth: 2,
+                textField: '➤  ${position.plateNumber}',
+                textRotate: position.heading,
+                textColor: position.isOnline
+                    ? (position.speed > 0 ? '#15803D' : '#175CD3')
+                    : '#6B7280',
+                textHaloColor: '#FFFFFF',
+                textHaloWidth: 2,
+                textSize: 18,
               ),
             )
             .toList(),
@@ -401,6 +510,37 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
             .map((position) => <String, dynamic>{'truckId': position.truckId})
             .toList(),
       );
+      final detail = widget.tripDetail;
+      if (detail != null) {
+        final route = detail.route.coordinates
+            .map((point) => LatLng(point.latitude, point.longitude))
+            .toList();
+        final trail = detail.trail
+            .map((point) => LatLng(point.latitude, point.longitude))
+            .toList();
+        if (route.length > 1) {
+          await controller.addLine(
+            LineOptions(geometry: route, lineColor: '#175CD3', lineWidth: 5),
+          );
+          await controller.addCircles([
+            CircleOptions(
+              geometry: route.first,
+              circleColor: '#16A34A',
+              circleRadius: 7,
+            ),
+            CircleOptions(
+              geometry: route.last,
+              circleColor: '#DC2626',
+              circleRadius: 7,
+            ),
+          ]);
+        }
+        if (trail.length > 1) {
+          await controller.addLine(
+            LineOptions(geometry: trail, lineColor: '#16A34A', lineWidth: 4),
+          );
+        }
+      }
       if (mounted && generation == _syncGeneration) {
         widget.onAnnotationsReady();
       }
@@ -408,6 +548,85 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
       if (mounted && generation == _syncGeneration) widget.onFailure();
     }
   }
+}
+
+class _SelectedTruckCard extends StatelessWidget {
+  const _SelectedTruckCard({
+    required this.position,
+    required this.onClose,
+    required this.detail,
+    required this.loading,
+  });
+  final TrackedTruck position;
+  final FleetTripDetail? detail;
+  final bool loading;
+  final VoidCallback onClose;
+  @override
+  Widget build(BuildContext context) => Card(
+    elevation: 6,
+    child: SizedBox(
+      width: 270,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.local_shipping),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    position.plateNumber,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  onPressed: onClose,
+                  icon: const Icon(Icons.close),
+                  tooltip: context.l10n.close,
+                ),
+              ],
+            ),
+            Text(localizedStatus(context.l10n, position.truckStatus)),
+            Text(
+              position.isOnline ? context.l10n.online : context.l10n.offline,
+            ),
+            Text(
+              '${context.l10n.speed}: ${position.speed.toStringAsFixed(0)} km/h',
+            ),
+            Text(
+              '${context.l10n.driver}: ${position.driverName ?? context.l10n.notAssigned}',
+            ),
+            Text(
+              '${context.l10n.activeTrip}: ${position.currentTripId ?? context.l10n.notAssigned}',
+            ),
+            Text('${context.l10n.lastUpdate}: ${position.recordedAt}'),
+            if (loading) const LinearProgressIndicator(),
+            if (detail != null) ...[
+              const Divider(),
+              Text(
+                key: const Key('fleet-route-progress'),
+                '${context.l10n.routeProgress}: ${detail!.progress.progressPercent?.toStringAsFixed(1) ?? '—'}%',
+              ),
+              Text(
+                '${context.l10n.remainingDistance}: ${((detail!.progress.remainingDistanceMeters ?? 0) / 1000).toStringAsFixed(1)} km',
+              ),
+              Text(
+                '${context.l10n.eta}: ${detail!.progress.estimatedArrivalAt ?? '—'}',
+              ),
+              Text(
+                detail!.progress.isOffRoute == true
+                    ? context.l10n.offRoute
+                    : context.l10n.onRoute,
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _MessageState extends StatelessWidget {
@@ -495,23 +714,5 @@ class _FallbackMap extends StatelessWidget {
         ),
       ),
     ],
-  );
-}
-
-void _showTruckDetails(BuildContext context, TrackedTruck position) {
-  showDialog<void>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Text(position.plateNumber),
-      content: Text(
-        '${localizedStatus(context.l10n, position.truckStatus)}\n${position.isOnline ? context.l10n.online : context.l10n.offline}\n${context.l10n.speed}: ${position.speed.toStringAsFixed(0)} km/h\n${context.l10n.driver}: ${position.driverName ?? context.l10n.notAssigned}\n${context.l10n.activeTrip}: ${position.currentTripId ?? context.l10n.notAssigned}\n${context.l10n.lastUpdate}: ${position.recordedAt}',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(context.l10n.close),
-        ),
-      ],
-    ),
   );
 }

@@ -77,4 +77,42 @@ final class OperationsRepository {
     'POST',
     '/api/trips/$id/${action == 'MarkInTransit' ? 'mark-in-transit' : action.toLowerCase()}',
   );
+
+  Future<List<LocationResult>> searchLocations(String query) async {
+    try {
+      final response = await _client.dio.get<List<dynamic>>(
+        '/api/locations/search',
+        queryParameters: {'query': query},
+      );
+      return response.data!.cast<Json>().map(LocationResult.fromJson).toList();
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<TripRoutePlan> previewRoute(List<TripStop> stops) async {
+    try {
+      final response = await _client.dio.post<Json>(
+        '/api/routes/preview',
+        data: {
+          'routeProfile': 'Driving',
+          'stops': stops.map((item) => item.toJson()).toList(),
+        },
+      );
+      return TripRoutePlan.fromJson(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<RouteProgress> routeProgress(String tripId) async {
+    try {
+      final response = await _client.dio.get<Json>(
+        '/api/trips/$tripId/route-progress',
+      );
+      return RouteProgress.fromJson(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
 }

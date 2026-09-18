@@ -9,6 +9,7 @@ import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/fleet/drivers/presentation/drivers_screen.dart';
 import 'features/fleet/trucks/presentation/trucks_screen.dart';
 import 'features/trips/presentation/trip_details_screen.dart';
+import 'features/trips/presentation/trip_planner_screen.dart';
 import 'features/trips/presentation/trips_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'l10n/app_localizations.dart';
@@ -62,6 +63,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) =>
             const AppShell(selectedIndex: 4, child: TripsScreen()),
         routes: [
+          GoRoute(
+            path: 'new',
+            builder: (_, _) =>
+                const AppShell(selectedIndex: 4, child: TripPlannerScreen()),
+          ),
+          GoRoute(
+            path: ':id/edit',
+            builder: (_, state) => AppShell(
+              selectedIndex: 4,
+              child: TripPlannerScreen(tripId: state.pathParameters['id']),
+            ),
+          ),
           GoRoute(
             path: ':id',
             builder: (_, state) => AppShell(

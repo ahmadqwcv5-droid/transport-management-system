@@ -4,6 +4,7 @@ namespace TransportManagement.Domain.Trips;
 
 public sealed class Trip : Entity, ITenantOwned
 {
+    private readonly List<TripStop> _stops = [];
     private Trip() { }
 
     public Trip(
@@ -38,6 +39,9 @@ public sealed class Trip : Entity, ITenantOwned
     public decimal Price { get; private set; }
     public string? Notes { get; private set; }
     public TripStatus Status { get; private set; }
+    public IReadOnlyCollection<TripStop> Stops => _stops;
+    public TripRoutePlan? RoutePlan { get; private set; }
+    public bool IsRouteAware => RoutePlan is not null && _stops.Count >= 2;
 
     public bool ReservesResources => Status is TripStatus.Assigned or TripStatus.Started
         or TripStatus.InTransit or TripStatus.Delivered;
@@ -63,6 +67,38 @@ public sealed class Trip : Entity, ITenantOwned
         TruckId = truckId;
         DriverId = driverId;
         Status = TripStatus.Assigned;
+        Touch(now);
+    }
+
+    public void ReplaceRoute(
+        IReadOnlyCollection<TripStop> stops,
+        TripRoutePlan routePlan,
+        DateTimeOffset now)
+    {
+        EnsureStatus(TripStatus.Draft);
+        if (stops.Count < 2)
+            throw new DomainRuleException("A route requires pickup and delivery stops.", "INVALID_TRIP_STOPS");
+        var ordered = stops.OrderBy(x => x.Sequence).ToArray();
+        if (ordered[0].Sequence != 0 || ordered[0].Type != TripStopType.Pickup
+            || ordered[^1].Type != TripStopType.Delivery
+            || ordered.Select(x => x.Sequence).Distinct().Count() != ordered.Length)
+            throw new DomainRuleException("Stops must start with pickup, end with delivery, and have unique ordering.", "INVALID_TRIP_STOPS");
+        if (ordered.Any(x => x.CompanyId != CompanyId || x.TripId != Id || !x.HasCoordinates)
+            || routePlan.CompanyId != CompanyId || routePlan.TripId != Id)
+            throw new DomainRuleException("Route data does not belong to this trip.", "INVALID_TRIP_ROUTE");
+
+        var pickup = ordered[0];
+        var delivery = ordered[^1];
+        var latitudeDelta = Math.Abs(pickup.Latitude!.Value - delivery.Latitude!.Value);
+        var longitudeDelta = Math.Abs(pickup.Longitude!.Value - delivery.Longitude!.Value);
+        if (latitudeDelta < 0.00001m && longitudeDelta < 0.00001m)
+            throw new DomainRuleException("Pickup and delivery must be different locations.", "IDENTICAL_TRIP_STOPS");
+
+        _stops.Clear();
+        _stops.AddRange(ordered);
+        RoutePlan = routePlan;
+        Origin = pickup.Name;
+        Destination = delivery.Name;
         Touch(now);
     }
 

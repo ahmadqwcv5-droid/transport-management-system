@@ -1,4 +1,17 @@
+import '../../operations/domain/operations_models.dart' as ops;
+
 typedef Json = Map<String, dynamic>;
+
+final class FleetTripDetail {
+  const FleetTripDetail({
+    required this.route,
+    required this.trail,
+    required this.progress,
+  });
+  final ops.TripRoutePlan route;
+  final List<ops.GeoPoint> trail;
+  final ops.RouteProgress progress;
+}
 
 final class TrackedTruck {
   const TrackedTruck({
@@ -8,13 +21,14 @@ final class TrackedTruck {
     required this.latitude,
     required this.longitude,
     required this.speed,
+    this.heading = 0,
     required this.recordedAt,
     required this.isOnline,
     this.driverName,
     this.currentTripId,
   });
   final String truckId, plateNumber, truckStatus, recordedAt;
-  final double latitude, longitude, speed;
+  final double latitude, longitude, speed, heading;
   final bool isOnline;
   final String? driverName, currentTripId;
   factory TrackedTruck.fromJson(Json json) => TrackedTruck(
@@ -24,6 +38,7 @@ final class TrackedTruck {
     latitude: (json['latitude'] as num).toDouble(),
     longitude: (json['longitude'] as num).toDouble(),
     speed: (json['speed'] as num).toDouble(),
+    heading: (json['heading'] as num?)?.toDouble() ?? 0,
     recordedAt: json['recordedAt'] as String,
     isOnline: json['isOnline'] as bool,
     driverName: json['driverName'] as String?,

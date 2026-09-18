@@ -456,4 +456,95 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get simulatorCommandSucceeded => 'تم تنفيذ أمر المحاكي.';
+
+  @override
+  String get planTrip => 'تخطيط رحلة';
+
+  @override
+  String get pickup => 'الاستلام';
+
+  @override
+  String get delivery => 'التسليم';
+
+  @override
+  String get locationName => 'اسم الموقع';
+
+  @override
+  String get searchLocation => 'البحث عن موقع';
+
+  @override
+  String get searchResults => 'نتائج المواقع';
+
+  @override
+  String get noLocationResults =>
+      'لم يتم العثور على مواقع مطابقة. يمكنك إدخال الإحداثيات يدوياً.';
+
+  @override
+  String get latitude => 'خط العرض';
+
+  @override
+  String get longitude => 'خط الطول';
+
+  @override
+  String get invalidCoordinate => 'أدخل إحداثياً صالحاً.';
+
+  @override
+  String get routePreview => 'معاينة المسار';
+
+  @override
+  String get calculateRoute => 'حساب المسار';
+
+  @override
+  String get calculatingRoute => 'جارٍ حساب المسار…';
+
+  @override
+  String get calculateRouteHint =>
+      'اختر موقعي الاستلام والتسليم ثم احسب مسار الطريق.';
+
+  @override
+  String get routeProviderUnavailable =>
+      'تعذر حساب المسار. تحقق من مزود التوجيه ثم حاول مجدداً.';
+
+  @override
+  String get saveTrip => 'حفظ الرحلة';
+
+  @override
+  String get onlineOnly => 'المتصلة فقط';
+
+  @override
+  String get movingOnly => 'المتحركة فقط';
+
+  @override
+  String get routeProgress => 'تقدم المسار';
+
+  @override
+  String get remainingDistance => 'المسافة المتبقية';
+
+  @override
+  String get eta => 'وقت الوصول المتوقع';
+
+  @override
+  String get offRoute => 'خارج المسار';
+
+  @override
+  String get onRoute => 'على المسار';
+
+  @override
+  String get legacyTripRouteWarning =>
+      'تحتوي هذه الرحلة القديمة على أسماء المواقع فقط. اختر موقعي الاستلام والتسليم قبل الإسناد.';
+
+  @override
+  String get routeDistance => 'مسافة المسار';
+
+  @override
+  String get routeDuration => 'المدة المقدرة';
+
+  @override
+  String get routeProvider => 'مزود التوجيه';
+
+  @override
+  String get selectOnMap => 'اختيار من الخريطة';
+
+  @override
+  String get tapMapToSelect => 'اضغط على الخريطة لاختيار هذا الموقع';
 }

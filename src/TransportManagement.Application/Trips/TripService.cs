@@ -4,18 +4,28 @@ using TransportManagement.Domain.Clients;
 using TransportManagement.Domain.Common;
 using TransportManagement.Domain.Fleet;
 using TransportManagement.Domain.Trips;
+using TransportManagement.Application.Routing;
+using System.Text.Json;
 
 namespace TransportManagement.Application.Trips;
 
-public sealed class TripService(IOperationsStore store, ICurrentUser currentUser, IClock clock)
+public sealed class TripService(
+    IOperationsStore store,
+    ICurrentUser currentUser,
+    IClock clock,
+    RoutePlanningService routePlanningService)
 {
     public async Task<TripResponse> CreateAsync(TripRequest request, CancellationToken cancellationToken)
     {
         await RequiredActiveClientAsync(request.ClientId, cancellationToken);
+        var route = await routePlanningService.PreviewAsync(
+            new(request.Stops, request.RouteProfile), cancellationToken);
+        var orderedStops = request.Stops.OrderBy(x => x.Sequence).ToArray();
         var trip = new Trip(
-            Guid.NewGuid(), currentUser.CompanyId, request.ClientId, request.Origin,
-            request.Destination, request.CargoDescription, request.PlannedStartAt,
+            Guid.NewGuid(), currentUser.CompanyId, request.ClientId, orderedStops[0].Name,
+            orderedStops[^1].Name, request.CargoDescription, request.PlannedStartAt,
             request.Price, request.Notes, clock.UtcNow);
+        trip.ReplaceRoute(CreateStops(trip.Id, orderedStops), CreateRoutePlan(trip.Id, route), clock.UtcNow);
         store.AddTrip(trip);
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
@@ -25,8 +35,12 @@ public sealed class TripService(IOperationsStore store, ICurrentUser currentUser
     {
         var trip = await RequiredTripAsync(id, cancellationToken);
         await RequiredActiveClientAsync(request.ClientId, cancellationToken);
-        trip.UpdateDraft(request.ClientId, request.Origin, request.Destination, request.CargoDescription,
+        var route = await routePlanningService.PreviewAsync(
+            new(request.Stops, request.RouteProfile), cancellationToken);
+        var orderedStops = request.Stops.OrderBy(x => x.Sequence).ToArray();
+        trip.UpdateDraft(request.ClientId, orderedStops[0].Name, orderedStops[^1].Name, request.CargoDescription,
             request.PlannedStartAt, request.Price, request.Notes, clock.UtcNow);
+        trip.ReplaceRoute(CreateStops(trip.Id, orderedStops), CreateRoutePlan(trip.Id, route), clock.UtcNow);
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
     }
@@ -48,6 +62,8 @@ public sealed class TripService(IOperationsStore store, ICurrentUser currentUser
     public async Task<TripResponse> AssignAsync(Guid id, AssignTripRequest request, CancellationToken cancellationToken)
     {
         var trip = await RequiredTripAsync(id, cancellationToken);
+        if (trip.RoutePlan is null || trip.Stops.Any(x => !x.HasCoordinates))
+            throw new ConflictException("Select geographic stops and calculate a route before assignment.", "ROUTE_PLAN_REQUIRED");
         await RequiredActiveClientAsync(trip.ClientId, cancellationToken);
         var truck = await RequiredTruckAsync(request.TruckId, cancellationToken);
         var driver = await RequiredDriverAsync(request.DriverId, cancellationToken);
@@ -155,7 +171,32 @@ public sealed class TripService(IOperationsStore store, ICurrentUser currentUser
         trip.Id, trip.ClientId, trip.TruckId, trip.DriverId, trip.Origin, trip.Destination,
         trip.CargoDescription, trip.PlannedStartAt, trip.ActualStartAt, trip.DeliveredAt,
         trip.CompletedAt, trip.Price, trip.Notes, trip.Status, AllowedActions(trip.Status),
+        trip.Stops.OrderBy(x => x.Sequence).Select(x => new TripStopResponse(
+            x.Id, x.Sequence, x.Type, x.Name, x.Address, x.Latitude, x.Longitude,
+            x.PlannedArrivalAt, x.PlannedServiceDurationMinutes)).ToArray(),
+        trip.RoutePlan is null ? null : new TripRoutePlanResponse(
+            trip.RoutePlan.Id, trip.RoutePlan.Geometry, trip.RoutePlan.GeometryFormat,
+            trip.RoutePlan.GeometryVersion, trip.RoutePlan.DistanceMeters,
+            trip.RoutePlan.EstimatedDurationSeconds, trip.RoutePlan.ProviderName,
+            trip.RoutePlan.RouteProfile, trip.RoutePlan.CalculatedAt,
+            trip.RoutePlan.StopsFingerprint, trip.RoutePlan.ProviderRouteId,
+            trip.RoutePlan.Warnings),
+        trip.RoutePlan is null || trip.Stops.Any(x => !x.HasCoordinates),
         trip.CreatedAt, trip.UpdatedAt);
+
+    private TripStop[] CreateStops(Guid tripId, IReadOnlyList<RouteStopRequest> stops) =>
+        stops.Select(stop => new TripStop(
+            Guid.NewGuid(), currentUser.CompanyId, tripId, stop.Sequence,
+            Enum.Parse<TripStopType>(stop.Type, true), stop.Name, stop.Address,
+            stop.Latitude, stop.Longitude, stop.PlannedArrivalAt,
+            stop.PlannedServiceDurationMinutes, clock.UtcNow)).ToArray();
+
+    private TripRoutePlan CreateRoutePlan(Guid tripId, RouteResultResponse route) => new(
+        Guid.NewGuid(), currentUser.CompanyId, tripId, route.Geometry,
+        route.GeometryFormat, route.GeometryVersion, route.DistanceMeters,
+        route.EstimatedDurationSeconds, route.ProviderName, route.RouteProfile.ToString(),
+        route.CalculatedAt, route.StopsFingerprint, route.ProviderRouteId,
+        route.Warnings.Count == 0 ? null : JsonSerializer.Serialize(route.Warnings), clock.UtcNow);
 
     private static string[] AllowedActions(TripStatus status) => status switch
     {

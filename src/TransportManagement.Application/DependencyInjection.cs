@@ -6,6 +6,7 @@ using TransportManagement.Application.Fleet;
 using TransportManagement.Application.Trips;
 using TransportManagement.Application.Tracking;
 using TransportManagement.Application.Dashboard;
+using TransportManagement.Application.Routing;
 
 namespace TransportManagement.Application;
 
@@ -18,6 +19,9 @@ public static class DependencyInjection
         .AddScoped<TruckService>()
         .AddScoped<DriverService>()
         .AddScoped<TripService>()
+        .AddSingleton<RoutePlanningService>()
+        .AddScoped<LocationService>()
+        .AddScoped<RouteProgressService>()
         .AddScoped<TrackingService>()
         .AddScoped<DashboardService>();
 }

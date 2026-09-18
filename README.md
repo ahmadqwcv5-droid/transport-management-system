@@ -1,6 +1,10 @@
 # Transport Management System
 
-A production-oriented internal road-freight Transport Management System. Sprint 1 established authentication and tenant isolation, Sprint 2 added operational management, and Sprint 3 adds English/Arabic localization, RTL support, simulated fleet tracking, a MapLibre-ready fleet map, and an operational dashboard.
+A production-oriented internal road-freight Transport Management System. Sprint
+3.2 adds structured pickup/delivery locations, stored road-route snapshots,
+geometry-based progress and ETA, route-aware simulation, and selected-route /
+travelled-trail fleet visualization to the earlier authentication, operations,
+localization, and tracking foundation.
 
 ## Architecture
 
@@ -12,9 +16,9 @@ The backend is a modular monolith using Clean Architecture with lightweight DDD 
 - **API** contains only HTTP concerns and thin controllers.
 - **Flutter** is feature-first, with Riverpod as its single state-management solution.
 
-Tracking is accessed through the application-owned `ITrackingProvider`; the
-Development simulator is an Infrastructure adapter and can later be replaced by
-a real telematics adapter without coupling Domain entities to a vendor.
+Tracking, routing, and geocoding are accessed through separate application-owned
+ports. Infrastructure adapters can be replaced independently without coupling
+Domain entities or Flutter to OSRM, a geocoder, or a telematics vendor.
 
 Every tenant-owned entity implements `ITenantOwned`. `AppDbContext` applies a global company filter, reading the company exclusively from a signed JWT claim through `ICurrentUser`. The client never selects or submits the active company. Login and refresh are the only narrowly scoped persistence operations that bypass filters because no authenticated tenant exists yet. See [docs/architecture.md](docs/architecture.md).
 
@@ -102,6 +106,11 @@ Sprint 3 is represented by `20260917073102_Sprint3LocalizationTracking`. It
 adds the persisted user locale and tenant-owned truck-position history with
 coordinate precision and tenant/latest-position indexes.
 
+Sprint 3.2 is represented by `20260917182358_Sprint32RouteAwareTrips`. It adds
+tenant-owned ordered stops and immutable route-plan snapshots. Existing trips
+are backfilled with label-only pickup/delivery stops; coordinates remain null
+and the migration does not invent historical locations.
+
 ## Run Flutter Web
 
 ```bash
@@ -158,6 +167,18 @@ not prove that every geographic tile visibly rendered. Visual tile evidence is
 therefore recorded separately from automated style-readiness assertions.
 Docker Compose in this repository serves PostgreSQL and the API only—it does
 not serve or inject runtime configuration into Flutter Web.
+
+### Route planning
+
+Choose **Trips → New trip** to open the responsive planner. Select pickup and
+delivery through a configured backend geocoder, click the map, or enter valid
+coordinates manually. **Calculate route** calls the backend routing adapter and
+shows the stored road geometry, distance, and duration; save stays disabled
+until a valid preview exists. The default Development OSRM demo uses a general
+driving profile only—no truck restrictions, live traffic, SLA, or production
+capacity are implied. Leave geocoding disabled for manual/map selection, or
+configure a policy-compliant managed service; the public Nominatim service must
+not be used for client-side autocomplete.
 
 ## Run Flutter Android
 
@@ -218,6 +239,25 @@ advances the trip through `Completed`, logs out, and verifies the login redirect
 It uses unique runtime values, so it is safe to rerun against a local development
 database. Credentials are runtime-only and are not stored in source control.
 
+For the complete Sprint 3.2 route workflow and five screenshots, run:
+
+```bash
+flutter drive \
+  --driver=test_driver/integration_test_sprint3_2.dart \
+  --target=integration_test/sprint3_2_smoke_test.dart \
+  -d web-server --browser-name=firefox --driver-port=4444 --headless \
+  --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=MAP_STYLE_URL=https://demotiles.maplibre.org/style.json \
+  --dart-define=MAP_LOADING_TIMEOUT_SECONDS=30 \
+  --dart-define=ENABLE_SIMULATOR_CONTROLS=true \
+  --dart-define=E2E_PASSWORD=YOUR_DEVELOPMENT_PASSWORD
+```
+
+Evidence is written under `build/sprint3_2_evidence/`. The workflow selects
+locations, previews a real road route, saves/assigns/starts the trip, steps the
+route-aware simulator, verifies progress/trail overlays, and captures Arabic RTL.
+
 For the complete Sprint 3 workflow, use:
 
 ```text
@@ -272,6 +312,13 @@ speed (0.5 km/h tolerance), or heading (1 degree tolerance) changes, or when the
 `Tracking__HistoryHeartbeatSeconds` heartbeat elapses. Latest/history queries
 remain tenant-filtered. Long-term retention and partitioning remain deferred.
 
+Movement is a function of route geometry, elapsed simulator time, and configured
+speed. Polling current positions is observational and cannot move a truck.
+Pause freezes distance, Step advances a configured distance, Reset returns to
+pickup, and arrival clamps exactly to delivery with zero speed. Progress is
+calculated by projecting the latest sample onto the stored route; stopped trucks
+show no misleading ETA.
+
 The dashboard uses one tenant-scoped endpoint for fleet status totals, active
 and completed-today trip totals, online/offline tracking totals, current
 positions, and recent trips. Flutter has one centralized polling controller;
@@ -297,6 +344,12 @@ pull-to-refresh remains available.
 | `TRACKING_POLLING_INTERVAL_SECONDS` (`--dart-define`) | Flutter | Dashboard refresh interval, default 5 seconds |
 | `MAP_LOADING_TIMEOUT_SECONDS` (`--dart-define`) | Flutter | Time to await the genuine MapLibre style callback, default 12 seconds |
 | `ENABLE_SIMULATOR_CONTROLS` (`--dart-define`) | Flutter | Explicit development-only simulator panel gate, default false |
+| `Routing__Provider` / `Routing__BaseUrl` | API | Backend routing adapter and endpoint; `Osrm` in Development |
+| `Routing__UserAgent` | API | Identifying HTTP User-Agent required by shared/public providers |
+| `Routing__TimeoutSeconds` | API | Bounded route-provider timeout |
+| `Routing__OffRouteThresholdMeters` | API | Projection distance that marks a truck off route |
+| `Geocoding__Provider` / `Geocoding__BaseUrl` | API | Optional backend geocoder; blank is intentionally unconfigured |
+| `Geocoding__UserAgent` | API | Policy-compliant geocoder identification |
 
 Never commit `.env`, signing keys, database passwords, or production credentials. The committed values are non-secret placeholders.
 
@@ -313,6 +366,9 @@ Never commit `.env`, signing keys, database passwords, or production credentials
 - `/api/trucks` — list/get/create/update, status update, and deactivate
 - `/api/drivers` — list/get/create/update, status update, and deactivate
 - `/api/trips` — list/get/create/update Draft, assign, start, mark in transit, deliver, complete, and cancel
+- `GET /api/trips/{id}/route-progress` — progress, remaining distance, ETA, phase, and off-route state
+- `POST /api/routes/preview` — cached, provider-neutral road-route preview
+- `GET /api/locations/search` and `/reverse` — rate-limited backend geocoding boundary
 - `GET /api/dashboard` — tenant-scoped operational summary, positions, and recent trips
 - `GET /api/tracking/positions`
 - `GET /api/tracking/trucks/{id}/position`
@@ -330,8 +386,10 @@ are serialized as readable strings. All operational endpoints require the named
 - `/clients` — searchable client list and create/edit/deactivate flow
 - `/trucks` — truck list, details, create/edit, status, and deactivate flow
 - `/drivers` — driver list, details, create/edit, status, and deactivate flow
-- `/trips` — trip list and Draft creation
-- `/trips/:id` — details, Draft edit, resource assignment, and allowed status actions
+- `/trips` — trip list
+- `/trips/new` — full-page route planner
+- `/trips/:id/edit` — Draft-only replanning
+- `/trips/:id` — route details, resource assignment, and allowed status actions
 - `/settings` — persisted English/Arabic language selection
 
 ## Project structure
@@ -354,6 +412,7 @@ SPRINT1_IMPLEMENTATION_PLAN.md
 SPRINT2_IMPLEMENTATION_PLAN.md
 SPRINT3_IMPLEMENTATION_PLAN.md
 SPRINT3_1_IMPLEMENTATION_PLAN.md
+SPRINT3_2_IMPLEMENTATION_PLAN.md
 ```
 
 ## Key engineering decisions
@@ -372,6 +431,9 @@ SPRINT3_1_IMPLEMENTATION_PLAN.md
 - Standard generated Flutter ARB localizations own visible English/Arabic text; directional layout APIs allow Material to mirror the shell, forms, and dialogs.
 - MapLibre is the vendor-neutral rendering layer. Style/tile hosting is externally configurable and is not a backend/domain concern.
 - Polling is intentionally used before SignalR: current fleet scale does not justify persistent real-time connections, and the provider/dashboard contracts preserve a future upgrade path.
+- Route-aware writes derive legacy origin/destination labels from ordered stops;
+  assignment freezes the stored route snapshot. Legacy label-only trips remain
+  readable and must be geographically replanned before assignment.
 
 ## Authorization matrix
 
@@ -390,12 +452,15 @@ Employee cannot.
 
 ## Sprint boundary
 
-Known Sprint 3.1 limitations: the simulator is process-local and
+Known Sprint 3.2 limitations: the simulator is process-local and
 development-only; polling is used instead of push; the current MapLibre Flutter
 API exposes style readiness but no complete tile-rendered/error signal, so a
 timeout supplies deterministic recovery and visual tile rendering is checked
 separately; map availability belongs to the configured provider; stored
 position history remains intentionally simple and has no retention/partitioning
-pipeline. Android execution requires a local Android SDK and emulator/device.
+pipeline. The Development route is general-driving, not HGV-aware; traffic,
+rerouting, optimization, proof of delivery, GPS vendors, and high-volume
+telemetry remain deferred. Android execution requires a local Android SDK and
+emulator/device.
 
 Deferred to later sprints: finance, expenses, payments, profitability, advanced maintenance, documents, reporting, real GPS providers, granular permissions, advanced dashboard analytics, route optimization, AI features, and a driver application.

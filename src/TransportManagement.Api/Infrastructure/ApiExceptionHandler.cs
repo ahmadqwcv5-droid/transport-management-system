@@ -24,6 +24,7 @@ internal sealed class ApiExceptionHandler(
             AuthenticationException => StatusCodes.Status401Unauthorized,
             NotFoundException => StatusCodes.Status404NotFound,
             ConflictException => StatusCodes.Status409Conflict,
+            ProviderException => StatusCodes.Status503ServiceUnavailable,
             DomainRuleException => StatusCodes.Status400BadRequest,
             _ => StatusCodes.Status500InternalServerError
         };
@@ -34,6 +35,7 @@ internal sealed class ApiExceptionHandler(
         var code = exception switch
         {
             ConflictException conflict => conflict.Code,
+            ProviderException provider => provider.Code,
             NotFoundException notFound => notFound.Code,
             DomainRuleException domain => domain.Code,
             AuthenticationException => "AUTHENTICATION_FAILED",
@@ -51,6 +53,7 @@ internal sealed class ApiExceptionHandler(
                     401 => "Authentication failed",
                     404 => "Resource not found",
                     409 => "Operation conflict",
+                    503 => "External provider unavailable",
                     _ => "An unexpected error occurred"
                 },
                 Detail = status < 500 ? exception.Message : "Contact support with the trace identifier.",
