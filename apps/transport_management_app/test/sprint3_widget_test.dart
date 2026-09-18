@@ -147,6 +147,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('06 TMS 01'), findsOneWidget);
     expect(find.textContaining('42 km/h'), findsOneWidget);
+    expect(find.byKey(const Key('fleet-map-recenter')), findsOneWidget);
+    expect(
+      tester.getBottomRight(find.byKey(const Key('fleet-map-recenter'))).dy,
+      lessThanOrEqualTo(
+        tester.getBottomRight(find.byKey(const Key('offline-map-surface'))).dy,
+      ),
+    );
   });
 
   testWidgets('loaded state requires callback and annotations are separate', (

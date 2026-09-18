@@ -5,7 +5,7 @@ import 'package:integration_test/integration_test_driver_extended.dart';
 Future<void> main() async {
   await integrationDriver(
     onScreenshot: (name, bytes, [args]) async {
-      final directory = Directory('build/sprint3_2_evidence');
+      final directory = Directory('../../docs/evidence/sprint3_2_1');
       await directory.create(recursive: true);
       await File('${directory.path}/$name.png').writeAsBytes(bytes);
       return true;

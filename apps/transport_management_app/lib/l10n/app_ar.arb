@@ -176,4 +176,9 @@
   ,"routeProvider": "مزود التوجيه"
   ,"selectOnMap": "اختيار من الخريطة"
   ,"tapMapToSelect": "اضغط على الخريطة لاختيار هذا الموقع"
+  ,"moving": "متحركة"
+  ,"stationary": "متوقفة"
+  ,"recenter": "إعادة التوسيط"
+  ,"fitRoute": "ملاءمة المسار"
+  ,"fleetList": "الأسطول"
 }

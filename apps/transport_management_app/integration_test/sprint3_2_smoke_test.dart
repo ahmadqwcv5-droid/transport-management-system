@@ -107,7 +107,7 @@ void main() {
     await _tap(tester, find.byKey(const Key('trip-action-mark-in-transit')));
     await _tap(tester, find.text('Dashboard'));
     await _waitFor(tester, find.byKey(const Key('fleet-dashboard')));
-    await _tap(tester, find.byKey(const Key('sim-step')));
+    await _tap(tester, find.byKey(const Key('sim-start')));
     final selector = find.byWidgetPredicate(
       (widget) =>
           widget.key is ValueKey<String> &&
@@ -117,9 +117,39 @@ void main() {
     await _tap(tester, selector.first);
     await _waitFor(tester, find.byKey(const Key('fleet-route-progress')));
     _hideSnackBar(tester);
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pumpAndSettle();
-    await binding.takeScreenshot('04-live-fleet-route-progress');
+    await binding.takeScreenshot('01-road-detailed-selected-truck');
+
+    // Observe ten complete one-second polling cycles. The deterministic
+    // coordinator test records exact operation counts; this browser interval
+    // proves the platform view stays continuously rendered under real polling.
+    // One deterministic simulator step per cycle makes the travelled trail
+    // visually legible at full-route zoom.
+    for (var cycle = 0; cycle < 10; cycle++) {
+      await _tap(tester, find.byKey(const Key('sim-step')));
+      await tester.pump(const Duration(seconds: 1));
+    }
+    await binding.takeScreenshot('02-route-trail-stops-after-10-polls');
+
+    final map = find.byKey(const Key('real-maplibre-map'));
+    await tester.drag(map, const Offset(120, 0));
+    for (var cycle = 0; cycle < 3; cycle++) {
+      await tester.pump(const Duration(seconds: 1));
+    }
+    await binding.takeScreenshot('03-manual-pan-preserved');
+    await _tap(tester, find.byKey(const Key('fleet-map-recenter')));
+    await tester.pump(const Duration(seconds: 1));
+    await binding.takeScreenshot('04-fit-route-recentered');
+
+    await _tap(tester, find.byKey(const Key('sim-pause')));
+    await tester.pump(const Duration(seconds: 2));
+    await _tap(tester, find.byKey(const Key('sim-resume')));
+    await tester.pump(const Duration(seconds: 2));
+
+    if (selector.evaluate().length > 1) {
+      await _tap(tester, selector.last);
+      await tester.pump(const Duration(seconds: 1));
+      await binding.takeScreenshot('05-synchronized-fleet-selection');
+    }
 
     await _tap(tester, find.text('Settings'));
     await _tap(tester, find.byKey(const Key('language-selector')));
@@ -127,9 +157,8 @@ void main() {
     await _tap(tester, find.byKey(const Key('nav-dashboard')));
     await _waitFor(tester, find.byKey(const Key('fleet-dashboard')));
     _hideSnackBar(tester);
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pumpAndSettle();
-    await binding.takeScreenshot('05-arabic-rtl-fleet');
+    await tester.pump(const Duration(seconds: 2));
+    await binding.takeScreenshot('06-arabic-rtl-fleet');
   });
 }
 

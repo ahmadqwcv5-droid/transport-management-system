@@ -2,7 +2,9 @@
 
 A production-oriented internal road-freight Transport Management System. Sprint
 3.2 adds structured pickup/delivery locations, stored road-route snapshots,
-geometry-based progress and ETA, route-aware simulation, and selected-route /
+geometry-based progress and ETA, and route-aware simulation. Sprint 3.2.1 adds
+a road-detailed development basemap, real directional truck artwork, stable
+incremental map annotations, explicit camera modes, and selected-route /
 travelled-trail fleet visualization to the earlier authentication, operations,
 localization, and tracking foundation.
 
@@ -118,16 +120,17 @@ cd apps/transport_management_app
 flutter pub get
 flutter run -d chrome --web-port=3000 \
   --dart-define=API_BASE_URL=http://localhost:5080 \
-  --dart-define=MAP_STYLE_URL=https://demotiles.maplibre.org/style.json \
+  --dart-define=MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty \
   --dart-define=TRACKING_POLLING_INTERVAL_SECONDS=5 \
   --dart-define=MAP_LOADING_TIMEOUT_SECONDS=12 \
   --dart-define=ENABLE_SIMULATOR_CONTROLS=true
 ```
 
 `MAP_STYLE_URL` and the other Flutter values above are compile-time
-`--dart-define` values. The MapLibre demo style is legal public demonstration
-infrastructure, not a production hosting recommendation or SLA. Build the same
-configuration for deployment with:
+`--dart-define` values. OpenFreeMap Liberty provides the road and place detail
+needed during development and retains OpenStreetMap/OpenFreeMap attribution.
+It is external development infrastructure, not a production hosting guarantee
+or SLA. Production must explicitly configure an appropriate style provider:
 
 ```bash
 flutter build web --release \
@@ -167,6 +170,11 @@ not prove that every geographic tile visibly rendered. Visual tile evidence is
 therefore recorded separately from automated style-readiness assertions.
 Docker Compose in this repository serves PostgreSQL and the API only—it does
 not serve or inject runtime configuration into Flutter Web.
+
+The basemap and route engine are independent: changing `MAP_STYLE_URL` changes
+only rendered map context. It does not change OSRM route calculation or stored
+route geometry. The map keeps MapLibre's attribution control visible; follow
+the selected production style/data provider's attribution requirements.
 
 ### Route planning
 
@@ -248,15 +256,18 @@ flutter drive \
   -d web-server --browser-name=firefox --driver-port=4444 --headless \
   --web-port=3000 \
   --dart-define=API_BASE_URL=http://localhost:5080 \
-  --dart-define=MAP_STYLE_URL=https://demotiles.maplibre.org/style.json \
+  --dart-define=MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty \
   --dart-define=MAP_LOADING_TIMEOUT_SECONDS=30 \
   --dart-define=ENABLE_SIMULATOR_CONTROLS=true \
   --dart-define=E2E_PASSWORD=YOUR_DEVELOPMENT_PASSWORD
 ```
 
-Evidence is written under `build/sprint3_2_evidence/`. The workflow selects
-locations, previews a real road route, saves/assigns/starts the trip, steps the
-route-aware simulator, verifies progress/trail overlays, and captures Arabic RTL.
+Evidence is retained under `docs/evidence/sprint3_2_1/`. The workflow selects
+locations, previews a real road route, saves/assigns/starts the trip, observes
+ten live polling cycles, verifies the image marker and stable progress/trail/
+stop overlays, checks manual pan plus explicit route fitting, and captures
+Arabic RTL. Deterministic operation counts in the same directory prove that
+ordinary polling performs no global annotation clears or camera moves.
 
 For the complete Sprint 3 workflow, use:
 
@@ -268,7 +279,7 @@ This is specifically the fallback workflow. It logs in, creates a truck,
 verifies Arabic/RTL and English/LTR, explicitly selects fallback, checks fallback
 markers/details, exercises every simulator command, and logs out. It does not
 claim to verify MapLibre. Run the separate real-map and failure paths with the
-commands below (the public demo style is non-production):
+commands below (the public development style has no production SLA):
 
 ```bash
 # Real MapLibre style/callback/annotation path, with screenshot evidence.
@@ -278,7 +289,7 @@ flutter drive \
   -d web-server --browser-name=firefox --driver-port=4444 --headless \
   --web-port=3000 \
   --dart-define=API_BASE_URL=http://localhost:5080 \
-  --dart-define=MAP_STYLE_URL=https://demotiles.maplibre.org/style.json \
+  --dart-define=MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty \
   --dart-define=MAP_LOADING_TIMEOUT_SECONDS=25 \
   --dart-define=ENABLE_SIMULATOR_CONTROLS=true \
   --dart-define=E2E_PASSWORD=YOUR_DEVELOPMENT_PASSWORD

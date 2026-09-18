@@ -550,4 +550,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tapMapToSelect => 'Tap the map to select this location';
+
+  @override
+  String get moving => 'Moving';
+
+  @override
+  String get stationary => 'Stationary';
+
+  @override
+  String get recenter => 'Recenter';
+
+  @override
+  String get fitRoute => 'Fit route';
+
+  @override
+  String get fleetList => 'Fleet';
 }

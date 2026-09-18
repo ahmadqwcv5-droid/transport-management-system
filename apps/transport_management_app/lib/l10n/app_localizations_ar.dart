@@ -547,4 +547,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tapMapToSelect => 'اضغط على الخريطة لاختيار هذا الموقع';
+
+  @override
+  String get moving => 'متحركة';
+
+  @override
+  String get stationary => 'متوقفة';
+
+  @override
+  String get recenter => 'إعادة التوسيط';
+
+  @override
+  String get fitRoute => 'ملاءمة المسار';
+
+  @override
+  String get fleetList => 'الأسطول';
 }

@@ -7,6 +7,8 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import '../../../l10n/l10n_extensions.dart';
 import '../domain/dashboard_models.dart';
 import 'dashboard_controller.dart';
+import 'fleet_map_coordinator.dart';
+import 'maplibre_fleet_adapter.dart';
 
 enum FleetMapMode { unconfigured, loading, loaded, failed, fallback }
 
@@ -55,6 +57,10 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   String? _selectedTruckId;
   FleetTripDetail? _tripDetail;
   bool _loadingDetail = false;
+  int _cameraRevision = 0;
+  FleetCameraRequest _cameraRequest = FleetCameraRequest.none;
+  ({TrackedTruck truck, bool fitCamera})? _pendingDetailRefresh;
+  bool _detailRefreshRunning = false;
 
   List<TrackedTruck> get _visiblePositions => widget.positions.where((item) {
     if (_onlineOnly && !item.isOnline) return false;
@@ -100,11 +106,26 @@ class _FleetMapState extends ConsumerState<FleetMap> {
         _retry();
       }
     }
+    final selectedId = _selectedTruckId;
+    if (selectedId != null) {
+      final oldSelected = oldWidget.positions
+          .where((item) => item.truckId == selectedId)
+          .firstOrNull;
+      final currentSelected = widget.positions
+          .where((item) => item.truckId == selectedId)
+          .firstOrNull;
+      if (currentSelected?.currentTripId != null &&
+          (oldSelected?.recordedAt != currentSelected!.recordedAt ||
+              oldSelected?.currentTripId != currentSelected.currentTripId)) {
+        _queueDetailRefresh(currentSelected, fitCamera: false);
+      }
+    }
   }
 
   @override
   void dispose() {
     _loadingTimer?.cancel();
+    _pendingDetailRefresh = null;
     super.dispose();
   }
 
@@ -128,13 +149,13 @@ class _FleetMapState extends ConsumerState<FleetMap> {
                 FilterChip(
                   label: Text(context.l10n.onlineOnly),
                   selected: _onlineOnly,
-                  onSelected: (value) => setState(() => _onlineOnly = value),
+                  onSelected: (value) => _setFilter(onlineOnly: value),
                 ),
                 const SizedBox(width: 8),
                 FilterChip(
                   label: Text(context.l10n.movingOnly),
                   selected: _movingOnly,
-                  onSelected: (value) => setState(() => _movingOnly = value),
+                  onSelected: (value) => _setFilter(movingOnly: value),
                 ),
               ],
             ),
@@ -190,7 +211,8 @@ class _FleetMapState extends ConsumerState<FleetMap> {
               position: _selected!,
               detail: _tripDetail,
               loading: _loadingDetail,
-              onClose: () => setState(() => _selectedTruckId = null),
+              onClose: _clearSelection,
+              onRecenter: _recenter,
             ),
           ),
       ],
@@ -211,6 +233,8 @@ class _FleetMapState extends ConsumerState<FleetMap> {
             onTruckSelected: _selectTruck,
             tripDetail: _tripDetail,
             selectedTruckId: _selectedTruckId,
+            cameraRevision: _cameraRevision,
+            cameraRequest: _cameraRequest,
           )
         : widget.mapBuilder!(
             key: ValueKey('maplibre-attempt-$_attempt'),
@@ -260,36 +284,10 @@ class _FleetMapState extends ConsumerState<FleetMap> {
           PositionedDirectional(
             start: 12,
             bottom: 12,
-            end: 12,
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsetsDirectional.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                child: Wrap(
-                  key: const Key('map-annotations-ready'),
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: _visiblePositions.isEmpty
-                      ? [Text(context.l10n.noTrackedTrucks)]
-                      : _visiblePositions
-                            .map(
-                              (position) => ActionChip(
-                                key: Key('real-map-truck-${position.truckId}'),
-                                avatar: Icon(
-                                  Icons.local_shipping,
-                                  color: position.isOnline
-                                      ? Colors.green
-                                      : Colors.grey,
-                                ),
-                                label: Text(position.plateNumber),
-                                onPressed: () => _selectTruck(position),
-                              ),
-                            )
-                            .toList(),
-                ),
-              ),
+            child: _FleetPanel(
+              positions: _visiblePositions,
+              selectedTruckId: _selectedTruckId,
+              onTruckSelected: _selectTruck,
             ),
           ),
         if (_selected != null)
@@ -300,7 +298,8 @@ class _FleetMapState extends ConsumerState<FleetMap> {
               position: _selected!,
               detail: _tripDetail,
               loading: _loadingDetail,
-              onClose: () => setState(() => _selectedTruckId = null),
+              onClose: _clearSelection,
+              onRecenter: _recenter,
             ),
           ),
       ],
@@ -308,26 +307,85 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   }
 
   Future<void> _selectTruck(TrackedTruck position) async {
+    _pendingDetailRefresh = null;
     setState(() {
       _selectedTruckId = position.truckId;
       _tripDetail = null;
       _loadingDetail = position.currentTripId != null;
+      _cameraRevision++;
+      _cameraRequest = FleetCameraRequest.selection;
     });
     if (position.currentTripId == null) return;
+    _queueDetailRefresh(position, fitCamera: true);
+  }
+
+  void _queueDetailRefresh(TrackedTruck truck, {required bool fitCamera}) {
+    _pendingDetailRefresh = (truck: truck, fitCamera: fitCamera);
+    if (!_detailRefreshRunning) unawaited(_drainDetailRefresh());
+  }
+
+  Future<void> _drainDetailRefresh() async {
+    _detailRefreshRunning = true;
     try {
-      final detail = await ref
-          .read(dashboardRepositoryProvider)
-          .tripDetail(position.currentTripId!, position.truckId);
-      if (mounted && _selectedTruckId == position.truckId) {
-        setState(() => _tripDetail = detail);
+      while (mounted && _pendingDetailRefresh != null) {
+        final request = _pendingDetailRefresh!;
+        _pendingDetailRefresh = null;
+        try {
+          final detail = await ref
+              .read(dashboardRepositoryProvider)
+              .tripDetail(request.truck.currentTripId!, request.truck.truckId);
+          if (mounted &&
+              _selectedTruckId == request.truck.truckId &&
+              _selected?.currentTripId == request.truck.currentTripId) {
+            setState(() {
+              _tripDetail = detail;
+              _loadingDetail = false;
+              if (request.fitCamera) {
+                _cameraRevision++;
+                _cameraRequest = FleetCameraRequest.selection;
+              }
+            });
+          }
+        } on Object {
+          // Keep the last good route/trail when a selected-only refresh fails.
+          if (mounted &&
+              _selectedTruckId == request.truck.truckId &&
+              request.fitCamera) {
+            setState(() => _loadingDetail = false);
+          }
+        }
       }
-    } on Object {
-      // The truck card remains useful when route details are temporarily unavailable.
     } finally {
-      if (mounted && _selectedTruckId == position.truckId) {
-        setState(() => _loadingDetail = false);
+      _detailRefreshRunning = false;
+      if (mounted && _pendingDetailRefresh != null) {
+        unawaited(_drainDetailRefresh());
       }
     }
+  }
+
+  void _setFilter({bool? onlineOnly, bool? movingOnly}) {
+    setState(() {
+      if (onlineOnly != null) _onlineOnly = onlineOnly;
+      if (movingOnly != null) _movingOnly = movingOnly;
+      _cameraRevision++;
+      _cameraRequest = FleetCameraRequest.filteredFleet;
+    });
+  }
+
+  void _clearSelection() {
+    _pendingDetailRefresh = null;
+    setState(() {
+      _selectedTruckId = null;
+      _tripDetail = null;
+      _loadingDetail = false;
+    });
+  }
+
+  void _recenter() {
+    setState(() {
+      _cameraRevision++;
+      _cameraRequest = FleetCameraRequest.recenter;
+    });
   }
 
   void _armTimeout() {
@@ -386,6 +444,8 @@ Widget _productionMapBuilder({
   required ValueChanged<TrackedTruck> onTruckSelected,
   FleetTripDetail? tripDetail,
   String? selectedTruckId,
+  int cameraRevision = 0,
+  FleetCameraRequest cameraRequest = FleetCameraRequest.none,
 }) => _ConfiguredFleetMap(
   key: key,
   styleUrl: styleUrl,
@@ -396,6 +456,8 @@ Widget _productionMapBuilder({
   onTruckSelected: onTruckSelected,
   tripDetail: tripDetail,
   selectedTruckId: selectedTruckId,
+  cameraRevision: cameraRevision,
+  cameraRequest: cameraRequest,
 );
 
 class _ConfiguredFleetMap extends StatefulWidget {
@@ -408,6 +470,8 @@ class _ConfiguredFleetMap extends StatefulWidget {
     required this.onTruckSelected,
     this.tripDetail,
     this.selectedTruckId,
+    required this.cameraRevision,
+    required this.cameraRequest,
     super.key,
   });
 
@@ -419,6 +483,8 @@ class _ConfiguredFleetMap extends StatefulWidget {
   final ValueChanged<TrackedTruck> onTruckSelected;
   final FleetTripDetail? tripDetail;
   final String? selectedTruckId;
+  final int cameraRevision;
+  final FleetCameraRequest cameraRequest;
 
   @override
   State<_ConfiguredFleetMap> createState() => _ConfiguredFleetMapState();
@@ -426,19 +492,24 @@ class _ConfiguredFleetMap extends StatefulWidget {
 
 class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
   MapLibreMapController? _controller;
+  FleetMapAnnotationCoordinator? _coordinator;
   void Function(Symbol)? _symbolTapListener;
   bool _styleLoaded = false;
-  int _syncGeneration = 0;
 
   @override
   void didUpdateWidget(covariant _ConfiguredFleetMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_styleLoaded) _syncCircles();
+    if (!_styleLoaded) return;
+    _synchronize(
+      cameraRequest: oldWidget.cameraRevision == widget.cameraRevision
+          ? FleetCameraRequest.none
+          : widget.cameraRequest,
+    );
   }
 
   @override
   void dispose() {
-    _syncGeneration++;
+    _coordinator?.dispose();
     final controller = _controller;
     final listener = _symbolTapListener;
     if (controller != null && listener != null) {
@@ -458,10 +529,18 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
               widget.positions.first.latitude,
               widget.positions.first.longitude,
             ),
-      zoom: widget.positions.isEmpty ? 4 : 6,
+      zoom: widget.positions.isEmpty ? 4 : 11,
     ),
+    annotationOrder: const [
+      AnnotationType.line,
+      AnnotationType.circle,
+      AnnotationType.symbol,
+    ],
     onMapCreated: (controller) {
       _controller = controller;
+      _coordinator = FleetMapAnnotationCoordinator(
+        MapLibreFleetAnnotationAdapter(controller),
+      );
       void listener(Symbol symbol) {
         final truckId = symbol.data?['truckId'] as String?;
         final position = widget.positions
@@ -473,80 +552,62 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
       _symbolTapListener = listener;
       controller.onSymbolTapped.add(listener);
     },
-    onStyleLoadedCallback: () {
+    onStyleLoadedCallback: () async {
       if (!mounted) return;
       _styleLoaded = true;
       widget.onStyleLoaded();
-      _syncCircles();
+      try {
+        await _coordinator?.onStyleLoaded(_snapshot(), panelWidth: 290);
+        if (mounted) widget.onAnnotationsReady();
+      } on Object {
+        if (mounted) widget.onFailure();
+      }
     },
   );
 
-  Future<void> _syncCircles() async {
-    final controller = _controller;
-    if (controller == null || !_styleLoaded) return;
-    final generation = ++_syncGeneration;
+  Future<void> _synchronize({required FleetCameraRequest cameraRequest}) async {
+    final coordinator = _coordinator;
+    if (coordinator == null || !_styleLoaded || !mounted) return;
     try {
-      await controller.clearSymbols();
-      await controller.clearLines();
-      await controller.clearCircles();
-      if (!mounted || generation != _syncGeneration) return;
-      await controller.addSymbols(
-        widget.positions
-            .map(
-              (position) => SymbolOptions(
-                geometry: LatLng(position.latitude, position.longitude),
-                textField: '➤  ${position.plateNumber}',
-                textRotate: position.heading,
-                textColor: position.isOnline
-                    ? (position.speed > 0 ? '#15803D' : '#175CD3')
-                    : '#6B7280',
-                textHaloColor: '#FFFFFF',
-                textHaloWidth: 2,
-                textSize: 18,
-              ),
-            )
-            .toList(),
-        widget.positions
-            .map((position) => <String, dynamic>{'truckId': position.truckId})
-            .toList(),
+      await coordinator.synchronize(
+        _snapshot(),
+        cameraRequest: cameraRequest,
+        panelWidth: 290,
       );
-      final detail = widget.tripDetail;
-      if (detail != null) {
-        final route = detail.route.coordinates
-            .map((point) => LatLng(point.latitude, point.longitude))
-            .toList();
-        final trail = detail.trail
-            .map((point) => LatLng(point.latitude, point.longitude))
-            .toList();
-        if (route.length > 1) {
-          await controller.addLine(
-            LineOptions(geometry: route, lineColor: '#175CD3', lineWidth: 5),
-          );
-          await controller.addCircles([
-            CircleOptions(
-              geometry: route.first,
-              circleColor: '#16A34A',
-              circleRadius: 7,
-            ),
-            CircleOptions(
-              geometry: route.last,
-              circleColor: '#DC2626',
-              circleRadius: 7,
-            ),
-          ]);
-        }
-        if (trail.length > 1) {
-          await controller.addLine(
-            LineOptions(geometry: trail, lineColor: '#16A34A', lineWidth: 4),
-          );
-        }
-      }
-      if (mounted && generation == _syncGeneration) {
-        widget.onAnnotationsReady();
-      }
     } on Object {
-      if (mounted && generation == _syncGeneration) widget.onFailure();
+      if (mounted) widget.onFailure();
     }
+  }
+
+  FleetMapSnapshot _snapshot() {
+    final trucks = widget.positions.map(
+      (position) => TruckMarkerModel(
+        id: position.truckId,
+        point: MapPoint(position.latitude, position.longitude),
+        heading: position.heading,
+        state: TruckMarkerModel.stateFor(position),
+        selected: position.truckId == widget.selectedTruckId,
+      ),
+    );
+    final detail = widget.tripDetail;
+    final selected = widget.positions
+        .where((position) => position.truckId == widget.selectedTruckId)
+        .firstOrNull;
+    return FleetMapSnapshot(
+      trucks: trucks,
+      selectedTruckId: widget.selectedTruckId,
+      route: detail == null
+          ? null
+          : RouteOverlayModel(
+              tripId: selected?.currentTripId ?? 'selected-trip',
+              route: detail.route.coordinates
+                  .map((point) => MapPoint(point.latitude, point.longitude))
+                  .toList(),
+              trail: detail.trail
+                  .map((point) => MapPoint(point.latitude, point.longitude))
+                  .toList(),
+            ),
+    );
   }
 }
 
@@ -554,6 +615,7 @@ class _SelectedTruckCard extends StatelessWidget {
   const _SelectedTruckCard({
     required this.position,
     required this.onClose,
+    required this.onRecenter,
     required this.detail,
     required this.loading,
   });
@@ -561,6 +623,7 @@ class _SelectedTruckCard extends StatelessWidget {
   final FleetTripDetail? detail;
   final bool loading;
   final VoidCallback onClose;
+  final VoidCallback onRecenter;
   @override
   Widget build(BuildContext context) => Card(
     elevation: 6,
@@ -589,20 +652,45 @@ class _SelectedTruckCard extends StatelessWidget {
                 ),
               ],
             ),
-            Text(localizedStatus(context.l10n, position.truckStatus)),
-            Text(
-              position.isOnline ? context.l10n.online : context.l10n.offline,
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                _CompactStatusChip(
+                  label: localizedStatus(context.l10n, position.truckStatus),
+                ),
+                _CompactStatusChip(
+                  label: position.isOnline
+                      ? context.l10n.online
+                      : context.l10n.offline,
+                ),
+                _CompactStatusChip(
+                  label: !position.isOnline
+                      ? context.l10n.offline
+                      : position.speed > 0.5
+                      ? context.l10n.moving
+                      : context.l10n.stationary,
+                ),
+              ],
             ),
             Text(
               '${context.l10n.speed}: ${position.speed.toStringAsFixed(0)} km/h',
             ),
             Text(
               '${context.l10n.driver}: ${position.driverName ?? context.l10n.notAssigned}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             Text(
               '${context.l10n.activeTrip}: ${position.currentTripId ?? context.l10n.notAssigned}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            Text('${context.l10n.lastUpdate}: ${position.recordedAt}'),
+            Text(
+              '${context.l10n.lastUpdate}: ${_compactTimestamp(position.recordedAt)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             if (loading) const LinearProgressIndicator(),
             if (detail != null) ...[
               const Divider(),
@@ -615,6 +703,8 @@ class _SelectedTruckCard extends StatelessWidget {
               ),
               Text(
                 '${context.l10n.eta}: ${detail!.progress.estimatedArrivalAt ?? '—'}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               Text(
                 detail!.progress.isOffRoute == true
@@ -622,8 +712,119 @@ class _SelectedTruckCard extends StatelessWidget {
                     : context.l10n.onRoute,
               ),
             ],
+            const SizedBox(height: 8),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: FilledButton.tonalIcon(
+                key: const Key('fleet-map-recenter'),
+                onPressed: onRecenter,
+                icon: const Icon(Icons.center_focus_strong),
+                label: Text(
+                  detail == null
+                      ? context.l10n.recenter
+                      : context.l10n.fitRoute,
+                ),
+              ),
+            ),
           ],
         ),
+      ),
+    ),
+  );
+}
+
+class _CompactStatusChip extends StatelessWidget {
+  const _CompactStatusChip({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsetsDirectional.symmetric(horizontal: 7, vertical: 3),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Text(label, style: Theme.of(context).textTheme.labelSmall),
+  );
+}
+
+String _compactTimestamp(String value) {
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return value;
+  final utc = parsed.toUtc();
+  String two(int number) => number.toString().padLeft(2, '0');
+  return '${utc.year}-${two(utc.month)}-${two(utc.day)} '
+      '${two(utc.hour)}:${two(utc.minute)}:${two(utc.second)}Z';
+}
+
+class _FleetPanel extends StatelessWidget {
+  const _FleetPanel({
+    required this.positions,
+    required this.selectedTruckId,
+    required this.onTruckSelected,
+  });
+
+  final List<TrackedTruck> positions;
+  final String? selectedTruckId;
+  final ValueChanged<TrackedTruck> onTruckSelected;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    key: const Key('map-annotations-ready'),
+    elevation: 5,
+    child: SizedBox(
+      width: 220,
+      height: 150,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 12, 4),
+            child: Text(
+              context.l10n.fleetList,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+          ),
+          Expanded(
+            child: positions.isEmpty
+                ? Center(child: Text(context.l10n.noTrackedTrucks))
+                : ListView.builder(
+                    padding: const EdgeInsetsDirectional.only(bottom: 6),
+                    itemCount: positions.length,
+                    itemBuilder: (context, index) {
+                      final position = positions[index];
+                      final selected = position.truckId == selectedTruckId;
+                      return Material(
+                        color: selected
+                            ? Theme.of(context).colorScheme.secondaryContainer
+                            : Colors.transparent,
+                        child: ListTile(
+                          key: Key('real-map-truck-${position.truckId}'),
+                          dense: true,
+                          selected: selected,
+                          leading: Icon(
+                            Icons.local_shipping,
+                            color: !position.isOnline
+                                ? Colors.grey
+                                : position.speed > 0.5
+                                ? Colors.green
+                                : Colors.blue,
+                          ),
+                          title: Text(position.plateNumber),
+                          subtitle: Text(
+                            !position.isOnline
+                                ? context.l10n.offline
+                                : position.speed > 0.5
+                                ? context.l10n.moving
+                                : context.l10n.stationary,
+                          ),
+                          onTap: () => onTruckSelected(position),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     ),
   );

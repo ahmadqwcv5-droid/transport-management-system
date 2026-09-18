@@ -176,4 +176,9 @@
   ,"routeProvider": "Routing provider"
   ,"selectOnMap": "Select on map"
   ,"tapMapToSelect": "Tap the map to select this location"
+  ,"moving": "Moving"
+  ,"stationary": "Stationary"
+  ,"recenter": "Recenter"
+  ,"fitRoute": "Fit route"
+  ,"fleetList": "Fleet"
 }

@@ -1159,6 +1159,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the map to select this location'**
   String get tapMapToSelect;
+
+  /// No description provided for @moving.
+  ///
+  /// In en, this message translates to:
+  /// **'Moving'**
+  String get moving;
+
+  /// No description provided for @stationary.
+  ///
+  /// In en, this message translates to:
+  /// **'Stationary'**
+  String get stationary;
+
+  /// No description provided for @recenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Recenter'**
+  String get recenter;
+
+  /// No description provided for @fitRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit route'**
+  String get fitRoute;
+
+  /// No description provided for @fleetList.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet'**
+  String get fleetList;
 }
 
 class _AppLocalizationsDelegate

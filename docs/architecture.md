@@ -232,3 +232,23 @@ inventing geography. Such trips remain readable but cannot be assigned until a
 Draft is replanned. General OSRM driving is explicitly not an HGV routing model;
 truck restrictions, traffic, rerouting, and optimization require a later
 provider/product decision.
+
+## ADR-018: Incremental MapLibre annotation coordination
+
+**Status:** Accepted
+
+The fleet map separates platform-neutral snapshot diffing from the MapLibre
+adapter. The coordinator owns stable truck, status, planned-route, trail, and
+stop identities; serializes asynchronous synchronization; and coalesces rapid
+inputs so the latest pending snapshot wins. Ordinary tracking polls update only
+changed symbol/status geometry and a growing trail. They never globally clear
+annotations, recreate the planned route or stops, or move the camera.
+
+A genuine style load is a distinct lifecycle event: the adapter discards stale
+MapLibre handles, registers the project-owned truck PNG once, configures its
+symbol layer for map-aligned rotation and overlap, and restores the current
+snapshot. Camera movement is event-driven—initial fleet fit, filter/selection
+change, or explicit recenter—so user pan and zoom remain authoritative between
+those events. Stable atomic marker updates are preferred over browser
+frame-by-frame interpolation because the current MapLibre Flutter Web annotation
+bridge does not provide a cancellation-safe animation primitive.
