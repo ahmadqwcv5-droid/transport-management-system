@@ -10,10 +10,12 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
 {
     private sealed class TruckSimulation
     {
+        public Guid? TripId { get; set; }
         public string? RouteRevision { get; set; }
         public decimal AnchorDistanceMeters { get; set; }
         public DateTimeOffset AnchorAt { get; set; }
         public bool Offline { get; set; }
+        public Guid RunId { get; set; } = Guid.NewGuid();
     }
 
     private sealed class CompanySimulation
@@ -78,6 +80,7 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
                         state.AnchorDistanceMeters = 0;
                         state.AnchorAt = now;
                         state.Offline = false;
+                        state.RunId = Guid.NewGuid();
                     }
                     break;
                 case "step":
@@ -117,22 +120,30 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
         return new(target.TruckId,
             decimal.Round(position.Coordinate.Latitude, 6),
             decimal.Round(position.Coordinate.Longitude, 6),
-            moving ? _speedKilometersPerHour * (decimal)company.SpeedMultiplier : 0,
-            position.Heading, !state.Offline, now, "RouteSimulator");
+            moving ? _speedKilometersPerHour : 0,
+            position.Heading, !state.Offline, now, "RouteSimulator", state.RunId);
     }
 
     private static TruckSimulation StateFor(CompanySimulation company, TrackingTarget target, DateTimeOffset now)
     {
         if (!company.Trucks.TryGetValue(target.TruckId, out var state))
         {
-            state = new TruckSimulation { RouteRevision = target.RouteRevision, AnchorAt = now };
+            state = new TruckSimulation
+            {
+                TripId = target.TripId,
+                RouteRevision = target.RouteRevision,
+                AnchorAt = now
+            };
             company.Trucks[target.TruckId] = state;
         }
-        else if (!string.Equals(state.RouteRevision, target.RouteRevision, StringComparison.Ordinal))
+        else if (state.TripId != target.TripId
+            || !string.Equals(state.RouteRevision, target.RouteRevision, StringComparison.Ordinal))
         {
+            state.TripId = target.TripId;
             state.RouteRevision = target.RouteRevision;
             state.AnchorDistanceMeters = 0;
             state.AnchorAt = now;
+            state.RunId = Guid.NewGuid();
         }
         return state;
     }

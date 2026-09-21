@@ -54,6 +54,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   bool _annotationsReady = false;
   bool _onlineOnly = false;
   bool _movingOnly = false;
+  bool _showTrail = true;
   String? _selectedTruckId;
   FleetTripDetail? _tripDetail;
   bool _loadingDetail = false;
@@ -232,6 +233,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
             onFailure: () => _onFailure(attempt),
             onTruckSelected: _selectTruck,
             tripDetail: _tripDetail,
+            showTrail: _showTrail,
             selectedTruckId: _selectedTruckId,
             cameraRevision: _cameraRevision,
             cameraRequest: _cameraRequest,
@@ -290,6 +292,15 @@ class _FleetMapState extends ConsumerState<FleetMap> {
               onTruckSelected: _selectTruck,
             ),
           ),
+        if (_mode == FleetMapMode.loaded && _tripDetail != null)
+          PositionedDirectional(
+            start: 12,
+            top: 58,
+            child: TrailLegend(
+              showTrail: _showTrail,
+              onChanged: (value) => setState(() => _showTrail = value),
+            ),
+          ),
         if (_selected != null)
           PositionedDirectional(
             end: 12,
@@ -333,7 +344,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
         try {
           final detail = await ref
               .read(dashboardRepositoryProvider)
-              .tripDetail(request.truck.currentTripId!, request.truck.truckId);
+              .tripDetail(request.truck.currentTripId!);
           if (mounted &&
               _selectedTruckId == request.truck.truckId &&
               _selected?.currentTripId == request.truck.currentTripId) {
@@ -443,6 +454,7 @@ Widget _productionMapBuilder({
   required VoidCallback onFailure,
   required ValueChanged<TrackedTruck> onTruckSelected,
   FleetTripDetail? tripDetail,
+  bool showTrail = true,
   String? selectedTruckId,
   int cameraRevision = 0,
   FleetCameraRequest cameraRequest = FleetCameraRequest.none,
@@ -455,6 +467,7 @@ Widget _productionMapBuilder({
   onFailure: onFailure,
   onTruckSelected: onTruckSelected,
   tripDetail: tripDetail,
+  showTrail: showTrail,
   selectedTruckId: selectedTruckId,
   cameraRevision: cameraRevision,
   cameraRequest: cameraRequest,
@@ -469,6 +482,7 @@ class _ConfiguredFleetMap extends StatefulWidget {
     required this.onFailure,
     required this.onTruckSelected,
     this.tripDetail,
+    required this.showTrail,
     this.selectedTruckId,
     required this.cameraRevision,
     required this.cameraRequest,
@@ -482,6 +496,7 @@ class _ConfiguredFleetMap extends StatefulWidget {
   final VoidCallback onFailure;
   final ValueChanged<TrackedTruck> onTruckSelected;
   final FleetTripDetail? tripDetail;
+  final bool showTrail;
   final String? selectedTruckId;
   final int cameraRevision;
   final FleetCameraRequest cameraRequest;
@@ -603,12 +618,71 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
               route: detail.route.coordinates
                   .map((point) => MapPoint(point.latitude, point.longitude))
                   .toList(),
-              trail: detail.trail
-                  .map((point) => MapPoint(point.latitude, point.longitude))
-                  .toList(),
+              trails: widget.showTrail
+                  ? detail.trail
+                        .map(
+                          (segment) => TrailSegmentModel(
+                            id: segment.id,
+                            points: segment.points
+                                .map(
+                                  (point) =>
+                                      MapPoint(point.latitude, point.longitude),
+                                )
+                                .toList(),
+                          ),
+                        )
+                        .toList()
+                  : const [],
             ),
     );
   }
+}
+
+class TrailLegend extends StatelessWidget {
+  const TrailLegend({
+    required this.showTrail,
+    required this.onChanged,
+    super.key,
+  });
+  final bool showTrail;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    key: const Key('fleet-trail-legend'),
+    child: Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(10, 4, 6, 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const _LegendLine(color: Color(0xFF175CD3)),
+          Text(context.l10n.plannedRoute),
+          const SizedBox(width: 8),
+          const _LegendLine(color: Color(0xFF047857)),
+          Text(context.l10n.travelledTrail),
+          const SizedBox(width: 4),
+          Switch(
+            key: const Key('fleet-trail-visibility'),
+            value: showTrail,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _LegendLine extends StatelessWidget {
+  const _LegendLine({required this.color});
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 18,
+    height: 4,
+    margin: const EdgeInsetsDirectional.only(end: 4),
+    color: color,
+  );
 }
 
 class _SelectedTruckCard extends StatelessWidget {

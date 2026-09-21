@@ -1189,6 +1189,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fleet'**
   String get fleetList;
+
+  /// No description provided for @plannedRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned route'**
+  String get plannedRoute;
+
+  /// No description provided for @travelledTrail.
+  ///
+  /// In en, this message translates to:
+  /// **'Travelled trail'**
+  String get travelledTrail;
 }
 
 class _AppLocalizationsDelegate

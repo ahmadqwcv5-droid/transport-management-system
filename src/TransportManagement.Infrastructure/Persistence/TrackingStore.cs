@@ -23,9 +23,30 @@ internal sealed class TrackingStore(AppDbContext dbContext) : ITrackingStore
         dbContext.TruckPositions.AsNoTracking().Where(x => x.TruckId == truckId)
             .OrderByDescending(x => x.RecordedAt).FirstOrDefaultAsync(cancellationToken);
 
+    public Task<TruckPosition?> LatestTripPositionAsync(
+        Guid tripId, Guid truckId, CancellationToken cancellationToken) =>
+        dbContext.TruckPositions.AsNoTracking()
+            .Where(x => x.TripId == tripId && x.TruckId == truckId)
+            .OrderByDescending(x => x.RecordedAt)
+            .ThenByDescending(x => x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public async Task<IReadOnlyList<TruckPosition>> HistoryAsync(Guid truckId, int limit, CancellationToken cancellationToken) =>
         await dbContext.TruckPositions.AsNoTracking().Where(x => x.TruckId == truckId)
             .OrderByDescending(x => x.RecordedAt).Take(limit).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<TruckPosition>> TripHistoryAsync(
+        Guid tripId, Guid truckId, int limit, CancellationToken cancellationToken)
+    {
+        var newest = await dbContext.TruckPositions.AsNoTracking()
+            .Where(x => x.TripId == tripId && x.TruckId == truckId)
+            .OrderByDescending(x => x.RecordedAt)
+            .ThenByDescending(x => x.Id)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+        newest.Reverse();
+        return newest;
+    }
 
     public void AddPositions(IEnumerable<TruckPosition> positions) => dbContext.TruckPositions.AddRange(positions);
     public async Task SaveChangesAsync(CancellationToken cancellationToken) => await dbContext.SaveChangesAsync(cancellationToken);

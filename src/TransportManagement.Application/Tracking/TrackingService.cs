@@ -24,13 +24,19 @@ public sealed class TrackingService(
         if (samples.Count > 0)
         {
             var latestByTruck = latest.ToDictionary(position => position.TruckId);
+            var targetsByTruck = targets.ToDictionary(target => target.TruckId);
             var changed = samples
                 .Where(sample => !latestByTruck.TryGetValue(sample.TruckId, out var previous)
-                    || ShouldPersist(sample, previous))
-                .Select(sample => new TruckPosition(
-                    Guid.NewGuid(), currentUser.CompanyId, sample.TruckId, sample.Latitude,
-                    sample.Longitude, sample.Speed, sample.Heading, sample.IsOnline,
-                    sample.RecordedAt, sample.Source))
+                    || ShouldPersist(sample, targetsByTruck[sample.TruckId], previous))
+                .Select(sample =>
+                {
+                    var target = targetsByTruck[sample.TruckId];
+                    return new TruckPosition(
+                        Guid.NewGuid(), currentUser.CompanyId, sample.TruckId, sample.Latitude,
+                        sample.Longitude, sample.Speed, sample.Heading, sample.IsOnline,
+                        sample.RecordedAt, sample.Source, target.TripId, target.RoutePlanId,
+                        sample.TrackingRunId);
+                })
                 .ToArray();
             if (changed.Length > 0)
             {
@@ -65,6 +71,34 @@ public sealed class TrackingService(
             .Select(p => Map(p, truck.PlateNumber, truck.Status.ToString(), trips, drivers)).ToArray();
     }
 
+    public async Task<TripTrackingHistoryResponse> TripHistoryAsync(
+        Guid tripId, int limit, CancellationToken cancellationToken)
+    {
+        var trip = await operationsStore.GetTripAsync(tripId, cancellationToken)
+            ?? throw new NotFoundException("Trip was not found in the current company.", "TRIP_NOT_FOUND");
+        if (trip.TruckId is not Guid truckId)
+            throw new ConflictException("The trip has no assigned truck.", "TRIP_TRUCK_REQUIRED");
+        var boundedLimit = Math.Clamp(limit, 1, policy.MaxTripHistoryPoints);
+        var positions = await trackingStore.TripHistoryAsync(
+            trip.Id, truckId, boundedLimit, cancellationToken);
+        var segments = TrailSegmenter.Segment(
+                positions, policy.TrailGapThreshold, policy.TrailJumpThresholdMeters)
+            .Select(segment =>
+            {
+                var first = segment[0];
+                var id = $"{first.TrackingRunId:N}:{first.RoutePlanId:N}:{first.Id:N}";
+                return new TripTrailSegmentResponse(
+                    id,
+                    first.TrackingRunId!.Value,
+                    first.RoutePlanId,
+                    segment.Select(position => new TripTrailPointResponse(
+                        position.Id, position.Latitude, position.Longitude,
+                        position.Speed, position.Heading, position.IsOnline,
+                        position.RecordedAt, position.Source)).ToArray());
+            }).ToArray();
+        return new(trip.Id, truckId, segments.Sum(segment => segment.Points.Count), segments);
+    }
+
     public async Task<SimulatorStateResponse> ControlAsync(SimulatorControlRequest request, CancellationToken cancellationToken)
     {
         if (!provider.IsSimulator)
@@ -89,7 +123,7 @@ public sealed class TrackingService(
             isOnline ? "Online" : "Offline", trip?.Id, driver?.FullName);
     }
 
-    private bool ShouldPersist(TrackingSample sample, TruckPosition previous)
+    private bool ShouldPersist(TrackingSample sample, TrackingTarget target, TruckPosition previous)
     {
         var headingDelta = Math.Abs(sample.Heading - previous.Heading);
         headingDelta = Math.Min(headingDelta, 360 - headingDelta);
@@ -99,6 +133,9 @@ public sealed class TrackingService(
             || headingDelta > policy.HeadingTolerance
             || sample.IsOnline != previous.IsOnline
             || !string.Equals(sample.Source, previous.Source, StringComparison.Ordinal)
+            || target.TripId != previous.TripId
+            || target.RoutePlanId != previous.RoutePlanId
+            || sample.TrackingRunId != previous.TrackingRunId
             || sample.RecordedAt - previous.RecordedAt >= policy.HistoryHeartbeat;
     }
 
@@ -113,6 +150,7 @@ public sealed class TrackingService(
             return new TrackingTarget(
                 truckId,
                 trip?.Id,
+                trip?.RoutePlan?.Id,
                 trip?.RoutePlan?.StopsFingerprint,
                 coordinates,
                 trip?.Status is TripStatus.Started or TripStatus.InTransit);

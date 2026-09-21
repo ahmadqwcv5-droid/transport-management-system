@@ -1,0 +1,194 @@
+{
+  "truckId": "584a5deb-37f7-4d02-8bdd-17b66a682648",
+  "tripAId": "a8dddf13-fdcf-4392-818c-fc262835f6bb",
+  "tripBId": "75e7c44b-332b-40bb-96e2-9ef3841b56e6",
+  "tripAPointCount": 3,
+  "tripBSegments": [
+    {
+      "id": "1e91aea8687244e89bd33ade5549b437:9ff97370a9f243d38721e92e66fabdb2:142cc2a938a945529e67a72a15f49baa",
+      "trackingRunId": "1e91aea8-6872-44e8-9bd3-3ade5549b437",
+      "routePlanId": "9ff97370-a9f2-43d3-8721-e92e66fabdb2",
+      "points": [
+        {
+          "positionId": "142cc2a9-38a9-4552-9e67-a72a15f49baa",
+          "latitude": 41.009688,
+          "longitude": 28.978493,
+          "speed": 0,
+          "heading": 313.19,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:26.653076+00:00",
+          "source": "RouteSimulator"
+        },
+        {
+          "positionId": "89f8f622-a331-4d53-bb90-f4ad82fb06ef",
+          "latitude": 41.016687,
+          "longitude": 28.976138,
+          "speed": 65,
+          "heading": 302.11,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:26.814159+00:00",
+          "source": "RouteSimulator"
+        }
+      ]
+    },
+    {
+      "id": "f5a89fe820ac48a0bb193f2f83ce850c:9ff97370a9f243d38721e92e66fabdb2:4e9acc08e36f4f229e0ab1c0a95cbab7",
+      "trackingRunId": "f5a89fe8-20ac-48a0-bb19-3f2f83ce850c",
+      "routePlanId": "9ff97370-a9f2-43d3-8721-e92e66fabdb2",
+      "points": [
+        {
+          "positionId": "4e9acc08-e36f-4f22-9e0a-b1c0a95cbab7",
+          "latitude": 41.009688,
+          "longitude": 28.978493,
+          "speed": 0,
+          "heading": 313.19,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:26.910992+00:00",
+          "source": "RouteSimulator"
+        }
+      ]
+    },
+    {
+      "id": "f5a89fe820ac48a0bb193f2f83ce850c:9ff97370a9f243d38721e92e66fabdb2:9ef0cc3308dc455f934a7bdbe28a0152",
+      "trackingRunId": "f5a89fe8-20ac-48a0-bb19-3f2f83ce850c",
+      "routePlanId": "9ff97370-a9f2-43d3-8721-e92e66fabdb2",
+      "points": [
+        {
+          "positionId": "9ef0cc33-08dc-455f-934a-7bdbe28a0152",
+          "latitude": 41.043395,
+          "longitude": 29.036502,
+          "speed": 65,
+          "heading": 141.78,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:27.07489+00:00",
+          "source": "RouteSimulator"
+        }
+      ]
+    },
+    {
+      "id": "091518e711c54818afdb2202b0a80bea:9ff97370a9f243d38721e92e66fabdb2:3cf143232dd840cd93f537c9a2e29615",
+      "trackingRunId": "091518e7-11c5-4818-afdb-2202b0a80bea",
+      "routePlanId": "9ff97370-a9f2-43d3-8721-e92e66fabdb2",
+      "points": [
+        {
+          "positionId": "3cf14323-2dd8-40cd-93f5-37c9a2e29615",
+          "latitude": 41.009688,
+          "longitude": 28.978493,
+          "speed": 0,
+          "heading": 313.19,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:27.178954+00:00",
+          "source": "RouteSimulator"
+        },
+        {
+          "positionId": "97af0637-1983-43ae-90d0-f888c3d9f18e",
+          "latitude": 41.016687,
+          "longitude": 28.976139,
+          "speed": 65,
+          "heading": 302.11,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:27.305903+00:00",
+          "source": "RouteSimulator"
+        },
+        {
+          "positionId": "4881ad86-570b-439d-8301-8b41b65f9156",
+          "latitude": 41.022851,
+          "longitude": 28.975151,
+          "speed": 65,
+          "heading": 4.58,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:27.420676+00:00",
+          "source": "RouteSimulator"
+        },
+        {
+          "positionId": "02ab9c1d-e5d6-4f5c-8225-154888d3307f",
+          "latitude": 41.028,
+          "longitude": 28.984388,
+          "speed": 65,
+          "heading": 74.21,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:27.523886+00:00",
+          "source": "RouteSimulator"
+        }
+      ]
+    },
+    {
+      "id": "7486d248d56349729922bd29ef7734d8:9ff97370a9f243d38721e92e66fabdb2:c7574443e66c4a0298f64115eb6d9fbf",
+      "trackingRunId": "7486d248-d563-4972-9922-bd29ef7734d8",
+      "routePlanId": "9ff97370-a9f2-43d3-8721-e92e66fabdb2",
+      "points": [
+        {
+          "positionId": "c7574443-e66c-4a02-98f6-4115eb6d9fbf",
+          "latitude": 41.009688,
+          "longitude": 28.978493,
+          "speed": 0,
+          "heading": 313.19,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:27.608661+00:00",
+          "source": "RouteSimulator"
+        },
+        {
+          "positionId": "19d4f302-66ff-46b5-92dc-11c2db1159b5",
+          "latitude": 41.016686,
+          "longitude": 28.97614,
+          "speed": 65,
+          "heading": 302.11,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:27.727886+00:00",
+          "source": "RouteSimulator"
+        },
+        {
+          "positionId": "d1b2c89c-4821-4d8e-93c6-1e6a86df0bad",
+          "latitude": 41.022845,
+          "longitude": 28.975151,
+          "speed": 65,
+          "heading": 4.58,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:27.809724+00:00",
+          "source": "RouteSimulator"
+        },
+        {
+          "positionId": "375cef9b-5749-4eb0-b34a-1ec0e3f70c9b",
+          "latitude": 41.027997,
+          "longitude": 28.984375,
+          "speed": 65,
+          "heading": 74.21,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:27.890636+00:00",
+          "source": "RouteSimulator"
+        },
+        {
+          "positionId": "c02a47f4-1d20-4a0b-b3cb-fa29f44baeb5",
+          "latitude": 41.028017,
+          "longitude": 28.984461,
+          "speed": 65,
+          "heading": 72.26,
+          "isOnline": true,
+          "recordedAt": "2026-09-21T06:33:27.97146+00:00",
+          "source": "RouteSimulator"
+        }
+      ]
+    }
+  ],
+  "reportedSpeedAt10x": 65,
+  "oneXProgressMeters": 1001.5620986746809,
+  "tenXProgressMeters": 10013.492034200694,
+  "screenshots": [
+    {
+      "screenshotName": "01-trip-b-isolated-10x-physical-speed",
+      "bytes": []
+    },
+    {
+      "screenshotName": "02-post-reset-independent-segments",
+      "bytes": []
+    },
+    {
+      "screenshotName": "03-manual-pan-after-10-polls",
+      "bytes": []
+    },
+    {
+      "screenshotName": "04-arabic-rtl-trail-legend",
+      "bytes": []
+    }
+  ]
+}

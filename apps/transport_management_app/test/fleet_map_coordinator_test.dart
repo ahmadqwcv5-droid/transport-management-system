@@ -146,7 +146,7 @@ void main() {
         expect(adapter.operations, [
           'status:update:one',
           'truck:update:one',
-          'trail:update',
+          'trail:update:run-a',
         ]);
         expect(coordinator.telemetry.plannedRouteAdditions, 1);
         expect(coordinator.telemetry.plannedRouteUpdates, 0);
@@ -183,11 +183,11 @@ void main() {
             'route:remove',
             'stop:remove:pickup',
             'stop:remove:delivery',
-            'trail:remove',
+            'trail:remove:run-a',
             'route:add',
             'stop:add:pickup',
             'stop:add:delivery',
-            'trail:add',
+            'trail:add:run-a',
           ]),
         );
       },
@@ -329,6 +329,39 @@ void main() {
     expect(counts.globalCircleClears, 0);
     expect(counts.cameraMovesCausedByPolling, 0);
   });
+
+  test(
+    'independent trail segments keep stable identifiers during polling',
+    () async {
+      final adapter = FakeFleetMapAdapter();
+      final coordinator = FleetMapAnnotationCoordinator(adapter);
+      await coordinator.onStyleLoaded(
+        fleetSnapshot([truck('one')], route: route(segmentCount: 2)),
+      );
+      expect(
+        adapter.operations,
+        containsAll(['trail:add:run-a', 'trail:add:run-b']),
+      );
+      adapter.operations.clear();
+
+      await coordinator.synchronize(
+        fleetSnapshot([
+          truck('one', latitude: 40.01),
+        ], route: route(segmentCount: 2, trailLength: 3)),
+      );
+
+      expect(adapter.operations, contains('trail:update:run-a'));
+      expect(adapter.operations, contains('trail:update:run-b'));
+      expect(
+        adapter.operations.where((value) => value.startsWith('trail:add')),
+        isEmpty,
+      );
+      expect(
+        adapter.operations.where((value) => value.startsWith('trail:remove')),
+        isEmpty,
+      );
+    },
+  );
 }
 
 TruckMarkerModel truck(
@@ -359,6 +392,7 @@ FleetMapSnapshot fleetSnapshot(
 RouteOverlayModel route({
   String tripId = 'trip-a',
   int trailLength = 2,
+  int segmentCount = 1,
   double longitudeOffset = 0,
 }) => RouteOverlayModel(
   tripId: tripId,
@@ -367,9 +401,18 @@ RouteOverlayModel route({
     MapPoint(40.5, 30.5 + longitudeOffset),
     MapPoint(41, 31 + longitudeOffset),
   ],
-  trail: List.generate(
-    trailLength,
-    (index) => MapPoint(40 + index / 100, 30 + index / 100),
+  trails: List.generate(
+    segmentCount,
+    (segment) => TrailSegmentModel(
+      id: segment == 0 ? 'run-a' : 'run-b',
+      points: List.generate(
+        trailLength,
+        (index) => MapPoint(
+          40 + segment / 10 + index / 100,
+          30 + segment / 10 + index / 100,
+        ),
+      ),
+    ),
   ),
 );
 
@@ -447,11 +490,13 @@ final class FakeFleetMapAdapter implements FleetMapAnnotationAdapter {
   @override
   Future<void> removePlannedRoute() => _operation('route:remove');
   @override
-  Future<void> addTrail(List<MapPoint> trail) => _operation('trail:add');
+  Future<void> addTrail(String id, List<MapPoint> trail) =>
+      _operation('trail:add:$id');
   @override
-  Future<void> updateTrail(List<MapPoint> trail) => _operation('trail:update');
+  Future<void> updateTrail(String id, List<MapPoint> trail) =>
+      _operation('trail:update:$id');
   @override
-  Future<void> removeTrail() => _operation('trail:remove');
+  Future<void> removeTrail(String id) => _operation('trail:remove:$id');
   @override
   Future<void> addStop(String id, MapPoint point, {required bool pickup}) =>
       _operation('stop:add:$id');

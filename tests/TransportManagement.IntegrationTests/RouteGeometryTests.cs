@@ -39,7 +39,7 @@ public sealed class RouteGeometryTests
         var provider = new SimulatedTrackingProvider(configuration);
         var companyId = Guid.NewGuid();
         var truckId = Guid.NewGuid();
-        var target = new TrackingTarget(truckId, Guid.NewGuid(), "revision-a", Route, true);
+        var target = new TrackingTarget(truckId, Guid.NewGuid(), Guid.NewGuid(), "revision-a", Route, true);
         var start = DateTimeOffset.Parse("2026-09-17T00:00:00Z", CultureInfo.InvariantCulture);
         provider.Control(companyId, [target], new("start"), start);
 
@@ -63,6 +63,7 @@ public sealed class RouteGeometryTests
         var reset = provider.GetCurrent(companyId, [target], start.AddHours(3)).Single();
         Assert.Equal(Route[0].Latitude, reset.Latitude);
         Assert.Equal(Route[0].Longitude, reset.Longitude);
+        Assert.NotEqual(afterTenA.TrackingRunId, reset.TrackingRunId);
     }
 
     [Fact]
@@ -70,15 +71,45 @@ public sealed class RouteGeometryTests
     {
         var provider = new SimulatedTrackingProvider(new ConfigurationBuilder().Build());
         var company = Guid.NewGuid();
-        var first = new TrackingTarget(Guid.NewGuid(), Guid.NewGuid(), "a", Route, true);
+        var first = new TrackingTarget(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "a", Route, true);
         var secondRoute = new[] { new GeoCoordinate(41, 28), new GeoCoordinate(41.2m, 29) };
-        var second = new TrackingTarget(Guid.NewGuid(), Guid.NewGuid(), "b", secondRoute, true);
-        var noRoute = new TrackingTarget(Guid.NewGuid(), null, null, [], false);
+        var second = new TrackingTarget(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "b", secondRoute, true);
+        var noRoute = new TrackingTarget(Guid.NewGuid(), null, null, null, [], false);
         var now = DateTimeOffset.UtcNow;
         provider.Control(company, [first, second, noRoute], new("step"), now);
         var samples = provider.GetCurrent(company, [first, second, noRoute], now);
         Assert.Equal(2, samples.Count);
         Assert.DoesNotContain(samples, x => x.TruckId == noRoute.TruckId);
         Assert.NotEqual(samples[0].Latitude, samples[1].Latitude);
+    }
+
+    [Fact]
+    public void SimulatorMultiplierAcceleratesProgressWithoutInflatingPhysicalSpeed()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(
+            new Dictionary<string, string?>
+            {
+                ["Tracking:SimulatorSpeedKilometersPerHour"] = "65"
+            }).Build();
+        var oneX = new SimulatedTrackingProvider(configuration);
+        var tenX = new SimulatedTrackingProvider(configuration);
+        var companyId = Guid.NewGuid();
+        var target = new TrackingTarget(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "revision", Route, true);
+        var start = DateTimeOffset.Parse("2026-09-18T00:00:00Z", CultureInfo.InvariantCulture);
+
+        oneX.Control(companyId, [target], new("start"), start);
+        tenX.Control(companyId, [target], new("speed", SpeedMultiplier: 10), start);
+        tenX.Control(companyId, [target], new("start"), start);
+
+        var normal = oneX.GetCurrent(companyId, [target], start.AddSeconds(30)).Single();
+        var accelerated = tenX.GetCurrent(companyId, [target], start.AddSeconds(30)).Single();
+        var normalProgress = RouteGeometry.Project(
+            Route, new(normal.Latitude, normal.Longitude)).DistanceAlongRouteMeters;
+        var acceleratedProgress = RouteGeometry.Project(
+            Route, new(accelerated.Latitude, accelerated.Longitude)).DistanceAlongRouteMeters;
+
+        Assert.Equal(65m, normal.Speed);
+        Assert.Equal(normal.Speed, accelerated.Speed);
+        Assert.True(acceleratedProgress > normalProgress * 8);
     }
 }

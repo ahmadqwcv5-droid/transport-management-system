@@ -9,8 +9,27 @@ final class FleetTripDetail {
     required this.progress,
   });
   final ops.TripRoutePlan route;
-  final List<ops.GeoPoint> trail;
+  final List<TripTrailSegment> trail;
   final ops.RouteProgress progress;
+}
+
+final class TripTrailSegment {
+  const TripTrailSegment({required this.id, required this.points});
+  final String id;
+  final List<ops.GeoPoint> points;
+
+  factory TripTrailSegment.fromJson(Json json) => TripTrailSegment(
+    id: json['id'] as String,
+    points: (json['points'] as List<dynamic>)
+        .cast<Json>()
+        .map(
+          (item) => ops.GeoPoint(
+            (item['latitude'] as num).toDouble(),
+            (item['longitude'] as num).toDouble(),
+          ),
+        )
+        .toList(),
+  );
 }
 
 final class TrackedTruck {

@@ -12,9 +12,24 @@ public sealed record SimulatorControlRequest(
 public sealed record SimulatorStateResponse(
     bool Enabled, bool Running, double SpeedMultiplier, int Step);
 
+public sealed record TripTrailPointResponse(
+    Guid PositionId, decimal Latitude, decimal Longitude, decimal Speed,
+    decimal Heading, bool IsOnline, DateTimeOffset RecordedAt, string Source);
+
+public sealed record TripTrailSegmentResponse(
+    string Id, Guid TrackingRunId, Guid? RoutePlanId,
+    IReadOnlyList<TripTrailPointResponse> Points);
+
+public sealed record TripTrackingHistoryResponse(
+    Guid TripId, Guid TruckId, int PointCount,
+    IReadOnlyList<TripTrailSegmentResponse> Segments);
+
 public sealed record TrackingPolicy(
     TimeSpan OfflineThreshold,
     TimeSpan HistoryHeartbeat,
+    TimeSpan TrailGapThreshold,
+    decimal TrailJumpThresholdMeters,
+    int MaxTripHistoryPoints,
     decimal CoordinateTolerance = 0.00001m,
     decimal SpeedTolerance = 0.5m,
     decimal HeadingTolerance = 1m);

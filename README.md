@@ -8,6 +8,10 @@ incremental map annotations, explicit camera modes, and selected-route /
 travelled-trail fleet visualization to the earlier authentication, operations,
 localization, and tracking foundation.
 
+Sprint 3.2.2 makes persisted telemetry trip/route/run-aware, returns bounded
+chronological trail segments, prevents cross-trip/reset connectors, and keeps
+the simulator multiplier separate from displayed physical speed.
+
 ## Architecture
 
 The backend is a modular monolith using Clean Architecture with lightweight DDD and CQRS principles:
@@ -112,6 +116,11 @@ Sprint 3.2 is represented by `20260917182358_Sprint32RouteAwareTrips`. It adds
 tenant-owned ordered stops and immutable route-plan snapshots. Existing trips
 are backfilled with label-only pickup/delivery stops; coordinates remain null
 and the migration does not invent historical locations.
+
+Sprint 3.2.2 is represented by `20260918110252_Sprint322TripAwareTracking`.
+It adds nullable trip/route-plan/run context to positions plus a tenant/trip/time
+index. Existing rows remain unchanged with null context and are never guessed
+into a historical trip.
 
 ## Run Flutter Web
 
@@ -269,6 +278,30 @@ stop overlays, checks manual pan plus explicit route fitting, and captures
 Arabic RTL. Deterministic operation counts in the same directory prove that
 ordinary polling performs no global annotation clears or camera moves.
 
+For the Sprint 3.2.2 two-trip/reset/`10x` correctness workflow, use:
+
+```bash
+flutter drive \
+  --driver=test_driver/integration_test_sprint3_2_2.dart \
+  --target=integration_test/sprint3_2_2_smoke_test.dart \
+  -d web-server --browser-name=firefox --driver-port=4444 --headless \
+  --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty \
+  --dart-define=MAP_LOADING_TIMEOUT_SECONDS=30 \
+  --dart-define=TRACKING_POLLING_INTERVAL_SECONDS=1 \
+  --dart-define=ENABLE_SIMULATOR_CONTROLS=true \
+  --dart-define=E2E_EMAIL=owner@sprint322.local \
+  --dart-define=E2E_PASSWORD=YOUR_DEVELOPMENT_PASSWORD
+```
+
+It creates isolated runtime data, runs two trips on the same truck, validates
+trip-scoped history and reset segments through the live API, verifies physical
+speed at `10x`, observes ten polling cycles after manual pan, and captures
+English/Arabic evidence under `docs/evidence/sprint3_2_2/`. Provision the named
+owner in a dedicated local smoke tenant first, or replace `E2E_EMAIL` with a
+different dedicated local owner. The password is supplied only at runtime.
+
 For the complete Sprint 3 workflow, use:
 
 ```text
@@ -323,12 +356,26 @@ speed (0.5 km/h tolerance), or heading (1 degree tolerance) changes, or when the
 `Tracking__HistoryHeartbeatSeconds` heartbeat elapses. Latest/history queries
 remain tenant-filtered. Long-term retention and partitioning remain deferred.
 
+New writes correlate provider telemetry with the active trip and immutable route
+plan in `TrackingService`. Selected-trip trails use the bounded
+`/api/tracking/trips/{tripId}/history` endpoint, which returns oldest-to-newest
+segments. A run/route change, reset, excessive time gap, or Haversine-distance
+jump starts a new segment. Unassigned and legacy null-trip rows may still supply
+the latest fleet location, but never appear in a selected trip trail.
+
 Movement is a function of route geometry, elapsed simulator time, and configured
 speed. Polling current positions is observational and cannot move a truck.
 Pause freezes distance, Step advances a configured distance, Reset returns to
 pickup, and arrival clamps exactly to delivery with zero speed. Progress is
 calculated by projecting the latest sample onto the stored route; stopped trucks
 show no misleading ETA.
+
+The multiplier accelerates simulated elapsed time and route progress only. A
+truck configured at `65 km/h` therefore reports `65 km/h` at both `1x` and
+`10x`; at `10x` it covers approximately ten times the distance per wall-clock
+interval. Reset creates a new run boundary. Product ETA is operational
+real-world ETA based on remaining distance and physical speed, not accelerated
+demo completion time.
 
 The dashboard uses one tenant-scoped endpoint for fleet status totals, active
 and completed-today trip totals, online/offline tracking totals, current
@@ -351,6 +398,9 @@ pull-to-refresh remains available.
 | `Tracking__PollingIntervalSeconds` | API/Compose | Documented polling default for clients |
 | `Tracking__OfflineThresholdSeconds` | API | Age after which the latest sample is reported offline |
 | `Tracking__HistoryHeartbeatSeconds` | API | Maximum unchanged interval before a heartbeat history row, default 300 |
+| `Tracking__TrailGapThresholdSeconds` | API | Time gap that starts a new trail segment, default 300 |
+| `Tracking__TrailJumpThresholdMeters` | API | Geographic jump that starts a new trail segment, default 5000 |
+| `Tracking__MaxTripHistoryPoints` | API | Maximum points returned by trip history, clamped to 10–2000, default 500 |
 | `MAP_STYLE_URL` (`--dart-define`) | Flutter | Optional MapLibre style URL; blank shows the intentional unconfigured state |
 | `TRACKING_POLLING_INTERVAL_SECONDS` (`--dart-define`) | Flutter | Dashboard refresh interval, default 5 seconds |
 | `MAP_LOADING_TIMEOUT_SECONDS` (`--dart-define`) | Flutter | Time to await the genuine MapLibre style callback, default 12 seconds |
@@ -384,6 +434,7 @@ Never commit `.env`, signing keys, database passwords, or production credentials
 - `GET /api/tracking/positions`
 - `GET /api/tracking/trucks/{id}/position`
 - `GET /api/tracking/trucks/{id}/history?limit=50`
+- `GET /api/tracking/trips/{id}/history?limit=500` — tenant-validated chronological trail segments
 - `POST /api/tracking/simulator/control` — Development simulator, Owner only
 - `GET /health`
 

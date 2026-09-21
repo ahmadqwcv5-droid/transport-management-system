@@ -1,5 +1,11 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using TransportManagement.Domain.Tracking;
+using TransportManagement.Domain.Trips;
+using TransportManagement.Infrastructure.Persistence;
 
 namespace TransportManagement.IntegrationTests;
 
@@ -90,6 +96,103 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         Assert.Equal(pausedCount + 3, await HistoryCountAsync(client, truckId));
     }
 
+    [Fact]
+    public async Task ResetHistoryIsReturnedAsTripScopedIndependentSegments()
+    {
+        using var client = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
+        var truckId = await CreateStartedRouteTripAsync(client);
+        var tripId = (await client.GetJsonAsync<JsonElement[]>("/api/trips"))!
+            .Single(x => x.GetProperty("truckId").GetGuid() == truckId)
+            .GetProperty("id").GetGuid();
+
+        await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "reset" });
+        await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "step" });
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "reset" });
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+
+        var history = await client.GetJsonAsync<JsonElement>($"/api/tracking/trips/{tripId}/history");
+        var segments = history.GetProperty("segments").EnumerateArray().ToArray();
+        Assert.Equal(2, segments.Length);
+        Assert.All(segments, segment => Assert.NotEmpty(segment.GetProperty("points").EnumerateArray()));
+        Assert.All(segments, segment => Assert.NotEqual(Guid.Empty, segment.GetProperty("trackingRunId").GetGuid()));
+        Assert.All(segments, segment => Assert.Equal(JsonValueKind.String, segment.GetProperty("routePlanId").ValueKind));
+    }
+
+    [Fact]
+    public async Task TripHistoryExcludesAnotherTripAndLegacyPositionsAndIsTenantScoped()
+    {
+        using var companyA = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
+        using var companyB = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-b@example.test");
+        var truckId = await CreateStartedRouteTripAsync(companyA);
+        var now = DateTimeOffset.UtcNow;
+        Guid tripAId;
+        Guid tripBId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var tripA = await db.Trips.IgnoreQueryFilters()
+                .Include(x => x.RoutePlan)
+                .SingleAsync(
+                    x => x.CompanyId == ApiFactory.CompanyAId && x.TruckId == truckId,
+                    TestContext.Current.CancellationToken);
+            tripAId = tripA.Id;
+            var tripB = new Trip(
+                Guid.NewGuid(), ApiFactory.CompanyAId, tripA.ClientId,
+                "Previous pickup", "Previous delivery", "Previous cargo",
+                now.AddDays(-1), 100, null, now.AddDays(-2));
+            tripB.Assign(truckId, tripA.DriverId!.Value, now.AddDays(-2));
+            tripBId = tripB.Id;
+            db.Trips.Add(tripB);
+            db.TruckPositions.AddRange(
+                Position(truckId, tripAId, tripA.RoutePlan!.Id, 39, now.AddSeconds(1)),
+                Position(truckId, tripBId, null, 40, now),
+                Position(truckId, null, null, 41, now.AddSeconds(2)));
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var tripAHistory = await companyA.GetJsonAsync<JsonElement>(
+            $"/api/tracking/trips/{tripAId}/history");
+        var tripAPoints = tripAHistory.GetProperty("segments").EnumerateArray()
+            .SelectMany(segment => segment.GetProperty("points").EnumerateArray()).ToArray();
+        Assert.Single(tripAPoints);
+        Assert.Equal(39, tripAPoints[0].GetProperty("latitude").GetDecimal());
+
+        var tripBHistory = await companyA.GetJsonAsync<JsonElement>(
+            $"/api/tracking/trips/{tripBId}/history");
+        var tripBPoints = tripBHistory.GetProperty("segments").EnumerateArray()
+            .SelectMany(segment => segment.GetProperty("points").EnumerateArray()).ToArray();
+        Assert.Single(tripBPoints);
+        Assert.Equal(40, tripBPoints[0].GetProperty("latitude").GetDecimal());
+
+        var forbidden = await companyB.GetResponseAsync($"/api/tracking/trips/{tripAId}/history");
+        Assert.Equal(HttpStatusCode.NotFound, forbidden.StatusCode);
+        var problem = await forbidden.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+        Assert.Equal("TRIP_NOT_FOUND", problem.GetProperty("errorCode").GetString());
+    }
+
+    [Fact]
+    public async Task UnassignedPositionRemainsAvailableAsCurrentFleetLocation()
+    {
+        using var client = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
+        var truckId = (await (await client.PostJsonAsync("/api/trucks", new
+        {
+            plateNumber = $"FREE-{Guid.NewGuid():N}"[..20]
+        })).RequiredJsonAsync()).GetProperty("id").GetGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.TruckPositions.Add(Position(
+                truckId, null, null, 38.5m, DateTimeOffset.UtcNow));
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var current = await client.GetJsonAsync<JsonElement>(
+            $"/api/tracking/trucks/{truckId}/position");
+        Assert.Equal(38.5m, current.GetProperty("latitude").GetDecimal());
+        Assert.Equal(JsonValueKind.Null, current.GetProperty("currentTripId").ValueKind);
+    }
+
     private static async Task<int> HistoryCountAsync(HttpClient client, Guid truckId) =>
         (await client.GetJsonAsync<JsonElement[]>($"/api/tracking/trucks/{truckId}/history?limit=200"))!.Length;
 
@@ -111,4 +214,11 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         await client.PostEmptyAsync($"/api/trips/{tripId}/mark-in-transit");
         return truckId;
     }
+
+    private static TruckPosition Position(
+        Guid truckId, Guid? tripId, Guid? routePlanId,
+        decimal latitude, DateTimeOffset recordedAt) =>
+        new(
+            Guid.NewGuid(), ApiFactory.CompanyAId, truckId, latitude, 32,
+            65, 0, true, recordedAt, "Test", tripId, routePlanId, Guid.NewGuid());
 }

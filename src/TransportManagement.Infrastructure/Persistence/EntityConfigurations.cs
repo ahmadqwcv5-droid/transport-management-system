@@ -34,8 +34,11 @@ internal sealed class TruckPositionConfiguration : IEntityTypeConfiguration<Truc
         builder.Property(x => x.Source).HasMaxLength(50).IsRequired();
         builder.HasIndex(x => x.CompanyId);
         builder.HasIndex(x => new { x.CompanyId, x.TruckId, x.RecordedAt });
+        builder.HasIndex(x => new { x.CompanyId, x.TripId, x.RecordedAt });
         builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Truck>().WithMany().HasForeignKey(x => x.TruckId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Trip>().WithMany().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<TripRoutePlan>().WithMany().HasForeignKey(x => x.RoutePlanId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

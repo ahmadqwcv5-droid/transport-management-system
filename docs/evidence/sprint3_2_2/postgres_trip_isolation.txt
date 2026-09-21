@@ -1,0 +1,13 @@
+Sprint 3.2.2 read-only PostgreSQL isolation check
+Captured: 2026-09-21 UTC
+
+Query groups persisted positions by TripId and TruckId for the successful
+browser workflow's two trip IDs. Both trips use the same truck while retaining
+separate persisted associations.
+
+TripId                                TruckId                                point_count  run_count  first_at                         last_at
+75e7c44b-332b-40bb-96e2-9ef3841b56e6 584a5deb-37f7-4d02-8bdd-17b66a682648 40           4          2026-09-21 06:33:26.653076+00 2026-09-21 06:33:54.409643+00
+a8dddf13-fdcf-4392-818c-fc262835f6bb 584a5deb-37f7-4d02-8bdd-17b66a682648 3            1          2026-09-21 06:33:26.254865+00 2026-09-21 06:33:26.504864+00
+
+The polling phase adds Trip B points after the API assertion. They remain
+associated only with Trip B; Trip A remains at three points and one run.

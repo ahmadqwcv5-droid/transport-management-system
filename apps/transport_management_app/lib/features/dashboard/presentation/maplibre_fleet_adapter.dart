@@ -58,7 +58,7 @@ final class MapLibreFleetAnnotationAdapter
   final Map<String, Circle> _statuses = {};
   final Map<String, Circle> _stops = {};
   Line? _plannedRoute;
-  Line? _trail;
+  final Map<String, Line> _trails = {};
 
   @override
   Future<void> prepareStyle() async {
@@ -66,7 +66,7 @@ final class MapLibreFleetAnnotationAdapter
     _statuses.clear();
     _stops.clear();
     _plannedRoute = null;
-    _trail = null;
+    _trails.clear();
 
     final bytes = await rootBundle.load(truckMarkerAsset);
     await controller.addImage(
@@ -164,8 +164,8 @@ final class MapLibreFleetAnnotationAdapter
   }
 
   @override
-  Future<void> addTrail(List<MapPoint> trail) async {
-    _trail = await controller.addLine(
+  Future<void> addTrail(String id, List<MapPoint> trail) async {
+    _trails[id] = await controller.addLine(
       LineOptions(
         geometry: trail.map(_latLng).toList(),
         lineColor: '#047857',
@@ -176,9 +176,9 @@ final class MapLibreFleetAnnotationAdapter
   }
 
   @override
-  Future<void> updateTrail(List<MapPoint> trail) async {
-    final line = _trail;
-    if (line == null) return addTrail(trail);
+  Future<void> updateTrail(String id, List<MapPoint> trail) async {
+    final line = _trails[id];
+    if (line == null) return addTrail(id, trail);
     await controller.updateLine(
       line,
       LineOptions(geometry: trail.map(_latLng).toList()),
@@ -186,9 +186,8 @@ final class MapLibreFleetAnnotationAdapter
   }
 
   @override
-  Future<void> removeTrail() async {
-    final line = _trail;
-    _trail = null;
+  Future<void> removeTrail(String id) async {
+    final line = _trails.remove(id);
     if (line != null) await controller.removeLine(line);
   }
 

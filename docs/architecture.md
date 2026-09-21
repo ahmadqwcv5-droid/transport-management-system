@@ -252,3 +252,38 @@ change, or explicit recenter—so user pan and zoom remain authoritative between
 those events. Stable atomic marker updates are preferred over browser
 frame-by-frame interpolation because the current MapLibre Flutter Web annotation
 bridge does not provide a cancellation-safe animation primitive.
+
+## ADR-019: Trip-aware tracking context and discontinuity-safe trails
+
+**Status:** Accepted
+
+Tracking providers emit vendor-neutral telemetry and an optional provider run
+identity; they do not load or persist transport-domain trips. `TrackingService`
+correlates each sample with the active `TrackingTarget` and persists nullable
+`TripId`/`RoutePlanId` plus the run identity. Existing rows are not backfilled,
+because a truck assignment at migration time cannot prove historical ownership.
+Null-trip samples remain valid latest fleet locations but cannot enter trip
+history.
+
+The tenant-filtered trip endpoint validates the trip and authoritative truck
+assignment, performs one bounded company/trip/time-indexed query, normalizes the
+newest bounded window to chronological order, and returns deterministic segments.
+The backend owns segmentation so every client shares the same rule: run or route
+changes, a configured timestamp gap, or a configured Haversine jump split the
+trail. Flutter keys one MapLibre line per segment and diffs each line independently;
+normal polling still performs no global clears and no camera movement.
+
+```text
+Provider telemetry
+  -> application trip correlation
+  -> persisted tenant/truck/trip/route/run context
+  -> tenant-validated trip history
+  -> chronological safe segments
+  -> stable Flutter MapLibre line annotations
+```
+
+Simulator acceleration advances route distance using scaled simulated elapsed
+time while telemetry continues to report physical configured speed. Reset and
+route revision changes create a fresh run. Operational ETA uses remaining route
+distance and physical speed; it intentionally does not represent accelerated
+demo completion time.

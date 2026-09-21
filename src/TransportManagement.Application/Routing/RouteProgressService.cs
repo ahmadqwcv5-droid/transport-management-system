@@ -20,7 +20,8 @@ public sealed class RouteProgressService(
             return Unavailable(trip, "Route unavailable");
         if (trip.TruckId is null)
             return Unavailable(trip, "Awaiting start");
-        var position = await trackingStore.LatestPositionAsync(trip.TruckId.Value, cancellationToken);
+        var position = await trackingStore.LatestTripPositionAsync(
+            trip.Id, trip.TruckId.Value, cancellationToken);
         if (position is null)
             return Unavailable(trip, "Tracking unavailable");
 

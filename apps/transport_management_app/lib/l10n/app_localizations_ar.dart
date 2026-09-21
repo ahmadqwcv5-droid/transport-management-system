@@ -562,4 +562,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get fleetList => 'الأسطول';
+
+  @override
+  String get plannedRoute => 'المسار المخطط';
+
+  @override
+  String get travelledTrail => 'المسار المقطوع';
 }

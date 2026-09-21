@@ -22,6 +22,12 @@ public sealed class TrackingController(TrackingService service) : ControllerBase
         Guid truckId, [FromQuery] int limit = 50, CancellationToken cancellationToken = default) =>
         service.HistoryAsync(truckId, limit, cancellationToken);
 
+    [HttpGet("trips/{tripId:guid}/history")]
+    public Task<TripTrackingHistoryResponse> TripHistory(
+        Guid tripId, [FromQuery] int limit = 500,
+        CancellationToken cancellationToken = default) =>
+        service.TripHistoryAsync(tripId, limit, cancellationToken);
+
     [HttpPost("simulator/control")]
     [Authorize(Roles = "Owner")]
     public Task<SimulatorStateResponse> Control(

@@ -36,30 +36,25 @@ final class DashboardRepository {
     }
   }
 
-  Future<FleetTripDetail> tripDetail(String tripId, String truckId) async {
+  Future<FleetTripDetail> tripDetail(String tripId) async {
     try {
       final values = await Future.wait([
         _client.dio.get<Json>('/api/trips/$tripId'),
         _client.dio.get<Json>('/api/trips/$tripId/route-progress'),
-        _client.dio.get<List<dynamic>>(
-          '/api/tracking/trucks/$truckId/history',
-          queryParameters: {'limit': 100},
+        _client.dio.get<Json>(
+          '/api/tracking/trips/$tripId/history',
+          queryParameters: {'limit': 500},
         ),
       ]);
-      final trip = ops.Trip.fromJson(values[0].data! as Json);
+      final trip = ops.Trip.fromJson(values[0].data!);
       final route = trip.routePlan;
       if (route == null) throw StateError('Trip has no route plan.');
       return FleetTripDetail(
         route: route,
-        progress: ops.RouteProgress.fromJson(values[1].data! as Json),
-        trail: (values[2].data! as List<dynamic>)
+        progress: ops.RouteProgress.fromJson(values[1].data!),
+        trail: (values[2].data!['segments'] as List<dynamic>)
             .cast<Json>()
-            .map(
-              (item) => ops.GeoPoint(
-                (item['latitude'] as num).toDouble(),
-                (item['longitude'] as num).toDouble(),
-              ),
-            )
+            .map(TripTrailSegment.fromJson)
             .toList(),
       );
     } on DioException catch (error) {

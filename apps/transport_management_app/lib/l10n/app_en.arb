@@ -181,4 +181,6 @@
   ,"recenter": "Recenter"
   ,"fitRoute": "Fit route"
   ,"fleetList": "Fleet"
+  ,"plannedRoute": "Planned route"
+  ,"travelledTrail": "Travelled trail"
 }

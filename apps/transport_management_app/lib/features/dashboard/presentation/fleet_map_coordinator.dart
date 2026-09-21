@@ -76,15 +76,22 @@ final class RouteOverlayModel {
   const RouteOverlayModel({
     required this.tripId,
     required this.route,
-    required this.trail,
+    required this.trails,
   });
 
   final String tripId;
   final List<MapPoint> route;
-  final List<MapPoint> trail;
+  final List<TrailSegmentModel> trails;
 
   String get routeRevision => _pointRevision(route);
-  String get trailRevision => _pointRevision(trail);
+}
+
+final class TrailSegmentModel {
+  const TrailSegmentModel({required this.id, required this.points});
+  final String id;
+  final List<MapPoint> points;
+
+  String get revision => _pointRevision(points);
 }
 
 final class FleetMapSnapshot {
@@ -168,9 +175,9 @@ abstract interface class FleetMapAnnotationAdapter {
   Future<void> addPlannedRoute(List<MapPoint> route);
   Future<void> updatePlannedRoute(List<MapPoint> route);
   Future<void> removePlannedRoute();
-  Future<void> addTrail(List<MapPoint> trail);
-  Future<void> updateTrail(List<MapPoint> trail);
-  Future<void> removeTrail();
+  Future<void> addTrail(String id, List<MapPoint> trail);
+  Future<void> updateTrail(String id, List<MapPoint> trail);
+  Future<void> removeTrail(String id);
   Future<void> addStop(String id, MapPoint point, {required bool pickup});
   Future<void> removeStop(String id);
   Future<void> animateCamera(FleetCameraPlan plan);
@@ -293,8 +300,10 @@ final class FleetMapAnnotationCoordinator {
   ) async {
     if (route == null) {
       if (oldRoute == null) return;
-      if (oldRoute.trail.length > 1) {
-        await _adapter.removeTrail();
+      for (final segment in oldRoute.trails.where(
+        (segment) => segment.points.length > 1,
+      )) {
+        await _adapter.removeTrail(segment.id);
         telemetry.trailRemovals++;
       }
       if (oldRoute.route.length > 1) {
@@ -319,9 +328,13 @@ final class FleetMapAnnotationCoordinator {
         await _adapter.removeStop('delivery');
         telemetry.stopMarkerRemovals += 2;
       }
-      if (oldRoute != null && oldRoute.trail.length > 1) {
-        await _adapter.removeTrail();
-        telemetry.trailRemovals++;
+      if (oldRoute != null) {
+        for (final segment in oldRoute.trails.where(
+          (segment) => segment.points.length > 1,
+        )) {
+          await _adapter.removeTrail(segment.id);
+          telemetry.trailRemovals++;
+        }
       }
       if (route.route.length > 1) {
         await _adapter.addPlannedRoute(route.route);
@@ -330,23 +343,48 @@ final class FleetMapAnnotationCoordinator {
         await _adapter.addStop('delivery', route.route.last, pickup: false);
         telemetry.stopMarkerAdditions += 2;
       }
-      if (route.trail.length > 1) {
-        await _adapter.addTrail(route.trail);
+      for (final segment in route.trails.where(
+        (segment) => segment.points.length > 1,
+      )) {
+        await _adapter.addTrail(segment.id, segment.points);
         telemetry.trailAdditions++;
       }
       return;
     }
 
-    if (oldRoute.trailRevision == route.trailRevision) return;
-    if (oldRoute.trail.length <= 1 && route.trail.length > 1) {
-      await _adapter.addTrail(route.trail);
-      telemetry.trailAdditions++;
-    } else if (oldRoute.trail.length > 1 && route.trail.length <= 1) {
-      await _adapter.removeTrail();
-      telemetry.trailRemovals++;
-    } else if (route.trail.length > 1) {
-      await _adapter.updateTrail(route.trail);
-      telemetry.trailUpdates++;
+    final oldSegments = {
+      for (final segment in oldRoute.trails) segment.id: segment,
+    };
+    final nextSegments = {
+      for (final segment in route.trails) segment.id: segment,
+    };
+    for (final old in oldSegments.values.where(
+      (segment) => !nextSegments.containsKey(segment.id),
+    )) {
+      if (old.points.length > 1) {
+        await _adapter.removeTrail(old.id);
+        telemetry.trailRemovals++;
+      }
+    }
+    for (final segment in nextSegments.values) {
+      final old = oldSegments[segment.id];
+      if (old == null) {
+        if (segment.points.length > 1) {
+          await _adapter.addTrail(segment.id, segment.points);
+          telemetry.trailAdditions++;
+        }
+      } else if (old.revision != segment.revision) {
+        if (old.points.length <= 1 && segment.points.length > 1) {
+          await _adapter.addTrail(segment.id, segment.points);
+          telemetry.trailAdditions++;
+        } else if (old.points.length > 1 && segment.points.length <= 1) {
+          await _adapter.removeTrail(segment.id);
+          telemetry.trailRemovals++;
+        } else if (segment.points.length > 1) {
+          await _adapter.updateTrail(segment.id, segment.points);
+          telemetry.trailUpdates++;
+        }
+      }
     }
   }
 

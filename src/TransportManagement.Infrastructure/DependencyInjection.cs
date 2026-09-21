@@ -82,7 +82,13 @@ public static class DependencyInjection
         services.AddSingleton(
             new TrackingPolicy(
                 TimeSpan.FromSeconds(offlineThresholdSeconds),
-                TimeSpan.FromSeconds(historyHeartbeatSeconds)));
+                TimeSpan.FromSeconds(historyHeartbeatSeconds),
+                TimeSpan.FromSeconds(Math.Max(30,
+                    configuration.GetValue<int>("Tracking:TrailGapThresholdSeconds", 300))),
+                Math.Max(100, configuration.GetValue<decimal>(
+                    "Tracking:TrailJumpThresholdMeters", 5000)),
+                Math.Clamp(configuration.GetValue<int>(
+                    "Tracking:MaxTripHistoryPoints", 500), 10, 2000)));
         var simulatorEnabled = configuration.GetValue<bool>("Tracking:SimulatorEnabled")
             && (environment.IsDevelopment() || environment.IsEnvironment("Testing"))
             && configuration["Tracking:Provider"]?.Equals("Simulator", StringComparison.OrdinalIgnoreCase) == true;

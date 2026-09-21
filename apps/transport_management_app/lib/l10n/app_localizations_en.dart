@@ -565,4 +565,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fleetList => 'Fleet';
+
+  @override
+  String get plannedRoute => 'Planned route';
+
+  @override
+  String get travelledTrail => 'Travelled trail';
 }

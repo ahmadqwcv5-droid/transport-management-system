@@ -315,4 +315,29 @@ void main() {
     );
     expect(find.text('هذه الشاحنة مرتبطة برحلة نشطة أخرى.'), findsOneWidget);
   });
+
+  testWidgets('planned route and travelled trail legend is localized', (
+    tester,
+  ) async {
+    for (final value in [
+      ('en', 'Planned route', 'Travelled trail', TextDirection.ltr),
+      ('ar', 'المسار المخطط', 'المسار المقطوع', TextDirection.rtl),
+    ]) {
+      await tester.pumpWidget(
+        localized(
+          TrailLegend(showTrail: true, onChanged: (_) {}),
+          Locale(value.$1),
+        ),
+      );
+      expect(find.text(value.$2), findsOneWidget);
+      expect(find.text(value.$3), findsOneWidget);
+      expect(
+        Directionality.of(
+          tester.element(find.byKey(const Key('fleet-trail-legend'))),
+        ),
+        value.$4,
+      );
+      expect(find.byKey(const Key('fleet-trail-visibility')), findsOneWidget);
+    }
+  });
 }
