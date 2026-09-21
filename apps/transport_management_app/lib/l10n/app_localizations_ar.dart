@@ -568,4 +568,65 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get travelledTrail => 'المسار المقطوع';
+
+  @override
+  String get enRouteToPickup => 'في الطريق إلى الاستلام';
+
+  @override
+  String get atPickup => 'عند موقع الاستلام';
+
+  @override
+  String get previewApproach => 'معاينة المسار إلى الاستلام';
+
+  @override
+  String get dispatchToPickup => 'إرسال إلى موقع الاستلام';
+
+  @override
+  String get confirmPickupArrival => 'تأكيد الوصول إلى الاستلام';
+
+  @override
+  String get alreadyAtPickup => 'الشاحنة موجودة بالفعل ضمن نطاق موقع الاستلام.';
+
+  @override
+  String get approachDistance => 'مسافة الوصول إلى الاستلام';
+
+  @override
+  String get approachDuration => 'مدة الوصول إلى الاستلام';
+
+  @override
+  String get dispatchStarted => 'تم إرسال الشاحنة إلى موقع الاستلام.';
+
+  @override
+  String get truckPositionRequired => 'سجّل موقع الشاحنة الحالي قبل الإرسال.';
+
+  @override
+  String get truckPositionStale =>
+      'موقع الشاحنة قديم. حدّث التتبع ثم حاول مرة أخرى.';
+
+  @override
+  String get truckOfflineForDispatch =>
+      'يجب أن تكون الشاحنة متصلة قبل الإرسال.';
+
+  @override
+  String get repositioningRouteRequired =>
+      'عاين مساراً حديثاً إلى الاستلام قبل الإرسال.';
+
+  @override
+  String get repositioningRouteStale =>
+      'تحركت الشاحنة بعد المعاينة. احسب المسار مرة أخرى.';
+
+  @override
+  String get truckNotAtPickup => 'لم تصل الشاحنة إلى نطاق موقع الاستلام بعد.';
+
+  @override
+  String get approachRoute => 'المسار إلى الاستلام';
+
+  @override
+  String get cargoRoute => 'مسار الحمولة';
+
+  @override
+  String get proposed => 'مقترح';
+
+  @override
+  String get expired => 'منتهي الصلاحية';
 }

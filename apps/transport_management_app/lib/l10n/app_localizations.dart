@@ -1201,6 +1201,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Travelled trail'**
   String get travelledTrail;
+
+  /// No description provided for @enRouteToPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'En route to pickup'**
+  String get enRouteToPickup;
+
+  /// No description provided for @atPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'At pickup'**
+  String get atPickup;
+
+  /// No description provided for @previewApproach.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview route to pickup'**
+  String get previewApproach;
+
+  /// No description provided for @dispatchToPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Dispatch to pickup'**
+  String get dispatchToPickup;
+
+  /// No description provided for @confirmPickupArrival.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm pickup arrival'**
+  String get confirmPickupArrival;
+
+  /// No description provided for @alreadyAtPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'The truck is already within the pickup arrival area.'**
+  String get alreadyAtPickup;
+
+  /// No description provided for @approachDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Approach distance'**
+  String get approachDistance;
+
+  /// No description provided for @approachDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Approach duration'**
+  String get approachDuration;
+
+  /// No description provided for @dispatchStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck dispatched to pickup.'**
+  String get dispatchStarted;
+
+  /// No description provided for @truckPositionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Record the truck\'s current position before dispatch.'**
+  String get truckPositionRequired;
+
+  /// No description provided for @truckPositionStale.
+  ///
+  /// In en, this message translates to:
+  /// **'The truck position is too old. Refresh tracking and try again.'**
+  String get truckPositionStale;
+
+  /// No description provided for @truckOfflineForDispatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The truck must be online before dispatch.'**
+  String get truckOfflineForDispatch;
+
+  /// No description provided for @repositioningRouteRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview a current route to pickup before dispatch.'**
+  String get repositioningRouteRequired;
+
+  /// No description provided for @repositioningRouteStale.
+  ///
+  /// In en, this message translates to:
+  /// **'The truck moved after the preview. Calculate the route again.'**
+  String get repositioningRouteStale;
+
+  /// No description provided for @truckNotAtPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'The truck has not reached the pickup area yet.'**
+  String get truckNotAtPickup;
+
+  /// No description provided for @approachRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Route to pickup'**
+  String get approachRoute;
+
+  /// No description provided for @cargoRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Cargo route'**
+  String get cargoRoute;
+
+  /// No description provided for @proposed.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed'**
+  String get proposed;
+
+  /// No description provided for @expired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get expired;
 }
 
 class _AppLocalizationsDelegate

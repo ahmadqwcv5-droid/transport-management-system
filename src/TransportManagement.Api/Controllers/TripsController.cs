@@ -48,6 +48,28 @@ public sealed class TripsController(TripService service, RouteProgressService pr
     public Task<TripResponse> Assign(Guid id, AssignTripRequest request, CancellationToken cancellationToken) =>
         service.AssignAsync(id, request, cancellationToken);
 
+    [HttpPost("{id:guid}/repositioning/preview")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<RepositioningPreviewResponse> PreviewRepositioning(
+        Guid id, CancellationToken cancellationToken) =>
+        service.PreviewRepositioningAsync(id, cancellationToken);
+
+    [HttpPost("{id:guid}/dispatch-to-pickup")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TripResponse> DispatchToPickup(
+        Guid id, DispatchToPickupRequest request, CancellationToken cancellationToken) =>
+        service.DispatchToPickupAsync(id, request, cancellationToken);
+
+    [HttpPost("{id:guid}/arrive-pickup")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TripResponse> ArrivePickup(Guid id, CancellationToken cancellationToken) =>
+        service.ArrivePickupAsync(id, cancellationToken);
+
+    [HttpGet("{id:guid}/repositioning-progress")]
+    public Task<RepositioningProgressResponse> RepositioningProgress(
+        Guid id, CancellationToken cancellationToken) =>
+        service.RepositioningProgressAsync(id, cancellationToken);
+
     [HttpPost("{id:guid}/start")]
     [Authorize(Policy = "operations.manage")]
     public Task<TripResponse> Start(Guid id, CancellationToken cancellationToken) =>

@@ -21,6 +21,14 @@ public sealed class TripsTests(ApiFactory factory) : IClassFixture<ApiFactory>
             truckId = resources.TruckId,
             driverId = resources.DriverId
         });
+        await (await client.PostJsonAsync("/api/tracking/simulator/control", new
+        {
+            action = "seed-position",
+            truckId = resources.TruckId,
+            latitude = 39.9208m,
+            longitude = 32.8541m
+        })).RequiredJsonAsync();
+        await AssertTransitionAsync(client, $"/api/trips/{tripId}/dispatch-to-pickup", "AtPickup", new { });
         await AssertTransitionAsync(client, $"/api/trips/{tripId}/start", "Started");
         Assert.Equal("OnTrip", (await client.GetJsonAsync<JsonElement>($"/api/trucks/{resources.TruckId}"))
             .GetProperty("status").GetString());

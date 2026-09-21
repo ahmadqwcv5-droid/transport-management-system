@@ -9,6 +9,7 @@ using TransportManagement.Application.Abstractions;
 using TransportManagement.Domain.Companies;
 using TransportManagement.Domain.Identity;
 using TransportManagement.Infrastructure.Persistence;
+using TransportManagement.Infrastructure.Routing;
 using TransportManagement.Infrastructure.Tracking;
 
 namespace TransportManagement.IntegrationTests;
@@ -16,9 +17,19 @@ namespace TransportManagement.IntegrationTests;
 public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly string _databaseName = $"tms-tests-{Guid.NewGuid()}";
+    private readonly bool _useFailingRoutingProvider;
     public static readonly Guid CompanyAId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     public static readonly Guid CompanyBId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     public const string Password = "DemoPassword!123";
+
+    public ApiFactory()
+    {
+    }
+
+    internal ApiFactory(bool useFailingRoutingProvider)
+    {
+        _useFailingRoutingProvider = useFailingRoutingProvider;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -42,6 +53,11 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.RemoveAll<AppDbContext>();
             services.RemoveAll<ITrackingProvider>();
             services.AddSingleton<ITrackingProvider, SimulatedTrackingProvider>();
+            if (_useFailingRoutingProvider)
+            {
+                services.RemoveAll<IRoutingProvider>();
+                services.AddSingleton<IRoutingProvider, FailingRoutingProvider>();
+            }
             services.AddDbContext<AppDbContext>(options =>
                 options.UseInMemoryDatabase(_databaseName));
         });
@@ -66,5 +82,21 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     public new async ValueTask DisposeAsync()
     {
         await base.DisposeAsync();
+    }
+}
+
+internal sealed class FailingRoutingProvider : IRoutingProvider
+{
+    private readonly DeterministicRoutingProvider _inner = new();
+
+    public bool IsConfigured => true;
+
+    public Task<RoutingProviderResult> CalculateAsync(
+        RoutingProviderRequest request, CancellationToken cancellationToken)
+    {
+        if (request.Stops[^1].Latitude < 40)
+            throw new TransportManagement.Application.Common.ProviderException(
+                "The routing provider failed.", "ROUTING_PROVIDER_FAILURE");
+        return _inner.CalculateAsync(request, cancellationToken);
     }
 }

@@ -79,7 +79,7 @@ void main() {
       plannedStartAt: '2026-09-18T08:00:00Z',
       price: 1250,
       status: 'Assigned',
-      allowedActions: ['start', 'cancel'],
+      allowedActions: ['preview-repositioning', 'dispatch-to-pickup', 'cancel'],
     );
     const data = OperationsData(
       clients: [Client(id: 'client-1', name: 'Factory', isActive: true)],
@@ -106,8 +106,12 @@ void main() {
       testApp(const TripDetailsScreen(tripId: 'trip-1'), data),
     );
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(FilledButton, 'Start'), findsOneWidget);
+    expect(
+      find.widgetWithText(FilledButton, 'Preview route to pickup'),
+      findsOneWidget,
+    );
     expect(find.widgetWithText(FilledButton, 'Cancel'), findsOneWidget);
+    expect(find.text('dispatch-to-pickup'), findsNothing);
     expect(find.text('Mark in transit'), findsNothing);
   });
 }

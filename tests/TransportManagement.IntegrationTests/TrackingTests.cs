@@ -12,6 +12,66 @@ namespace TransportManagement.IntegrationTests;
 public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
     [Fact]
+    public async Task AssigningDistantNextTripDoesNotTeleportCompletedTruckToPickup()
+    {
+        using var client = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
+        var suffix = Guid.NewGuid().ToString("N")[..10];
+        var clientId = (await (await client.PostJsonAsync("/api/clients", new
+        {
+            name = $"No teleport {suffix}"
+        })).RequiredJsonAsync()).GetProperty("id").GetGuid();
+        var truckId = (await (await client.PostJsonAsync("/api/trucks", new
+        {
+            plateNumber = $"NT-{suffix}"
+        })).RequiredJsonAsync()).GetProperty("id").GetGuid();
+        var driverId = (await (await client.PostJsonAsync("/api/drivers", new
+        {
+            fullName = $"No Teleport {suffix}",
+            licenseNumber = $"NT-L-{suffix}"
+        })).RequiredJsonAsync()).GetProperty("id").GetGuid();
+
+        var tripAId = (await (await client.PostJsonAsync("/api/trips",
+            RouteTestData.TripPayload(clientId, 39, 32, 40, 31))).RequiredJsonAsync())
+            .GetProperty("id").GetGuid();
+        await (await client.PostJsonAsync($"/api/trips/{tripAId}/assign", new { truckId, driverId })).RequiredJsonAsync();
+        await (await client.PostJsonAsync("/api/tracking/simulator/control", new
+        {
+            action = "seed-position", truckId, latitude = 39m, longitude = 32m
+        })).RequiredJsonAsync();
+        await (await client.PostJsonAsync($"/api/trips/{tripAId}/dispatch-to-pickup", new { })).RequiredJsonAsync();
+        await (await client.PostEmptyAsync($"/api/trips/{tripAId}/start")).RequiredJsonAsync();
+        await (await client.PostEmptyAsync($"/api/trips/{tripAId}/mark-in-transit")).RequiredJsonAsync();
+        await (await client.PostEmptyAsync($"/api/trips/{tripAId}/deliver")).RequiredJsonAsync();
+        await (await client.PostEmptyAsync($"/api/trips/{tripAId}/complete")).RequiredJsonAsync();
+
+        var finalPosition = new TruckPosition(
+            Guid.NewGuid(), ApiFactory.CompanyAId, truckId, 40, 31, 0, 0, true,
+            DateTimeOffset.UtcNow, "Test", tripAId, null, Guid.NewGuid(), MovementPhase.Cargo);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.TruckPositions.Add(finalPosition);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var tripBId = (await (await client.PostJsonAsync("/api/trips",
+            RouteTestData.TripPayload(clientId, 41, 28, 40.5m, 29))).RequiredJsonAsync())
+            .GetProperty("id").GetGuid();
+        await client.PostJsonAsync($"/api/trips/{tripBId}/assign", new { truckId, driverId });
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+
+        using var verificationScope = factory.Services.CreateScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var latest = await verificationDb.TruckPositions.IgnoreQueryFilters()
+            .Where(x => x.CompanyId == ApiFactory.CompanyAId && x.TruckId == truckId)
+            .OrderByDescending(x => x.RecordedAt)
+            .FirstAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(finalPosition.Latitude, latest.Latitude);
+        Assert.Equal(finalPosition.Longitude, latest.Longitude);
+    }
+
+    [Fact]
     public async Task SimulatorMovesPausesResumesResetsAndTracksOfflineState()
     {
         using var client = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
@@ -76,7 +136,7 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "pause" });
         await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
         var pausedCount = await HistoryCountAsync(client, truckId);
-        Assert.Equal(2, pausedCount);
+        Assert.Equal(3, pausedCount);
 
         await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
         await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
@@ -209,9 +269,14 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         })).RequiredJsonAsync()).GetProperty("id").GetGuid();
         var tripId = (await (await client.PostJsonAsync("/api/trips", RouteTestData.TripPayload(clientId))).RequiredJsonAsync())
             .GetProperty("id").GetGuid();
-        await client.PostJsonAsync($"/api/trips/{tripId}/assign", new { truckId, driverId });
-        await client.PostEmptyAsync($"/api/trips/{tripId}/start");
-        await client.PostEmptyAsync($"/api/trips/{tripId}/mark-in-transit");
+        await (await client.PostJsonAsync($"/api/trips/{tripId}/assign", new { truckId, driverId })).RequiredJsonAsync();
+        await (await client.PostJsonAsync("/api/tracking/simulator/control", new
+        {
+            action = "seed-position", truckId, latitude = 39.9208m, longitude = 32.8541m
+        })).RequiredJsonAsync();
+        await (await client.PostJsonAsync($"/api/trips/{tripId}/dispatch-to-pickup", new { })).RequiredJsonAsync();
+        await (await client.PostEmptyAsync($"/api/trips/{tripId}/start")).RequiredJsonAsync();
+        await (await client.PostEmptyAsync($"/api/trips/{tripId}/mark-in-transit")).RequiredJsonAsync();
         return truckId;
     }
 

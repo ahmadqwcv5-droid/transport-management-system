@@ -15,7 +15,8 @@ public sealed class DashboardService(
         var trucks = await operationsStore.ListTrucksAsync(null, true, null, cancellationToken);
         var trips = await operationsStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var positions = await trackingService.CurrentAsync(cancellationToken);
-        var activeStatuses = new[] { TripStatus.Assigned, TripStatus.Started, TripStatus.InTransit, TripStatus.Delivered };
+        var activeStatuses = new[] { TripStatus.Assigned, TripStatus.EnRouteToPickup,
+            TripStatus.AtPickup, TripStatus.Started, TripStatus.InTransit, TripStatus.Delivered };
         var today = clock.UtcNow.UtcDateTime.Date;
         return new(
             new(trucks.Count,

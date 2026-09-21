@@ -7,10 +7,21 @@ final class FleetTripDetail {
     required this.route,
     required this.trail,
     required this.progress,
+    this.approachRoute,
+    this.approachProgress,
+    required this.tripStatus,
   });
   final ops.TripRoutePlan route;
+  final ops.TripRoutePlan? approachRoute;
   final List<TripTrailSegment> trail;
   final ops.RouteProgress progress;
+  final ops.RouteProgress? approachProgress;
+  final String tripStatus;
+
+  ops.RouteProgress get displayedProgress =>
+      tripStatus == 'EnRouteToPickup' && approachProgress != null
+      ? approachProgress!
+      : progress;
 }
 
 final class TripTrailSegment {
@@ -45,11 +56,13 @@ final class TrackedTruck {
     required this.isOnline,
     this.driverName,
     this.currentTripId,
+    this.movementPhase,
+    this.repositioningPlanId,
   });
   final String truckId, plateNumber, truckStatus, recordedAt;
   final double latitude, longitude, speed, heading;
   final bool isOnline;
-  final String? driverName, currentTripId;
+  final String? driverName, currentTripId, movementPhase, repositioningPlanId;
   factory TrackedTruck.fromJson(Json json) => TrackedTruck(
     truckId: json['truckId'] as String,
     plateNumber: json['plateNumber'] as String,
@@ -62,6 +75,8 @@ final class TrackedTruck {
     isOnline: json['isOnline'] as bool,
     driverName: json['driverName'] as String?,
     currentTripId: json['currentTripId'] as String?,
+    movementPhase: json['movementPhase'] as String?,
+    repositioningPlanId: json['repositioningPlanId'] as String?,
   );
 }
 

@@ -4,6 +4,8 @@ public enum TripStatus
 {
     Draft,
     Assigned,
+    EnRouteToPickup,
+    AtPickup,
     Started,
     InTransit,
     Delivered,

@@ -26,7 +26,18 @@ internal sealed class TrackingStore(AppDbContext dbContext) : ITrackingStore
     public Task<TruckPosition?> LatestTripPositionAsync(
         Guid tripId, Guid truckId, CancellationToken cancellationToken) =>
         dbContext.TruckPositions.AsNoTracking()
-            .Where(x => x.TripId == tripId && x.TruckId == truckId)
+            .Where(x => x.TripId == tripId && x.TruckId == truckId
+                && (x.MovementPhase == MovementPhase.Cargo || x.MovementPhase == null))
+            .OrderByDescending(x => x.RecordedAt)
+            .ThenByDescending(x => x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public Task<TruckPosition?> LatestRepositioningPositionAsync(
+        Guid tripId, Guid repositioningPlanId, Guid truckId,
+        CancellationToken cancellationToken) =>
+        dbContext.TruckPositions.AsNoTracking()
+            .Where(x => x.TripId == tripId && x.RepositioningPlanId == repositioningPlanId
+                && x.TruckId == truckId && x.MovementPhase == MovementPhase.Repositioning)
             .OrderByDescending(x => x.RecordedAt)
             .ThenByDescending(x => x.Id)
             .FirstOrDefaultAsync(cancellationToken);

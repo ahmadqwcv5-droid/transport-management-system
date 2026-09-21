@@ -1,0 +1,30 @@
+Sprint 3.3 retained PostgreSQL evidence (UTC, captured 2026-09-21)
+
+Truck: a829d4ca-1866-42e2-89db-9301c4b0883a
+Trip A: ef5063da-0cd3-41cb-88ac-3c4b75f2d7c7
+Trip B: e45f7de2-5beb-4089-b993-0717944ea4fe
+Approach plan: 0630a1ec-1bbc-4e90-8624-316479b46b52
+Cargo plan: 329c9ef0-77fa-4c64-8f68-5c0e5f15d879
+
+RecordedAt                         Latitude   Longitude  Speed  Phase
+2026-09-21 11:48:31.649879+00      39.920800  32.854100   0.00  CurrentLocation
+2026-09-21 11:48:31.791644+00      39.924959  32.859927   0.00  Cargo (Trip A final)
+2026-09-21 11:48:51.717794+00      39.945107  32.770531  65.00  Repositioning
+2026-09-21 11:48:51.991539+00      39.971208  32.663321   0.00  Repositioning (paused before API restart)
+2026-09-21 11:49:34.142099+00      39.971208  32.663321   0.00  Repositioning (restored after API restart)
+2026-09-21 11:49:52.131859+00      41.008200  28.978400   0.00  Repositioning (exact pickup arrival)
+2026-09-21 11:50:03.087495+00      41.009746  28.978411  65.00  Cargo (after explicit start)
+
+The pre/post-restart coordinate delta is 0 m. Repositioning rows have a
+RepositioningPlanId and no RoutePlanId; cargo rows have a RoutePlanId and no
+RepositioningPlanId. No Trip B row exists between its assignment and dispatch.
+
+Retained database trip count after the smoke workflow: 45.
+
+Applied migrations:
+20260916204809_InitialCreate
+20260917030406_Sprint2OperationalCore
+20260917073102_Sprint3LocalizationTracking
+20260917182358_Sprint32RouteAwareTrips
+20260918110252_Sprint322TripAwareTracking
+20260921083330_Sprint33DispatchToPickup

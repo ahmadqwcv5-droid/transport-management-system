@@ -77,13 +77,16 @@ final class RouteOverlayModel {
     required this.tripId,
     required this.route,
     required this.trails,
+    this.approachRoute = const [],
   });
 
   final String tripId;
   final List<MapPoint> route;
+  final List<MapPoint> approachRoute;
   final List<TrailSegmentModel> trails;
 
   String get routeRevision => _pointRevision(route);
+  String get approachRevision => _pointRevision(approachRoute);
 }
 
 final class TrailSegmentModel {
@@ -129,6 +132,9 @@ final class MapOperationTelemetry {
   int plannedRouteAdditions = 0;
   int plannedRouteUpdates = 0;
   int plannedRouteRemovals = 0;
+  int approachRouteAdditions = 0;
+  int approachRouteUpdates = 0;
+  int approachRouteRemovals = 0;
   int trailAdditions = 0;
   int trailUpdates = 0;
   int trailRemovals = 0;
@@ -151,6 +157,9 @@ final class MapOperationTelemetry {
     'plannedRouteAdditions': plannedRouteAdditions,
     'plannedRouteUpdates': plannedRouteUpdates,
     'plannedRouteRemovals': plannedRouteRemovals,
+    'approachRouteAdditions': approachRouteAdditions,
+    'approachRouteUpdates': approachRouteUpdates,
+    'approachRouteRemovals': approachRouteRemovals,
     'trailAdditions': trailAdditions,
     'trailUpdates': trailUpdates,
     'trailRemovals': trailRemovals,
@@ -175,6 +184,9 @@ abstract interface class FleetMapAnnotationAdapter {
   Future<void> addPlannedRoute(List<MapPoint> route);
   Future<void> updatePlannedRoute(List<MapPoint> route);
   Future<void> removePlannedRoute();
+  Future<void> addApproachRoute(List<MapPoint> route);
+  Future<void> updateApproachRoute(List<MapPoint> route);
+  Future<void> removeApproachRoute();
   Future<void> addTrail(String id, List<MapPoint> trail);
   Future<void> updateTrail(String id, List<MapPoint> trail);
   Future<void> removeTrail(String id);
@@ -298,6 +310,7 @@ final class FleetMapAnnotationCoordinator {
     RouteOverlayModel? oldRoute,
     RouteOverlayModel? route,
   ) async {
+    await _syncApproach(oldRoute, route);
     if (route == null) {
       if (oldRoute == null) return;
       for (final segment in oldRoute.trails.where(
@@ -388,6 +401,28 @@ final class FleetMapAnnotationCoordinator {
     }
   }
 
+  Future<void> _syncApproach(
+    RouteOverlayModel? oldRoute,
+    RouteOverlayModel? route,
+  ) async {
+    final oldPoints = oldRoute?.approachRoute ?? const <MapPoint>[];
+    final points = route?.approachRoute ?? const <MapPoint>[];
+    if (points.length <= 1) {
+      if (oldPoints.length > 1) {
+        await _adapter.removeApproachRoute();
+        telemetry.approachRouteRemovals++;
+      }
+      return;
+    }
+    if (oldPoints.length <= 1 || oldRoute?.tripId != route?.tripId) {
+      await _adapter.addApproachRoute(points);
+      telemetry.approachRouteAdditions++;
+    } else if (oldRoute!.approachRevision != route!.approachRevision) {
+      await _adapter.updateApproachRoute(points);
+      telemetry.approachRouteUpdates++;
+    }
+  }
+
   Future<void> _moveCamera(_SyncRequest request) async {
     if (request.cameraRequest == FleetCameraRequest.none) return;
     final snapshot = request.snapshot;
@@ -398,7 +433,7 @@ final class FleetMapAnnotationCoordinator {
       if (route != null && route.route.isNotEmpty) {
         plan = FleetCameraPlan(
           mode: FleetCameraMode.routeBounds,
-          points: route.route,
+          points: [...route.approachRoute, ...route.route],
           panelWidth: request.panelWidth,
         );
       } else {

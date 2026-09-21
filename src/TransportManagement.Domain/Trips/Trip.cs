@@ -5,6 +5,7 @@ namespace TransportManagement.Domain.Trips;
 public sealed class Trip : Entity, ITenantOwned
 {
     private readonly List<TripStop> _stops = [];
+    private readonly List<TripRepositioningPlan> _repositioningPlans = [];
     private Trip() { }
 
     public Trip(
@@ -34,17 +35,25 @@ public sealed class Trip : Entity, ITenantOwned
     public string CargoDescription { get; private set; } = string.Empty;
     public DateTimeOffset PlannedStartAt { get; private set; }
     public DateTimeOffset? ActualStartAt { get; private set; }
+    public DateTimeOffset? ArrivedPickupAt { get; private set; }
     public DateTimeOffset? DeliveredAt { get; private set; }
     public DateTimeOffset? CompletedAt { get; private set; }
     public decimal Price { get; private set; }
     public string? Notes { get; private set; }
     public TripStatus Status { get; private set; }
     public IReadOnlyCollection<TripStop> Stops => _stops;
+    public IReadOnlyCollection<TripRepositioningPlan> RepositioningPlans => _repositioningPlans;
     public TripRoutePlan? RoutePlan { get; private set; }
     public bool IsRouteAware => RoutePlan is not null && _stops.Count >= 2;
 
-    public bool ReservesResources => Status is TripStatus.Assigned or TripStatus.Started
+    public bool ReservesResources => Status is TripStatus.Assigned or TripStatus.EnRouteToPickup
+        or TripStatus.AtPickup or TripStatus.Started
         or TripStatus.InTransit or TripStatus.Delivered;
+
+    public TripRepositioningPlan? CurrentRepositioningPlan => _repositioningPlans
+        .Where(x => x.Status is RepositioningPlanStatus.Proposed or RepositioningPlanStatus.Active)
+        .OrderByDescending(x => x.CalculatedAt)
+        .FirstOrDefault();
 
     public void UpdateDraft(
         Guid clientId,
@@ -102,9 +111,41 @@ public sealed class Trip : Entity, ITenantOwned
         Touch(now);
     }
 
-    public void Start(DateTimeOffset now)
+    public void AddRepositioningPlan(TripRepositioningPlan plan, DateTimeOffset now)
     {
         EnsureStatus(TripStatus.Assigned);
+        if (plan.CompanyId != CompanyId || plan.TripId != Id || plan.TruckId != TruckId)
+            throw new DomainRuleException("Repositioning plan does not belong to this assignment.", "INVALID_TRIP_ROUTE");
+        foreach (var existing in _repositioningPlans) existing.Expire(now);
+        _repositioningPlans.Add(plan);
+        Touch(now);
+    }
+
+    public void DispatchToPickup(TripRepositioningPlan plan, DateTimeOffset now)
+    {
+        EnsureStatus(TripStatus.Assigned);
+        if (!_repositioningPlans.Contains(plan))
+            throw new DomainRuleException("Repositioning route is required.", "REPOSITIONING_ROUTE_REQUIRED");
+        plan.Activate(now);
+        Status = TripStatus.EnRouteToPickup;
+        Touch(now);
+    }
+
+    public void MarkAtPickup(DateTimeOffset now)
+    {
+        if (Status == TripStatus.AtPickup) return;
+        if (Status is not (TripStatus.Assigned or TripStatus.EnRouteToPickup))
+            throw new DomainRuleException("Arrival requires an assigned or dispatched trip.", "INVALID_TRIP_TRANSITION");
+        if (Status == TripStatus.EnRouteToPickup)
+            CurrentRepositioningPlan?.Complete(now);
+        ArrivedPickupAt = now;
+        Status = TripStatus.AtPickup;
+        Touch(now);
+    }
+
+    public void Start(DateTimeOffset now)
+    {
+        EnsureStatus(TripStatus.AtPickup);
         ActualStartAt = now;
         Status = TripStatus.Started;
         Touch(now);

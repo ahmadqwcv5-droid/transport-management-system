@@ -12,6 +12,11 @@ Sprint 3.2.2 makes persisted telemetry trip/route/run-aware, returns bounded
 chronological trail segments, prevents cross-trip/reset connectors, and keeps
 the simulator multiplier separate from displayed physical speed.
 
+Sprint 3.3 prevents assignment-time position teleportation and introduces an
+explicit `Assigned -> EnRouteToPickup -> AtPickup -> Started` workflow. Empty
+repositioning geometry, metrics, progress, and telemetry remain independent
+from the immutable commercial cargo route.
+
 ## Architecture
 
 The backend is a modular monolith using Clean Architecture with lightweight DDD and CQRS principles:
@@ -121,6 +126,11 @@ Sprint 3.2.2 is represented by `20260918110252_Sprint322TripAwareTracking`.
 It adds nullable trip/route-plan/run context to positions plus a tenant/trip/time
 index. Existing rows remain unchanged with null context and are never guessed
 into a historical trip.
+
+Sprint 3.3 is represented by `20260921083330_Sprint33DispatchToPickup`. It adds
+tenant-owned immutable repositioning snapshots and nullable movement-phase /
+repositioning-plan context to telemetry. Existing trip, route, and position rows
+remain unchanged; reservation indexes are extended for the new active states.
 
 ## Run Flutter Web
 
@@ -302,6 +312,37 @@ English/Arabic evidence under `docs/evidence/sprint3_2_2/`. Provision the named
 owner in a dedicated local smoke tenant first, or replace `E2E_EMAIL` with a
 different dedicated local owner. The password is supplied only at runtime.
 
+For the Sprint 3.3 assignment/repositioning/restart workflow, use a dedicated
+local development database and run:
+
+```bash
+flutter drive \
+  --driver=test_driver/integration_test_sprint3_3.dart \
+  --target=integration_test/sprint3_3_smoke_test.dart \
+  -d web-server --browser-name=firefox --driver-port=4444 --headless \
+  --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty \
+  --dart-define=MAP_LOADING_TIMEOUT_SECONDS=30 \
+  --dart-define=TRACKING_POLLING_INTERVAL_SECONDS=1 \
+  --dart-define=ENABLE_SIMULATOR_CONTROLS=true \
+  --dart-define=E2E_EMAIL=owner@demo.local \
+  --dart-define=E2E_PASSWORD=YOUR_DEVELOPMENT_PASSWORD
+```
+
+The driver pauses mid-approach and allows 45 seconds for an API-only restart.
+When it prints the restart prompt, run this from the repository root:
+
+```bash
+docker-compose -p tms-smoke restart api
+```
+
+Do not restart PostgreSQL or remove its volume. The workflow proves no movement
+on assignment, distant-start rejection, separate approach/cargo routes and
+progress, exact geographic arrival, explicit cargo start, restart restoration,
+physical speed at `10x`, manual-pan stability, and English/Arabic real-map
+rendering. Evidence is written to `docs/evidence/sprint3_3/`.
+
 For the complete Sprint 3 workflow, use:
 
 ```text
@@ -377,6 +418,14 @@ interval. Reset creates a new run boundary. Product ETA is operational
 real-world ETA based on remaining distance and physical speed, not accelerated
 demo completion time.
 
+Assignment is observational: an Assigned trip supplies no movement leg and
+cannot create a route-zero sample. Dispatch validates a fresh, online,
+tenant-owned truck position, then activates a separately stored approach plan.
+Arrival is a backend geographic decision. `AtPickup` waits without beginning
+cargo, and Start rechecks pickup proximity before selecting the immutable cargo
+leg. A new simulator process projects the latest persisted coordinate onto the
+active leg within a bounded tolerance instead of resetting to its origin.
+
 The dashboard uses one tenant-scoped endpoint for fleet status totals, active
 and completed-today trip totals, online/offline tracking totals, current
 positions, and recent trips. Flutter has one centralized polling controller;
@@ -401,6 +450,10 @@ pull-to-refresh remains available.
 | `Tracking__TrailGapThresholdSeconds` | API | Time gap that starts a new trail segment, default 300 |
 | `Tracking__TrailJumpThresholdMeters` | API | Geographic jump that starts a new trail segment, default 5000 |
 | `Tracking__MaxTripHistoryPoints` | API | Maximum points returned by trip history, clamped to 10–2000, default 500 |
+| `Dispatch__MaximumPositionAgeSeconds` | API | Maximum trusted-position age for preview/dispatch, default 300 |
+| `Dispatch__PickupArrivalRadiusMeters` | API | Geographic pickup-arrival radius, default 50 |
+| `Dispatch__ProposalOriginMovementToleranceMeters` | API | Allowed movement before a proposal becomes stale, default 100 |
+| `Dispatch__SimulatorRestoreProjectionToleranceMeters` | API | Maximum distance for simulator restart projection, default 500 |
 | `MAP_STYLE_URL` (`--dart-define`) | Flutter | Optional MapLibre style URL; blank shows the intentional unconfigured state |
 | `TRACKING_POLLING_INTERVAL_SECONDS` (`--dart-define`) | Flutter | Dashboard refresh interval, default 5 seconds |
 | `MAP_LOADING_TIMEOUT_SECONDS` (`--dart-define`) | Flutter | Time to await the genuine MapLibre style callback, default 12 seconds |
@@ -427,6 +480,10 @@ Never commit `.env`, signing keys, database passwords, or production credentials
 - `/api/trucks` — list/get/create/update, status update, and deactivate
 - `/api/drivers` — list/get/create/update, status update, and deactivate
 - `/api/trips` — list/get/create/update Draft, assign, start, mark in transit, deliver, complete, and cancel
+- `POST /api/trips/{id}/repositioning/preview` — persist a proposed approach from the latest trusted position
+- `POST /api/trips/{id}/dispatch-to-pickup` — revalidate and activate the approach leg
+- `POST /api/trips/{id}/arrive-pickup` — idempotently evaluate geographic arrival
+- `GET /api/trips/{id}/repositioning-progress` — approach progress, separate from cargo
 - `GET /api/trips/{id}/route-progress` — progress, remaining distance, ETA, phase, and off-route state
 - `POST /api/routes/preview` — cached, provider-neutral road-route preview
 - `GET /api/locations/search` and `/reverse` — rate-limited backend geocoding boundary

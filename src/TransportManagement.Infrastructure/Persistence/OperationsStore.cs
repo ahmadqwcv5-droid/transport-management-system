@@ -10,7 +10,8 @@ namespace TransportManagement.Infrastructure.Persistence;
 internal sealed class OperationsStore(AppDbContext dbContext) : IOperationsStore
 {
     private static readonly TripStatus[] ReservedStatuses =
-        [TripStatus.Assigned, TripStatus.Started, TripStatus.InTransit, TripStatus.Delivered];
+        [TripStatus.Assigned, TripStatus.EnRouteToPickup, TripStatus.AtPickup,
+            TripStatus.Started, TripStatus.InTransit, TripStatus.Delivered];
 
     public Task<Client?> GetClientAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Clients.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -81,6 +82,7 @@ internal sealed class OperationsStore(AppDbContext dbContext) : IOperationsStore
 
     public Task<Trip?> GetTripAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Trips.Include(x => x.Stops).Include(x => x.RoutePlan)
+            .Include(x => x.RepositioningPlans)
             .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
 
     public async Task<IReadOnlyList<Trip>> ListTripsAsync(
@@ -92,7 +94,8 @@ internal sealed class OperationsStore(AppDbContext dbContext) : IOperationsStore
         DateTimeOffset? plannedTo,
         CancellationToken cancellationToken)
     {
-        IQueryable<Trip> query = dbContext.Trips.AsNoTracking().Include(x => x.Stops).Include(x => x.RoutePlan);
+        IQueryable<Trip> query = dbContext.Trips.AsNoTracking().Include(x => x.Stops)
+            .Include(x => x.RoutePlan).Include(x => x.RepositioningPlans);
         if (status.HasValue) query = query.Where(x => x.Status == status.Value);
         if (clientId.HasValue) query = query.Where(x => x.ClientId == clientId.Value);
         if (truckId.HasValue) query = query.Where(x => x.TruckId == truckId.Value);
@@ -103,6 +106,8 @@ internal sealed class OperationsStore(AppDbContext dbContext) : IOperationsStore
     }
 
     public void AddTrip(Trip trip) => dbContext.Trips.Add(trip);
+    public void AddRepositioningPlan(TripRepositioningPlan plan) =>
+        dbContext.TripRepositioningPlans.Add(plan);
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken)
     {

@@ -1,4 +1,5 @@
 using TransportManagement.Application.Routing;
+using TransportManagement.Domain.Tracking;
 
 namespace TransportManagement.Application.Abstractions;
 
@@ -15,7 +16,11 @@ public sealed record TrackingTarget(
     Guid? RoutePlanId,
     string? RouteRevision,
     IReadOnlyList<GeoCoordinate> Route,
-    bool CanMove);
+    bool CanMove,
+    MovementPhase? MovementPhase = null,
+    Guid? RepositioningPlanId = null,
+    GeoCoordinate? RestorePosition = null,
+    decimal RestoreProjectionToleranceMeters = 500);
 
 public interface ITrackingProvider
 {

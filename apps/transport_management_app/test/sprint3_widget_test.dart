@@ -316,12 +316,24 @@ void main() {
     expect(find.text('هذه الشاحنة مرتبطة برحلة نشطة أخرى.'), findsOneWidget);
   });
 
-  testWidgets('planned route and travelled trail legend is localized', (
+  testWidgets('cargo, approach, and travelled trail legend is localized', (
     tester,
   ) async {
     for (final value in [
-      ('en', 'Planned route', 'Travelled trail', TextDirection.ltr),
-      ('ar', 'المسار المخطط', 'المسار المقطوع', TextDirection.rtl),
+      (
+        'en',
+        'Cargo route',
+        'Route to pickup',
+        'Travelled trail',
+        TextDirection.ltr,
+      ),
+      (
+        'ar',
+        'مسار الحمولة',
+        'المسار إلى الاستلام',
+        'المسار المقطوع',
+        TextDirection.rtl,
+      ),
     ]) {
       await tester.pumpWidget(
         localized(
@@ -331,11 +343,12 @@ void main() {
       );
       expect(find.text(value.$2), findsOneWidget);
       expect(find.text(value.$3), findsOneWidget);
+      expect(find.text(value.$4), findsOneWidget);
       expect(
         Directionality.of(
           tester.element(find.byKey(const Key('fleet-trail-legend'))),
         ),
-        value.$4,
+        value.$5,
       );
       expect(find.byKey(const Key('fleet-trail-visibility')), findsOneWidget);
     }

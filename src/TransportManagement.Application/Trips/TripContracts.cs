@@ -15,6 +15,14 @@ public sealed record TripRequest(
 
 public sealed record AssignTripRequest(Guid TruckId, Guid DriverId);
 
+public sealed record DispatchToPickupRequest(Guid? RepositioningPlanId);
+
+public sealed record DispatchPolicy(
+    TimeSpan MaximumPositionAge,
+    decimal PickupArrivalRadiusMeters,
+    decimal ProposalOriginMovementToleranceMeters,
+    decimal SimulatorRestoreProjectionToleranceMeters);
+
 public sealed record TripResponse(
     Guid Id,
     Guid ClientId,
@@ -25,6 +33,7 @@ public sealed record TripResponse(
     string CargoDescription,
     DateTimeOffset PlannedStartAt,
     DateTimeOffset? ActualStartAt,
+    DateTimeOffset? ArrivedPickupAt,
     DateTimeOffset? DeliveredAt,
     DateTimeOffset? CompletedAt,
     decimal Price,
@@ -33,9 +42,52 @@ public sealed record TripResponse(
     IReadOnlyList<string> AllowedActions,
     IReadOnlyList<TripStopResponse> Stops,
     TripRoutePlanResponse? RoutePlan,
+    TripRepositioningPlanResponse? RepositioningPlan,
     bool RequiresLocationSelection,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
+
+public sealed record TripRepositioningPlanResponse(
+    Guid Id,
+    Guid TripId,
+    Guid TruckId,
+    decimal OriginLatitude,
+    decimal OriginLongitude,
+    decimal DestinationLatitude,
+    decimal DestinationLongitude,
+    Guid? SourceTruckPositionId,
+    DateTimeOffset SourcePositionAt,
+    string Geometry,
+    string GeometryFormat,
+    int GeometryVersion,
+    decimal DistanceMeters,
+    int EstimatedDurationSeconds,
+    string ProviderName,
+    string RouteProfile,
+    DateTimeOffset CalculatedAt,
+    string? ProviderRouteId,
+    RepositioningPlanStatus Status,
+    DateTimeOffset? DispatchedAt,
+    DateTimeOffset? ArrivedPickupAt);
+
+public sealed record RepositioningPreviewResponse(
+    Guid TripId,
+    bool AlreadyAtPickup,
+    decimal DirectDistanceToPickupMeters,
+    int SourcePositionAgeSeconds,
+    TripRepositioningPlanResponse? Plan);
+
+public sealed record RepositioningProgressResponse(
+    Guid TripId,
+    Guid TruckId,
+    string OperationalPhase,
+    decimal PlannedDistanceMeters,
+    decimal? TravelledDistanceMeters,
+    decimal? RemainingDistanceMeters,
+    decimal? ProgressPercent,
+    DateTimeOffset? EstimatedArrivalAt,
+    DateTimeOffset? LastPositionAt,
+    bool CargoProgressStarted);
 
 public sealed record TripStopResponse(
     Guid Id, int Sequence, TripStopType Type, string Name, string? Address,

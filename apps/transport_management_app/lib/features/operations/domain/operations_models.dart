@@ -93,6 +93,43 @@ final class TripRoutePlan {
   }
 }
 
+final class TripRepositioningPlan {
+  const TripRepositioningPlan({
+    required this.id,
+    required this.route,
+    required this.status,
+  });
+  final String id, status;
+  final TripRoutePlan route;
+  factory TripRepositioningPlan.fromJson(Json json) => TripRepositioningPlan(
+    id: json['id'] as String,
+    status: json['status'] as String,
+    route: TripRoutePlan.fromJson({...json, 'warnings': const <String>[]}),
+  );
+}
+
+final class RepositioningPreview {
+  const RepositioningPreview({
+    required this.alreadyAtPickup,
+    required this.directDistanceToPickupMeters,
+    required this.sourcePositionAgeSeconds,
+    this.plan,
+  });
+  final bool alreadyAtPickup;
+  final double directDistanceToPickupMeters;
+  final int sourcePositionAgeSeconds;
+  final TripRepositioningPlan? plan;
+  factory RepositioningPreview.fromJson(Json json) => RepositioningPreview(
+    alreadyAtPickup: json['alreadyAtPickup'] as bool,
+    directDistanceToPickupMeters: (json['directDistanceToPickupMeters'] as num)
+        .toDouble(),
+    sourcePositionAgeSeconds: json['sourcePositionAgeSeconds'] as int,
+    plan: json['plan'] == null
+        ? null
+        : TripRepositioningPlan.fromJson(json['plan'] as Json),
+  );
+}
+
 final class LocationResult {
   const LocationResult({
     required this.displayName,
@@ -252,11 +289,13 @@ final class Trip {
     this.truckId,
     this.driverId,
     this.actualStartAt,
+    this.arrivedPickupAt,
     this.deliveredAt,
     this.completedAt,
     this.notes,
     this.stops = const [],
     this.routePlan,
+    this.repositioningPlan,
     this.requiresLocationSelection = true,
   });
   final String id,
@@ -269,6 +308,7 @@ final class Trip {
   final String? truckId,
       driverId,
       actualStartAt,
+      arrivedPickupAt,
       deliveredAt,
       completedAt,
       notes;
@@ -276,6 +316,7 @@ final class Trip {
   final List<String> allowedActions;
   final List<TripStop> stops;
   final TripRoutePlan? routePlan;
+  final TripRepositioningPlan? repositioningPlan;
   final bool requiresLocationSelection;
   factory Trip.fromJson(Json json) => Trip(
     id: json['id'] as String,
@@ -287,6 +328,7 @@ final class Trip {
     cargoDescription: json['cargoDescription'] as String,
     plannedStartAt: json['plannedStartAt'] as String,
     actualStartAt: json['actualStartAt'] as String?,
+    arrivedPickupAt: json['arrivedPickupAt'] as String?,
     deliveredAt: json['deliveredAt'] as String?,
     completedAt: json['completedAt'] as String?,
     price: json['price'] as num,
@@ -300,6 +342,9 @@ final class Trip {
     routePlan: json['routePlan'] == null
         ? null
         : TripRoutePlan.fromJson(json['routePlan'] as Json),
+    repositioningPlan: json['repositioningPlan'] == null
+        ? null
+        : TripRepositioningPlan.fromJson(json['repositioningPlan'] as Json),
     requiresLocationSelection:
         json['requiresLocationSelection'] as bool? ?? true,
   );

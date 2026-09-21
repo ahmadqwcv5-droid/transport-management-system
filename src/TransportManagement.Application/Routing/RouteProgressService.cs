@@ -20,6 +20,11 @@ public sealed class RouteProgressService(
             return Unavailable(trip, "Route unavailable");
         if (trip.TruckId is null)
             return Unavailable(trip, "Awaiting start");
+        if (trip.Status is TripStatus.Draft or TripStatus.Assigned
+            or TripStatus.EnRouteToPickup or TripStatus.AtPickup)
+            return Unavailable(trip, trip.Status == TripStatus.EnRouteToPickup
+                ? "Heading to pickup" : trip.Status == TripStatus.AtPickup
+                    ? "At pickup" : "Awaiting dispatch");
         var position = await trackingStore.LatestTripPositionAsync(
             trip.Id, trip.TruckId.Value, cancellationToken);
         if (position is null)
@@ -51,7 +56,9 @@ public sealed class RouteProgressService(
         if (trip.Status == TripStatus.Completed) return "Completed";
         if (offRoute) return "Off route";
         if (atDelivery) return "At delivery";
-        if (trip.Status is TripStatus.Draft or TripStatus.Assigned) return "Awaiting start";
+        if (trip.Status is TripStatus.Draft or TripStatus.Assigned) return "Awaiting dispatch";
+        if (trip.Status == TripStatus.EnRouteToPickup) return "Heading to pickup";
+        if (trip.Status == TripStatus.AtPickup) return "At pickup";
         if (percent <= 1) return "At pickup";
         if (percent >= 90) return "Approaching delivery";
         return "In transit";

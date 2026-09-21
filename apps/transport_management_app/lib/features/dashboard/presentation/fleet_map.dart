@@ -618,6 +618,11 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
               route: detail.route.coordinates
                   .map((point) => MapPoint(point.latitude, point.longitude))
                   .toList(),
+              approachRoute:
+                  detail.approachRoute?.coordinates
+                      .map((point) => MapPoint(point.latitude, point.longitude))
+                      .toList() ??
+                  const [],
               trails: widget.showTrail
                   ? detail.trail
                         .map(
@@ -656,7 +661,10 @@ class TrailLegend extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const _LegendLine(color: Color(0xFF175CD3)),
-          Text(context.l10n.plannedRoute),
+          Text(context.l10n.cargoRoute),
+          const SizedBox(width: 8),
+          const _LegendLine(color: Color(0xFFD97706), dashed: true),
+          Text(context.l10n.approachRoute),
           const SizedBox(width: 8),
           const _LegendLine(color: Color(0xFF047857)),
           Text(context.l10n.travelledTrail),
@@ -673,15 +681,25 @@ class TrailLegend extends StatelessWidget {
 }
 
 class _LegendLine extends StatelessWidget {
-  const _LegendLine({required this.color});
+  const _LegendLine({required this.color, this.dashed = false});
   final Color color;
+  final bool dashed;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => SizedBox(
     width: 18,
     height: 4,
-    margin: const EdgeInsetsDirectional.only(end: 4),
-    color: color,
+    child: Row(
+      children: List.generate(
+        dashed ? 3 : 1,
+        (_) => Expanded(
+          child: Container(
+            margin: EdgeInsetsDirectional.only(end: dashed ? 2 : 0),
+            color: color,
+          ),
+        ),
+      ),
+    ),
   );
 }
 
@@ -770,18 +788,18 @@ class _SelectedTruckCard extends StatelessWidget {
               const Divider(),
               Text(
                 key: const Key('fleet-route-progress'),
-                '${context.l10n.routeProgress}: ${detail!.progress.progressPercent?.toStringAsFixed(1) ?? '—'}%',
+                '${context.l10n.routeProgress}: ${detail!.displayedProgress.progressPercent?.toStringAsFixed(1) ?? '—'}%',
               ),
               Text(
-                '${context.l10n.remainingDistance}: ${((detail!.progress.remainingDistanceMeters ?? 0) / 1000).toStringAsFixed(1)} km',
+                '${context.l10n.remainingDistance}: ${((detail!.displayedProgress.remainingDistanceMeters ?? 0) / 1000).toStringAsFixed(1)} km',
               ),
               Text(
-                '${context.l10n.eta}: ${detail!.progress.estimatedArrivalAt ?? '—'}',
+                '${context.l10n.eta}: ${detail!.displayedProgress.estimatedArrivalAt ?? '—'}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                detail!.progress.isOffRoute == true
+                detail!.displayedProgress.isOffRoute == true
                     ? context.l10n.offRoute
                     : context.l10n.onRoute,
               ),

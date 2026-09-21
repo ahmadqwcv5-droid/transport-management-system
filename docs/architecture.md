@@ -287,3 +287,56 @@ time while telemetry continues to report physical configured speed. Reset and
 route revision changes create a fresh run. Operational ETA uses remaining route
 distance and physical speed; it intentionally does not represent accelerated
 demo completion time.
+
+## ADR-020: Explicit dispatch-to-pickup and independent movement legs
+
+**Status:** Accepted
+
+Trip execution is `Draft -> Assigned -> EnRouteToPickup -> AtPickup -> Started
+-> InTransit -> Delivered -> Completed`. Assignment reserves resources but is
+not movement. Dispatch requires a current tenant-owned, online, fresh position
+and activates a server-calculated `TripRepositioningPlan`. Arrival is determined
+geographically by the backend; `AtPickup` is an explicit waiting state, and
+cargo Start revalidates pickup proximity.
+
+Repositioning plans are immutable tenant-owned snapshots with their own origin,
+pickup destination, provider metadata, geometry, planned metrics, and lifecycle.
+They are never prepended to `TripRoutePlan`. Telemetry identifies
+`CurrentLocation`, `Repositioning`, or `Cargo`; approach rows reference a
+repositioning plan while cargo rows reference the commercial route. Progress
+queries and Flutter layers preserve the same boundary.
+
+```text
+trusted latest position -> proposed approach snapshot -> dispatch -> AtPickup
+                                                               |
+                                                               v explicit Start
+immutable cargo route -------------------------------------> cargo execution
+```
+
+The simulator receives only the currently executable leg. Assigned and AtPickup
+have no moving geometry, eliminating route-origin samples. On process restart it
+projects the latest persisted coordinate onto the active immutable geometry and
+restores only within a configured tolerance; an unsafe projection never invents
+a new coordinate. This mechanism belongs to the Development simulator. Provider
+telemetry remains vendor-neutral, while arrival evaluation stays in Application
+so future GPS ingestion can invoke the same rule.
+
+Assigned, EnRouteToPickup, AtPickup, Started, and InTransit all reserve the
+truck and driver, preventing a second trip from controlling them. EnRouteToPickup
+and later execution states present those resources as operationally busy.
+Cancellation from any permitted active state releases both consistently.
+Completed and Cancelled trips cannot remain an active simulator target.
+
+Planned repositioning distance and duration are retained as non-billable
+deadhead metrics for Sprint 4 profitability; they do not alter quoted cargo
+distance, cargo duration, or cargo completion percentage.
+
+```text
+Latest trusted truck position
+  -> route proposal to pickup
+  -> activate repositioning leg
+  -> telemetry and backend arrival detection
+  -> At Pickup
+  -> explicit cargo start
+  -> cargo route execution
+```

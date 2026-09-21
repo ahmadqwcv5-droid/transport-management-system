@@ -58,6 +58,9 @@ final class MapLibreFleetAnnotationAdapter
   final Map<String, Circle> _statuses = {};
   final Map<String, Circle> _stops = {};
   Line? _plannedRoute;
+  static const _approachSourceId = 'tms-approach-route-source';
+  static const _approachLayerId = 'tms-approach-route-layer';
+  bool _approachRouteAdded = false;
   final Map<String, Line> _trails = {};
 
   @override
@@ -66,6 +69,7 @@ final class MapLibreFleetAnnotationAdapter
     _statuses.clear();
     _stops.clear();
     _plannedRoute = null;
+    _approachRouteAdded = false;
     _trails.clear();
 
     final bytes = await rootBundle.load(truckMarkerAsset);
@@ -164,6 +168,37 @@ final class MapLibreFleetAnnotationAdapter
   }
 
   @override
+  Future<void> addApproachRoute(List<MapPoint> route) async {
+    final geoJson = _lineGeoJson(route);
+    await controller.addGeoJsonSource(_approachSourceId, geoJson);
+    await controller.addLineLayer(
+      _approachSourceId,
+      _approachLayerId,
+      const LineLayerProperties(
+        lineColor: '#D97706',
+        lineWidth: 5,
+        lineOpacity: 0.9,
+        lineDasharray: [2, 2],
+      ),
+    );
+    _approachRouteAdded = true;
+  }
+
+  @override
+  Future<void> updateApproachRoute(List<MapPoint> route) async {
+    if (!_approachRouteAdded) return addApproachRoute(route);
+    await controller.setGeoJsonSource(_approachSourceId, _lineGeoJson(route));
+  }
+
+  @override
+  Future<void> removeApproachRoute() async {
+    if (!_approachRouteAdded) return;
+    await controller.removeLayer(_approachLayerId);
+    await controller.removeSource(_approachSourceId);
+    _approachRouteAdded = false;
+  }
+
+  @override
   Future<void> addTrail(String id, List<MapPoint> trail) async {
     _trails[id] = await controller.addLine(
       LineOptions(
@@ -250,5 +285,21 @@ final class MapLibreFleetAnnotationAdapter
     );
   }
 }
+
+Map<String, dynamic> _lineGeoJson(List<MapPoint> route) => {
+  'type': 'FeatureCollection',
+  'features': [
+    {
+      'type': 'Feature',
+      'properties': <String, dynamic>{},
+      'geometry': {
+        'type': 'LineString',
+        'coordinates': route
+            .map((point) => [point.longitude, point.latitude])
+            .toList(),
+      },
+    },
+  ],
+};
 
 LatLng _latLng(MapPoint point) => LatLng(point.latitude, point.longitude);

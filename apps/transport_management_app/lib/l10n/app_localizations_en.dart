@@ -571,4 +571,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get travelledTrail => 'Travelled trail';
+
+  @override
+  String get enRouteToPickup => 'En route to pickup';
+
+  @override
+  String get atPickup => 'At pickup';
+
+  @override
+  String get previewApproach => 'Preview route to pickup';
+
+  @override
+  String get dispatchToPickup => 'Dispatch to pickup';
+
+  @override
+  String get confirmPickupArrival => 'Confirm pickup arrival';
+
+  @override
+  String get alreadyAtPickup =>
+      'The truck is already within the pickup arrival area.';
+
+  @override
+  String get approachDistance => 'Approach distance';
+
+  @override
+  String get approachDuration => 'Approach duration';
+
+  @override
+  String get dispatchStarted => 'Truck dispatched to pickup.';
+
+  @override
+  String get truckPositionRequired =>
+      'Record the truck\'s current position before dispatch.';
+
+  @override
+  String get truckPositionStale =>
+      'The truck position is too old. Refresh tracking and try again.';
+
+  @override
+  String get truckOfflineForDispatch =>
+      'The truck must be online before dispatch.';
+
+  @override
+  String get repositioningRouteRequired =>
+      'Preview a current route to pickup before dispatch.';
+
+  @override
+  String get repositioningRouteStale =>
+      'The truck moved after the preview. Calculate the route again.';
+
+  @override
+  String get truckNotAtPickup =>
+      'The truck has not reached the pickup area yet.';
+
+  @override
+  String get approachRoute => 'Route to pickup';
+
+  @override
+  String get cargoRoute => 'Cargo route';
+
+  @override
+  String get proposed => 'Proposed';
+
+  @override
+  String get expired => 'Expired';
 }

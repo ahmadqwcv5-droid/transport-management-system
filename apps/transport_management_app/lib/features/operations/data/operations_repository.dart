@@ -78,6 +78,23 @@ final class OperationsRepository {
     '/api/trips/$id/${action == 'MarkInTransit' ? 'mark-in-transit' : action.toLowerCase()}',
   );
 
+  Future<RepositioningPreview> previewRepositioning(String tripId) async {
+    try {
+      final response = await _client.dio.post<Json>(
+        '/api/trips/$tripId/repositioning/preview',
+      );
+      return RepositioningPreview.fromJson(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<void> dispatchToPickup(String tripId, String? planId) => _send(
+    'POST',
+    '/api/trips/$tripId/dispatch-to-pickup',
+    {'repositioningPlanId': planId},
+  );
+
   Future<List<LocationResult>> searchLocations(String query) async {
     try {
       final response = await _client.dio.get<List<dynamic>>(

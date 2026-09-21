@@ -13,6 +13,7 @@ using TransportManagement.Infrastructure.Persistence;
 using TransportManagement.Infrastructure.Tracking;
 using TransportManagement.Application.Tracking;
 using TransportManagement.Application.Routing;
+using TransportManagement.Application.Trips;
 using TransportManagement.Infrastructure.Routing;
 
 namespace TransportManagement.Infrastructure;
@@ -47,6 +48,12 @@ public static class DependencyInjection
         services.AddSingleton(new RouteProgressPolicy(
             Math.Max(10, configuration.GetValue<decimal>("Routing:OffRouteThresholdMeters", 150)),
             Math.Max(5, configuration.GetValue<decimal>("Routing:ArrivalThresholdMeters", 30))));
+        services.AddSingleton(new DispatchPolicy(
+            TimeSpan.FromSeconds(Math.Max(30,
+                configuration.GetValue<int>("Dispatch:MaximumPositionAgeSeconds", 300))),
+            Math.Max(5, configuration.GetValue<decimal>("Dispatch:PickupArrivalRadiusMeters", 50)),
+            Math.Max(5, configuration.GetValue<decimal>("Dispatch:ProposalOriginMovementToleranceMeters", 100)),
+            Math.Max(10, configuration.GetValue<decimal>("Dispatch:SimulatorRestoreProjectionToleranceMeters", 500))));
 
         if (environment.IsEnvironment("Testing"))
         {
@@ -88,7 +95,9 @@ public static class DependencyInjection
                 Math.Max(100, configuration.GetValue<decimal>(
                     "Tracking:TrailJumpThresholdMeters", 5000)),
                 Math.Clamp(configuration.GetValue<int>(
-                    "Tracking:MaxTripHistoryPoints", 500), 10, 2000)));
+                    "Tracking:MaxTripHistoryPoints", 500), 10, 2000),
+                Math.Max(10, configuration.GetValue<decimal>(
+                    "Dispatch:SimulatorRestoreProjectionToleranceMeters", 500))));
         var simulatorEnabled = configuration.GetValue<bool>("Tracking:SimulatorEnabled")
             && (environment.IsDevelopment() || environment.IsEnvironment("Testing"))
             && configuration["Tracking:Provider"]?.Equals("Simulator", StringComparison.OrdinalIgnoreCase) == true;

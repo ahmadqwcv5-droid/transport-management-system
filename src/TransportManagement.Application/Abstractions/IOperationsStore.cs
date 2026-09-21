@@ -32,6 +32,7 @@ public interface IOperationsStore
         DateTimeOffset? plannedTo,
         CancellationToken cancellationToken);
     void AddTrip(Trip trip);
+    void AddRepositioningPlan(TripRepositioningPlan plan);
 
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }

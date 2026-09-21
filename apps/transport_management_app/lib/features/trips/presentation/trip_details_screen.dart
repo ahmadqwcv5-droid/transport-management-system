@@ -81,6 +81,8 @@ class TripDetailsScreen extends ConsumerWidget {
                   _Fact(context.l10n.price, trip.price.toStringAsFixed(2)),
                   if (trip.actualStartAt != null)
                     _Fact(context.l10n.started, trip.actualStartAt!),
+                  if (trip.arrivedPickupAt != null)
+                    _Fact(context.l10n.atPickup, trip.arrivedPickupAt!),
                   if (trip.deliveredAt != null)
                     _Fact(context.l10n.delivered, trip.deliveredAt!),
                   if (trip.completedAt != null)
@@ -129,6 +131,35 @@ class TripDetailsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          if (trip.repositioningPlan != null) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Wrap(
+                  spacing: 32,
+                  runSpacing: 16,
+                  children: [
+                    _Fact(
+                      context.l10n.approachDistance,
+                      '${(trip.repositioningPlan!.route.distanceMeters / 1000).toStringAsFixed(1)} km',
+                    ),
+                    _Fact(
+                      context.l10n.approachDuration,
+                      '${Duration(seconds: trip.repositioningPlan!.route.estimatedDurationSeconds).inMinutes} min',
+                    ),
+                    _Fact(
+                      context.l10n.status,
+                      localizedStatus(
+                        context.l10n,
+                        trip.repositioningPlan!.status,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           if (canManageOperations(ref))
             Wrap(
               spacing: 10,
@@ -140,11 +171,15 @@ class TripDetailsScreen extends ConsumerWidget {
                     icon: const Icon(Icons.edit),
                     label: Text(context.l10n.editDraft),
                   ),
-                for (final action in trip.allowedActions)
+                for (final action in trip.allowedActions.where(
+                  (value) => value != 'dispatch-to-pickup',
+                ))
                   FilledButton(
                     key: Key('trip-action-$action'),
                     onPressed: () => action == 'assign'
                         ? _assign(context, ref, data, trip)
+                        : action == 'preview-repositioning'
+                        ? _previewAndDispatch(context, ref, trip)
                         : _act(context, ref, trip, action),
                     child: Text(_label(context, action)),
                   ),
@@ -157,12 +192,64 @@ class TripDetailsScreen extends ConsumerWidget {
   static String _label(BuildContext context, String value) => switch (value) {
     'assign' => context.l10n.assign,
     'start' => context.l10n.start,
+    'preview-repositioning' => context.l10n.previewApproach,
+    'arrive-pickup' => context.l10n.confirmPickupArrival,
     'mark-in-transit' => context.l10n.markInTransit,
     'deliver' => context.l10n.deliver,
     'complete' => context.l10n.complete,
     'cancel' => context.l10n.cancel,
     _ => value,
   };
+  static Future<void> _previewAndDispatch(
+    BuildContext context,
+    WidgetRef ref,
+    Trip trip,
+  ) async {
+    RepositioningPreview? preview;
+    final ok = await ref
+        .read(operationsControllerProvider.notifier)
+        .mutate(
+          (repo) async => preview = await repo.previewRepositioning(trip.id),
+        );
+    if (!context.mounted || !ok || preview == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.dispatchToPickup),
+        content: Text(
+          preview!.alreadyAtPickup
+              ? context.l10n.alreadyAtPickup
+              : '${context.l10n.approachDistance}: '
+                    '${(preview!.plan!.route.distanceMeters / 1000).toStringAsFixed(1)} km\n'
+                    '${context.l10n.approachDuration}: '
+                    '${Duration(seconds: preview!.plan!.route.estimatedDurationSeconds).inMinutes} min',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            key: const Key('confirm-dispatch-to-pickup'),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(context.l10n.dispatchToPickup),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final dispatched = await ref
+        .read(operationsControllerProvider.notifier)
+        .mutate((repo) => repo.dispatchToPickup(trip.id, preview!.plan?.id));
+    if (context.mounted) {
+      showResult(
+        context,
+        dispatched,
+        successMessage: context.l10n.dispatchStarted,
+      );
+    }
+  }
+
   static Future<void> _act(
     BuildContext context,
     WidgetRef ref,

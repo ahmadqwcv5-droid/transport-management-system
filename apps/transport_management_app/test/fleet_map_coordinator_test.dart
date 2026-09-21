@@ -157,6 +157,33 @@ void main() {
       },
     );
 
+    test('approach overlay is independent and stable across polling', () async {
+      final adapter = FakeFleetMapAdapter();
+      final coordinator = FleetMapAnnotationCoordinator(adapter);
+      await coordinator.onStyleLoaded(
+        fleetSnapshot([truck('one')], route: route(withApproach: true)),
+      );
+      adapter.operations.clear();
+
+      for (var index = 1; index <= 10; index++) {
+        await coordinator.synchronize(
+          fleetSnapshot([
+            truck('one', latitude: 40 + index / 1000),
+          ], route: route(withApproach: true, trailLength: index + 2)),
+        );
+      }
+
+      expect(coordinator.telemetry.approachRouteAdditions, 1);
+      expect(coordinator.telemetry.approachRouteUpdates, 0);
+      expect(coordinator.telemetry.approachRouteRemovals, 0);
+      expect(
+        adapter.operations.where((value) => value.startsWith('approach:')),
+        isEmpty,
+      );
+      expect(coordinator.telemetry.globalLineClears, 0);
+      expect(coordinator.telemetry.cameraMovesCausedByPolling, 0);
+    });
+
     test(
       'selecting a different trip changes route-specific annotations',
       () async {
@@ -394,6 +421,7 @@ RouteOverlayModel route({
   int trailLength = 2,
   int segmentCount = 1,
   double longitudeOffset = 0,
+  bool withApproach = false,
 }) => RouteOverlayModel(
   tripId: tripId,
   route: [
@@ -401,6 +429,9 @@ RouteOverlayModel route({
     MapPoint(40.5, 30.5 + longitudeOffset),
     MapPoint(41, 31 + longitudeOffset),
   ],
+  approachRoute: withApproach
+      ? [const MapPoint(39.5, 29.5), const MapPoint(40, 30)]
+      : const [],
   trails: List.generate(
     segmentCount,
     (segment) => TrailSegmentModel(
@@ -489,6 +520,14 @@ final class FakeFleetMapAdapter implements FleetMapAnnotationAdapter {
       _operation('route:update');
   @override
   Future<void> removePlannedRoute() => _operation('route:remove');
+  @override
+  Future<void> addApproachRoute(List<MapPoint> route) =>
+      _operation('approach:add');
+  @override
+  Future<void> updateApproachRoute(List<MapPoint> route) =>
+      _operation('approach:update');
+  @override
+  Future<void> removeApproachRoute() => _operation('approach:remove');
   @override
   Future<void> addTrail(String id, List<MapPoint> trail) =>
       _operation('trail:add:$id');

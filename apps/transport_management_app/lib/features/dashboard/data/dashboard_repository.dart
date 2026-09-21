@@ -38,21 +38,28 @@ final class DashboardRepository {
 
   Future<FleetTripDetail> tripDetail(String tripId) async {
     try {
+      final tripResponse = await _client.dio.get<Json>('/api/trips/$tripId');
+      final trip = ops.Trip.fromJson(tripResponse.data!);
       final values = await Future.wait([
-        _client.dio.get<Json>('/api/trips/$tripId'),
         _client.dio.get<Json>('/api/trips/$tripId/route-progress'),
         _client.dio.get<Json>(
           '/api/tracking/trips/$tripId/history',
           queryParameters: {'limit': 500},
         ),
+        if (trip.repositioningPlan != null)
+          _client.dio.get<Json>('/api/trips/$tripId/repositioning-progress'),
       ]);
-      final trip = ops.Trip.fromJson(values[0].data!);
       final route = trip.routePlan;
       if (route == null) throw StateError('Trip has no route plan.');
       return FleetTripDetail(
         route: route,
-        progress: ops.RouteProgress.fromJson(values[1].data!),
-        trail: (values[2].data!['segments'] as List<dynamic>)
+        approachRoute: trip.repositioningPlan?.route,
+        progress: ops.RouteProgress.fromJson(values[0].data!),
+        approachProgress: trip.repositioningPlan == null
+            ? null
+            : ops.RouteProgress.fromJson(values[2].data!),
+        tripStatus: trip.status,
+        trail: (values[1].data!['segments'] as List<dynamic>)
             .cast<Json>()
             .map(TripTrailSegment.fromJson)
             .toList(),

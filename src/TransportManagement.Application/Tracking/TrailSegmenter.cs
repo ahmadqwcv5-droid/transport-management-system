@@ -42,6 +42,8 @@ public static class TrailSegmenter
     {
         if (previous.TrackingRunId != next.TrackingRunId
             || previous.RoutePlanId != next.RoutePlanId
+            || previous.RepositioningPlanId != next.RepositioningPlanId
+            || previous.MovementPhase != next.MovementPhase
             || next.RecordedAt - previous.RecordedAt > gapThreshold)
             return true;
 

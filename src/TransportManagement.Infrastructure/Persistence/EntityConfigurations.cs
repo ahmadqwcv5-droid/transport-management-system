@@ -32,6 +32,7 @@ internal sealed class TruckPositionConfiguration : IEntityTypeConfiguration<Truc
         builder.Property(x => x.Speed).HasPrecision(8, 2);
         builder.Property(x => x.Heading).HasPrecision(6, 2);
         builder.Property(x => x.Source).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.MovementPhase).HasConversion<string>().HasMaxLength(30);
         builder.HasIndex(x => x.CompanyId);
         builder.HasIndex(x => new { x.CompanyId, x.TruckId, x.RecordedAt });
         builder.HasIndex(x => new { x.CompanyId, x.TripId, x.RecordedAt });
@@ -39,6 +40,7 @@ internal sealed class TruckPositionConfiguration : IEntityTypeConfiguration<Truc
         builder.HasOne<Truck>().WithMany().HasForeignKey(x => x.TruckId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<Trip>().WithMany().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<TripRoutePlan>().WithMany().HasForeignKey(x => x.RoutePlanId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<TripRepositioningPlan>().WithMany().HasForeignKey(x => x.RepositioningPlanId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -127,7 +129,7 @@ internal sealed class DriverConfiguration : IEntityTypeConfiguration<Driver>
 
 internal sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
 {
-    private const string ReservedStatuses = "\"Status\" IN ('Assigned', 'Started', 'InTransit', 'Delivered')";
+    private const string ReservedStatuses = "\"Status\" IN ('Assigned', 'EnRouteToPickup', 'AtPickup', 'Started', 'InTransit', 'Delivered')";
 
     public void Configure(EntityTypeBuilder<Trip> builder)
     {
@@ -140,6 +142,7 @@ internal sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         builder.Property(x => x.Notes).HasMaxLength(2000);
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(30);
         builder.Ignore(x => x.ReservesResources);
+        builder.Ignore(x => x.CurrentRepositioningPlan);
         builder.HasIndex(x => x.CompanyId);
         builder.HasIndex(x => new { x.CompanyId, x.Status });
         builder.HasIndex(x => new { x.CompanyId, x.PlannedStartAt });
@@ -153,6 +156,33 @@ internal sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         builder.HasOne<Driver>().WithMany().HasForeignKey(x => x.DriverId).OnDelete(DeleteBehavior.Restrict);
         builder.HasMany(x => x.Stops).WithOne().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(x => x.RoutePlan).WithOne().HasForeignKey<TripRoutePlan>(x => x.TripId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(x => x.RepositioningPlans).WithOne().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class TripRepositioningPlanConfiguration : IEntityTypeConfiguration<TripRepositioningPlan>
+{
+    public void Configure(EntityTypeBuilder<TripRepositioningPlan> builder)
+    {
+        builder.ToTable("trip_repositioning_plans");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.OriginLatitude).HasPrecision(9, 6);
+        builder.Property(x => x.OriginLongitude).HasPrecision(9, 6);
+        builder.Property(x => x.DestinationLatitude).HasPrecision(9, 6);
+        builder.Property(x => x.DestinationLongitude).HasPrecision(9, 6);
+        builder.Property(x => x.Geometry).HasColumnType("jsonb").IsRequired();
+        builder.Property(x => x.GeometryFormat).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.DistanceMeters).HasPrecision(14, 2);
+        builder.Property(x => x.ProviderName).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.RouteProfile).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.ProviderRouteId).HasMaxLength(300);
+        builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(30);
+        builder.HasIndex(x => x.CompanyId);
+        builder.HasIndex(x => new { x.CompanyId, x.TripId, x.Status });
+        builder.HasIndex(x => new { x.CompanyId, x.TruckId, x.Status });
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Truck>().WithMany().HasForeignKey(x => x.TruckId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<TruckPosition>().WithMany().HasForeignKey(x => x.SourceTruckPositionId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

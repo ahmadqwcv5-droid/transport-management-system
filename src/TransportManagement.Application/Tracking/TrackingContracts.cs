@@ -1,13 +1,17 @@
+using TransportManagement.Domain.Tracking;
+
 namespace TransportManagement.Application.Tracking;
 
 public sealed record TruckPositionResponse(
     Guid TruckId, string PlateNumber, string TruckStatus,
     decimal Latitude, decimal Longitude, decimal Speed, decimal Heading,
     DateTimeOffset RecordedAt, bool IsOnline, string TrackingState,
-    Guid? CurrentTripId, string? DriverName);
+    Guid? CurrentTripId, string? DriverName, MovementPhase? MovementPhase,
+    Guid? RepositioningPlanId);
 
 public sealed record SimulatorControlRequest(
-    string Action, Guid? TruckId = null, double? SpeedMultiplier = null);
+    string Action, Guid? TruckId = null, double? SpeedMultiplier = null,
+    decimal? Latitude = null, decimal? Longitude = null);
 
 public sealed record SimulatorStateResponse(
     bool Enabled, bool Running, double SpeedMultiplier, int Step);
@@ -18,6 +22,7 @@ public sealed record TripTrailPointResponse(
 
 public sealed record TripTrailSegmentResponse(
     string Id, Guid TrackingRunId, Guid? RoutePlanId,
+    Guid? RepositioningPlanId, MovementPhase? MovementPhase,
     IReadOnlyList<TripTrailPointResponse> Points);
 
 public sealed record TripTrackingHistoryResponse(
@@ -30,6 +35,7 @@ public sealed record TrackingPolicy(
     TimeSpan TrailGapThreshold,
     decimal TrailJumpThresholdMeters,
     int MaxTripHistoryPoints,
+    decimal SimulatorRestoreProjectionToleranceMeters = 500,
     decimal CoordinateTolerance = 0.00001m,
     decimal SpeedTolerance = 0.5m,
     decimal HeadingTolerance = 1m);

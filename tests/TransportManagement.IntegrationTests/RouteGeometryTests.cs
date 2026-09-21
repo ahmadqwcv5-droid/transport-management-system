@@ -61,8 +61,8 @@ public sealed class RouteGeometryTests
 
         provider.Control(companyId, [target], new("reset"), start.AddHours(3));
         var reset = provider.GetCurrent(companyId, [target], start.AddHours(3)).Single();
-        Assert.Equal(Route[0].Latitude, reset.Latitude);
-        Assert.Equal(Route[0].Longitude, reset.Longitude);
+        Assert.Equal(delivered.Latitude, reset.Latitude);
+        Assert.Equal(delivered.Longitude, reset.Longitude);
         Assert.NotEqual(afterTenA.TrackingRunId, reset.TrackingRunId);
     }
 
@@ -111,5 +111,45 @@ public sealed class RouteGeometryTests
         Assert.Equal(65m, normal.Speed);
         Assert.Equal(normal.Speed, accelerated.Speed);
         Assert.True(acceleratedProgress > normalProgress * 8);
+    }
+
+    [Fact]
+    public void NewSimulatorInstanceRestoresFromPersistedCoordinateWithoutRouteZeroJump()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(
+            new Dictionary<string, string?>
+            {
+                ["Tracking:SimulatorSpeedKilometersPerHour"] = "60"
+            }).Build();
+        var companyId = Guid.NewGuid();
+        var truckId = Guid.NewGuid();
+        var tripId = Guid.NewGuid();
+        var routeId = Guid.NewGuid();
+        var start = DateTimeOffset.Parse("2026-09-21T08:00:00Z", CultureInfo.InvariantCulture);
+        var firstProvider = new SimulatedTrackingProvider(configuration);
+        var initial = new TrackingTarget(truckId, tripId, routeId, "cargo:a", Route, true);
+        firstProvider.Control(companyId, [initial], new("start"), start);
+        var beforeRestart = firstProvider.GetCurrent(companyId, [initial], start.AddMinutes(5)).Single();
+
+        var restoredTarget = initial with
+        {
+            RestorePosition = new(beforeRestart.Latitude, beforeRestart.Longitude),
+            RestoreProjectionToleranceMeters = 100
+        };
+        var restartedProvider = new SimulatedTrackingProvider(configuration);
+        var afterRestart = restartedProvider.GetCurrent(
+            companyId, [restoredTarget], start.AddMinutes(5)).Single();
+
+        Assert.InRange(Math.Abs(afterRestart.Latitude - beforeRestart.Latitude), 0, 0.00001m);
+        Assert.InRange(Math.Abs(afterRestart.Longitude - beforeRestart.Longitude), 0, 0.00001m);
+        Assert.NotEqual(Route[0].Latitude, afterRestart.Latitude);
+
+        var unsafeTarget = initial with
+        {
+            RestorePosition = new(0, 0),
+            RestoreProjectionToleranceMeters = 10
+        };
+        Assert.Empty(new SimulatedTrackingProvider(configuration).GetCurrent(
+            companyId, [unsafeTarget], start.AddMinutes(5)));
     }
 }

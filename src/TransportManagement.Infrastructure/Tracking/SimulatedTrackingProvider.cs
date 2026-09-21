@@ -16,6 +16,7 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
         public DateTimeOffset AnchorAt { get; set; }
         public bool Offline { get; set; }
         public Guid RunId { get; set; } = Guid.NewGuid();
+        public bool CanEmit { get; set; }
     }
 
     private sealed class CompanySimulation
@@ -40,8 +41,11 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
         lock (company)
         {
             return targets.OrderBy(x => x.TruckId)
-                .Where(x => x.Route.Count >= 2 && !string.IsNullOrWhiteSpace(x.RouteRevision))
-                .Select(target => Sample(target, StateFor(company, target, now), company, now))
+                .Where(x => x.CanMove && x.Route.Count >= 2
+                    && !string.IsNullOrWhiteSpace(x.RouteRevision))
+                .Select(target => (Target: target, State: StateFor(company, target, now)))
+                .Where(item => item.State.CanEmit)
+                .Select(item => Sample(item.Target, item.State, company, now))
                 .ToArray();
         }
     }
@@ -75,12 +79,13 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
                     company.Running = false;
                     company.Step = 0;
                     company.SpeedMultiplier = 1;
-                    foreach (var state in states.Values)
+                    foreach (var item in states)
                     {
-                        state.AnchorDistanceMeters = 0;
-                        state.AnchorAt = now;
-                        state.Offline = false;
-                        state.RunId = Guid.NewGuid();
+                        item.Value.AnchorDistanceMeters = CurrentDistance(
+                            item.Key, item.Value, company, now);
+                        item.Value.AnchorAt = now;
+                        item.Value.Offline = false;
+                        item.Value.RunId = Guid.NewGuid();
                     }
                     break;
                 case "step":
@@ -132,7 +137,9 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
             {
                 TripId = target.TripId,
                 RouteRevision = target.RouteRevision,
-                AnchorAt = now
+                AnchorAt = now,
+                CanEmit = TryRestore(target, out var restoredDistance),
+                AnchorDistanceMeters = restoredDistance
             };
             company.Trucks[target.TruckId] = state;
         }
@@ -141,11 +148,24 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
         {
             state.TripId = target.TripId;
             state.RouteRevision = target.RouteRevision;
-            state.AnchorDistanceMeters = 0;
+            state.CanEmit = TryRestore(target, out var restoredDistance);
+            state.AnchorDistanceMeters = restoredDistance;
             state.AnchorAt = now;
             state.RunId = Guid.NewGuid();
         }
         return state;
+    }
+
+    private static bool TryRestore(TrackingTarget target, out decimal distance)
+    {
+        distance = 0;
+        if (target.Route.Count < 2) return false;
+        if (target.RestorePosition is null) return true;
+        var projection = RouteGeometry.Project(target.Route, target.RestorePosition);
+        if (projection.DistanceFromRouteMeters > target.RestoreProjectionToleranceMeters)
+            return false;
+        distance = projection.DistanceAlongRouteMeters;
+        return true;
     }
 
     private void Anchor(TrackingTarget target, TruckSimulation state, CompanySimulation company, DateTimeOffset now)
