@@ -105,6 +105,21 @@ final class OperationsRepository {
     '/api/trips/$id/assign',
     {'truckId': truckId, 'driverId': driverId},
   );
+  Future<Trip> assignTripAndGet(
+    String id,
+    String truckId,
+    String driverId,
+  ) async {
+    try {
+      final response = await _client.dio.post<Json>(
+        '/api/trips/$id/assign',
+        data: {'truckId': truckId, 'driverId': driverId},
+      );
+      return Trip.fromJson(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
   Future<void> reassignTrip(String id, String truckId, String driverId) =>
       _send('POST', '/api/trips/$id/reassign', {'truckId': truckId, 'driverId': driverId});
   Future<void> unassignTrip(String id) => _send('POST', '/api/trips/$id/unassign');
@@ -114,10 +129,34 @@ final class OperationsRepository {
       _send('POST', '/api/trips/$id/cancel', {'reason': reason});
   Future<void> archiveTrip(String id, {required bool archive}) =>
       _send('POST', '/api/trips/$id/${archive ? 'archive' : 'unarchive'}');
-  Future<void> saveTripStops(String id, List<TripStop> stops, int version) =>
-      _send('PUT', '/api/trips/$id/stops', {
-        'stops': stops.map((item) => item.toJson()).toList(), 'expectedVersion': version,
-      });
+  Future<Trip> saveTripStops(
+    String id,
+    List<TripStop> stops,
+    int version,
+  ) async {
+    try {
+      final response = await _client.dio.put<Json>(
+        '/api/trips/$id/stops',
+        data: {
+          'stops': stops.map((item) => item.toJson()).toList(),
+          'expectedVersion': version,
+        },
+      );
+      return Trip.fromJson(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+  Future<AssignmentOptions> assignmentOptions(String id) async {
+    try {
+      final response = await _client.dio.get<Json>(
+        '/api/trips/$id/assignment-options',
+      );
+      return AssignmentOptions.fromJson(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
   Future<Trip> calculateTripRoute(String id) async {
     try {
       final response = await _client.dio.post<Json>('/api/trips/$id/calculate-route',

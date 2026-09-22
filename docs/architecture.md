@@ -415,3 +415,38 @@ unchanged writes to 60 per truck/hour while remaining below the 300-second
 dispatch freshness window. Once a trip is terminal or unassigned, future idle
 samples retain the physical fleet position but use CurrentLocation with no stale
 trip/route/repositioning association; historical samples are never rewritten.
+
+## ADR-022: Idempotent route inputs and explainable assignment
+
+**Status:** Accepted
+
+The server owns route freshness. Ordered stop coordinates rounded to the route
+provider's six-decimal contract plus route profile form the authoritative
+fingerprint. Replacing stops compares this fingerprint before mutating the
+route relationship. Identical route inputs preserve the route entity and Draft
+version; display-name/address edits may update stops without invalidating the
+route. A real route-input change deletes the snapshot and records exactly one
+`RouteInvalidated` event. This makes retries safe while keeping stale routes
+impossible to assign.
+
+The planner is a four-state workflow rather than a decorative Stepper:
+
+```text
+Details -> Pickup/Delivery/Route -> Truck/Driver (or skip) -> Review
+              ^ current route gate       ^ live options       |
+              +---------- same persisted Draft <--------------+
+```
+
+Assignment discovery is trip-scoped and tenant-filtered. The options endpoint
+returns both eligible and ineligible resources with stable reason codes and an
+optional safe conflicting trip number. It is advisory only: assignment and
+reassignment commands repeat all status/readiness/reservation checks, with
+PostgreSQL partial unique indexes as the race backstop. A conflict leaves the
+Draft, stops, and authoritative route intact and refreshes the workflow.
+
+Flutter stores normalized persisted-stop and route-input snapshots to avoid
+unnecessary writes, but server idempotency remains the authority. Map
+annotations are restored only after MapLibre reports its style loaded, and
+assignment options for a resumed Draft load after the first widget frame; both
+rules prevent browser-only lifecycle races found by the Sprint 3.4.1 Firefox
+acceptance workflow.

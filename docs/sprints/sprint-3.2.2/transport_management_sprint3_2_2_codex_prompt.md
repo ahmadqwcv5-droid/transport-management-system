@@ -104,7 +104,7 @@ Before implementation:
    - selected-trip trail state;
    - MapLibre line rendering.
 4. Reproduce or demonstrate the current cross-trip/reset trail failure with a focused test before fixing it.
-5. Create `SPRINT3_2_2_IMPLEMENTATION_PLAN.md` before material implementation.
+5. Create `docs/sprints/sprint-3.2.2/SPRINT3_2_2_IMPLEMENTATION_PLAN.md` before material implementation.
 
 The implementation plan must contain:
 
@@ -434,7 +434,7 @@ Sprint 3.2.2 is complete only when all of these are true:
 - [ ] A real browser workflow proves the two core fixes.
 - [ ] README and architecture documentation are updated.
 - [ ] Evidence is stored under `docs/evidence/sprint3_2_2/`.
-- [ ] `SPRINT3_2_2_IMPLEMENTATION_PLAN.md` contains actual elapsed times and final results.
+- [ ] `docs/sprints/sprint-3.2.2/SPRINT3_2_2_IMPLEMENTATION_PLAN.md` contains actual elapsed times and final results.
 
 ---
 
@@ -445,7 +445,7 @@ Update at least:
 - `README.md` with any new configuration, migration, API, simulator behavior, and validation steps.
 - `docs/architecture.md` with the trip-aware tracking model, provider/application responsibility boundary, trail segmentation, session/reset semantics, and ETA meaning.
 - API documentation or endpoint examples where the repository currently documents endpoints.
-- `SPRINT3_2_2_IMPLEMENTATION_PLAN.md` with final decisions, validation results, limitations, and actual elapsed time.
+- `docs/sprints/sprint-3.2.2/SPRINT3_2_2_IMPLEMENTATION_PLAN.md` with final decisions, validation results, limitations, and actual elapsed time.
 
 Include a small data-flow explanation showing:
 

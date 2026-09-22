@@ -20,7 +20,7 @@ Before changing code:
 
 1. Fetch the latest repository state.
 2. Inspect `git status` and preserve all unrelated user changes.
-3. Read `README.md`, `docs/architecture.md`, `SPRINT3_3_IMPLEMENTATION_PLAN.md`, and the Sprint 3.3 evidence.
+3. Read `README.md`, `docs/architecture.md`, `docs/sprints/sprint-3.3/SPRINT3_3_IMPLEMENTATION_PLAN.md`, and the Sprint 3.3 evidence.
 4. Trace the existing simulator controls, `seed-position` backend command, current-position persistence, online/offline calculation, dispatch freshness policy, trip-details error handling, dashboard data flow, and Flutter compile-time simulator gate.
 5. Reproduce both user-facing failures described below before implementing the fix.
 
@@ -97,7 +97,7 @@ After this sprint:
 
 ## Mandatory Working Process
 
-Create `SPRINT3_3_1_IMPLEMENTATION_PLAN.md` before material implementation.
+Create `docs/sprints/sprint-3.3.1/SPRINT3_3_1_IMPLEMENTATION_PLAN.md` before material implementation.
 
 The plan must include:
 
@@ -550,7 +550,7 @@ Update at least:
 - `README.md`;
 - `docs/architecture.md`;
 - relevant API/configuration documentation;
-- `SPRINT3_3_1_IMPLEMENTATION_PLAN.md`.
+- `docs/sprints/sprint-3.3.1/SPRINT3_3_1_IMPLEMENTATION_PLAN.md`.
 
 Document:
 

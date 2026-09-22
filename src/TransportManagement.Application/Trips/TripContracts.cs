@@ -17,6 +17,16 @@ public sealed record UpdateTripStopsRequest(
     [param: Required] IReadOnlyList<RouteStopRequest> Stops, long ExpectedVersion);
 public sealed record CalculateTripRouteRequest(RouteProfile RouteProfile = RouteProfile.Driving);
 public sealed record AssignTripRequest(Guid TruckId, Guid DriverId);
+public sealed record ResourceReservation(
+    Guid ResourceId, Guid TripId, string TripNumber);
+public sealed record AssignmentResourceOptionResponse(
+    Guid Id, string DisplayName, string Status, bool IsEligible,
+    string ReasonCode, Guid? ConflictingTripId = null,
+    string? ConflictingTripNumber = null);
+public sealed record AssignmentOptionsResponse(
+    Guid TripId, Guid? CurrentTruckId, Guid? CurrentDriverId,
+    bool CanAssign, IReadOnlyList<AssignmentResourceOptionResponse> Trucks,
+    IReadOnlyList<AssignmentResourceOptionResponse> Drivers);
 public sealed record CancelTripRequest([param: MaxLength(500)] string Reason);
 public sealed record DispatchToPickupRequest(Guid? RepositioningPlanId);
 public sealed record TripListQuery(

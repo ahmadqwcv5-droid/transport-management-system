@@ -898,4 +898,114 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventImportedBaseline => 'Imported baseline';
+
+  @override
+  String get eventRouteInvalidated => 'Route invalidated';
+
+  @override
+  String get identicalStops =>
+      'Pickup and delivery must be different locations.';
+
+  @override
+  String get routeStale =>
+      'The locations changed. Recalculate the route before continuing.';
+
+  @override
+  String get routeRequired => 'Calculate the route before continuing.';
+
+  @override
+  String get assignmentSelectionRequired =>
+      'Select an eligible truck and driver, or skip assignment for now.';
+
+  @override
+  String get tripCreatedAndAssigned => 'Trip saved and resources assigned.';
+
+  @override
+  String get draftSaved => 'Draft saved.';
+
+  @override
+  String get tripDetailsStep => 'Trip details';
+
+  @override
+  String get tripNumber => 'Trip number';
+
+  @override
+  String get locationsAndRouteStep => 'Pickup, delivery and route';
+
+  @override
+  String get truckAndDriverStep => 'Truck and driver';
+
+  @override
+  String get reviewAndConfirmStep => 'Review and confirm';
+
+  @override
+  String get invalidNumber => 'Enter a valid non-negative number.';
+
+  @override
+  String get recalculateRoute => 'Recalculate route';
+
+  @override
+  String get refreshAvailability => 'Refresh availability';
+
+  @override
+  String get skipForNow => 'Skip assignment for now';
+
+  @override
+  String get keepAsUnassignedDraft => 'Keep this trip as an unassigned Draft.';
+
+  @override
+  String get noEligibleTruck => 'No eligible truck is currently available.';
+
+  @override
+  String get noEligibleDriver => 'No eligible driver is currently available.';
+
+  @override
+  String get allocatedAfterSave => 'Allocated after save';
+
+  @override
+  String get notAvailable => 'Not available';
+
+  @override
+  String get distance => 'Distance';
+
+  @override
+  String get estimatedDuration => 'Estimated duration';
+
+  @override
+  String get readiness => 'Readiness';
+
+  @override
+  String get ready => 'Ready';
+
+  @override
+  String get editTripDetails => 'Edit trip details';
+
+  @override
+  String get editLocationsAndRoute => 'Edit locations and route';
+
+  @override
+  String get editAssignment => 'Edit assignment';
+
+  @override
+  String get createAndAssignTrip => 'Create and assign trip';
+
+  @override
+  String get assignTrip => 'Assign trip';
+
+  @override
+  String get routeSummary => 'Route summary';
+
+  @override
+  String get resourceInactive => 'Inactive';
+
+  @override
+  String get truckInMaintenance => 'In maintenance';
+
+  @override
+  String get truckOutOfServiceReason => 'Out of service';
+
+  @override
+  String resourceAssignedToTrip(String tripNumber) {
+    return 'Reserved by trip $tripNumber';
+  }
 }

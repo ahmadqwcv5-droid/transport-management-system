@@ -64,6 +64,12 @@ public sealed class TripsController(TripService service, RouteProgressService pr
         CancellationToken cancellationToken) =>
         service.CalculateRouteAsync(id, request, cancellationToken);
 
+    [HttpGet("{id:guid}/assignment-options")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<AssignmentOptionsResponse> AssignmentOptions(
+        Guid id, CancellationToken cancellationToken) =>
+        service.AssignmentOptionsAsync(id, cancellationToken);
+
     [HttpGet("{id:guid}/timeline")]
     public Task<TripTimelineResponse> Timeline(Guid id, [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default) =>

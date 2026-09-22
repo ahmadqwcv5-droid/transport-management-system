@@ -183,5 +183,5 @@ between 2026-09-18 and 2026-09-21 is excluded.
 
 Sprint 3.2.2 work is intentionally uncommitted and unpushed for review, as the
 prompt requires. The Sprint 3.2.2 prompt and plan are included in the working
-tree. The pre-existing untracked `transport_management_sprint3_1_codex_prompt.md`
+tree. The pre-existing untracked `docs/sprints/sprint-3.1/transport_management_sprint3_1_codex_prompt.md`
 is unrelated and remains untouched.

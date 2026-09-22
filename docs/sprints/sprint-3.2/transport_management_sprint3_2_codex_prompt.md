@@ -135,7 +135,7 @@ References:
 Create and continuously update:
 
 ```text
-SPRINT3_2_IMPLEMENTATION_PLAN.md
+docs/sprints/sprint-3.2/SPRINT3_2_IMPLEMENTATION_PLAN.md
 ```
 
 It must contain:

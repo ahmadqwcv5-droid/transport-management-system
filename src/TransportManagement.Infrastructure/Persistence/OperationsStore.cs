@@ -57,6 +57,15 @@ internal sealed class OperationsStore(AppDbContext dbContext) : IOperationsStore
         dbContext.Trips.AnyAsync(x => x.TruckId == truckId && ReservedStatuses.Contains(x.Status)
             && (!excludingTripId.HasValue || x.Id != excludingTripId), cancellationToken);
 
+    public async Task<IReadOnlyList<ResourceReservation>> TruckReservationsAsync(
+        Guid excludingTripId, CancellationToken cancellationToken) =>
+        await dbContext.Trips.AsNoTracking()
+            .Where(x => x.Id != excludingTripId && x.TruckId.HasValue
+                && ReservedStatuses.Contains(x.Status))
+            .Select(x => new ResourceReservation(
+                x.TruckId!.Value, x.Id, x.TripNumber))
+            .ToListAsync(cancellationToken);
+
     public void AddTruck(Truck truck) => dbContext.Trucks.Add(truck);
 
     public Task<Driver?> GetDriverAsync(Guid id, CancellationToken cancellationToken) =>
@@ -81,6 +90,15 @@ internal sealed class OperationsStore(AppDbContext dbContext) : IOperationsStore
     public Task<bool> DriverReservedAsync(Guid driverId, Guid? excludingTripId, CancellationToken cancellationToken) =>
         dbContext.Trips.AnyAsync(x => x.DriverId == driverId && ReservedStatuses.Contains(x.Status)
             && (!excludingTripId.HasValue || x.Id != excludingTripId), cancellationToken);
+
+    public async Task<IReadOnlyList<ResourceReservation>> DriverReservationsAsync(
+        Guid excludingTripId, CancellationToken cancellationToken) =>
+        await dbContext.Trips.AsNoTracking()
+            .Where(x => x.Id != excludingTripId && x.DriverId.HasValue
+                && ReservedStatuses.Contains(x.Status))
+            .Select(x => new ResourceReservation(
+                x.DriverId!.Value, x.Id, x.TripNumber))
+            .ToListAsync(cancellationToken);
 
     public void AddDriver(Driver driver) => dbContext.Drivers.Add(driver);
 

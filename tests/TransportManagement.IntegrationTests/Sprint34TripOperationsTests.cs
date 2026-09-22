@@ -173,6 +173,93 @@ public sealed class Sprint34TripOperationsTests(ApiFactory factory) : IClassFixt
         Assert.Contains("CURRENT_ROUTE_REQUIRED",
             changed.GetProperty("readiness").GetProperty("missingRequirements")
                 .EnumerateArray().Select(item => item.GetString()));
+        var timeline = await client.GetJsonAsync<JsonElement>(
+            $"/api/trips/{ready.GetProperty("id").GetGuid()}/timeline");
+        Assert.Single(timeline.GetProperty("items").EnumerateArray(),
+            item => item.GetProperty("eventType").GetString() == "RouteInvalidated");
+    }
+
+    [Fact]
+    public async Task IdenticalStopResubmissionPreservesRouteAndAssignmentReadiness()
+    {
+        using var client = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
+        var clientId = await CreateClientAsync(client, "Idempotent route");
+        var ready = await RouteTestData.CreateReadyTripAsync(client, clientId);
+        var routeId = ready.GetProperty("routePlan").GetProperty("id").GetGuid();
+        var stops = ready.GetProperty("stops").EnumerateArray().Select(stop => new
+        {
+            sequence = stop.GetProperty("sequence").GetInt32(),
+            type = stop.GetProperty("type").GetString(),
+            name = stop.GetProperty("name").GetString(),
+            address = stop.GetProperty("address").GetString(),
+            latitude = stop.GetProperty("latitude").GetDecimal(),
+            longitude = stop.GetProperty("longitude").GetDecimal()
+        }).ToArray();
+
+        var resubmitted = await (await client.PutAsJsonAsync(
+            $"/api/trips/{ready.GetProperty("id").GetGuid()}/stops",
+            new
+            {
+                expectedVersion = ready.GetProperty("version").GetInt64(),
+                stops
+            }, TestContext.Current.CancellationToken)).RequiredJsonAsync();
+
+        Assert.Equal(routeId,
+            resubmitted.GetProperty("routePlan").GetProperty("id").GetGuid());
+        Assert.True(resubmitted.GetProperty("readiness").GetProperty("canAssign").GetBoolean());
+        Assert.Equal(ready.GetProperty("version").GetInt64(),
+            resubmitted.GetProperty("version").GetInt64());
+
+        var detailsOnly = await (await client.PutAsJsonAsync(
+            $"/api/trips/{ready.GetProperty("id").GetGuid()}", new
+            {
+                clientId,
+                cargoDescription = "Updated cargo label",
+                plannedStartAt = DateTimeOffset.UtcNow.AddDays(2),
+                price = 1400m,
+                notes = "Non-route edit",
+                expectedVersion = resubmitted.GetProperty("version").GetInt64()
+            }, TestContext.Current.CancellationToken)).RequiredJsonAsync();
+        Assert.Equal(routeId,
+            detailsOnly.GetProperty("routePlan").GetProperty("id").GetGuid());
+
+        var renamedStops = stops.Select(stop => new
+        {
+            stop.sequence,
+            stop.type,
+            name = $"Renamed {stop.name}",
+            address = $"Updated {stop.address}",
+            stop.latitude,
+            stop.longitude
+        }).ToArray();
+        var displayOnly = await (await client.PutAsJsonAsync(
+            $"/api/trips/{ready.GetProperty("id").GetGuid()}/stops",
+            new
+            {
+                expectedVersion = detailsOnly.GetProperty("version").GetInt64(),
+                stops = renamedStops
+            }, TestContext.Current.CancellationToken)).RequiredJsonAsync();
+        Assert.Equal(routeId,
+            displayOnly.GetProperty("routePlan").GetProperty("id").GetGuid());
+        var timeline = await client.GetJsonAsync<JsonElement>(
+            $"/api/trips/{ready.GetProperty("id").GetGuid()}/timeline");
+        Assert.DoesNotContain(timeline.GetProperty("items").EnumerateArray(),
+            item => item.GetProperty("eventType").GetString() == "RouteInvalidated");
+
+        var suffix = Guid.NewGuid().ToString("N")[..10];
+        var truckId = (await (await client.PostJsonAsync("/api/trucks", new
+        {
+            plateNumber = $"IDM-{suffix}"
+        })).RequiredJsonAsync()).GetProperty("id").GetGuid();
+        var driverId = (await (await client.PostJsonAsync("/api/drivers", new
+        {
+            fullName = $"Idempotent Driver {suffix}",
+            licenseNumber = $"IDM-{suffix}"
+        })).RequiredJsonAsync()).GetProperty("id").GetGuid();
+        var assigned = await client.PostJsonAsync(
+            $"/api/trips/{ready.GetProperty("id").GetGuid()}/assign",
+            new { truckId, driverId });
+        Assert.Equal(HttpStatusCode.OK, assigned.StatusCode);
     }
 
     [Fact]
@@ -195,6 +282,57 @@ public sealed class Sprint34TripOperationsTests(ApiFactory factory) : IClassFixt
                 TestContext.Current.CancellationToken)).StatusCode);
         Assert.Equal(HttpStatusCode.OK,
             (await companyA.GetAsync($"/api/trips/{id}",
+                TestContext.Current.CancellationToken)).StatusCode);
+    }
+
+    [Fact]
+    public async Task AssignmentOptionsExplainEligibilityAndRemainTenantScoped()
+    {
+        using var companyA = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
+        using var companyB = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-b@example.test");
+        var clientId = await CreateClientAsync(companyA, "Options");
+        var target = await RouteTestData.CreateReadyTripAsync(companyA, clientId);
+        var reservedTrip = await RouteTestData.CreateReadyTripAsync(companyA, clientId);
+        var availableTruck = await CreateTruckAsync(companyA, "OPT-A");
+        var maintenanceTruck = await CreateTruckAsync(companyA, "OPT-M");
+        var reservedTruck = await CreateTruckAsync(companyA, "OPT-R");
+        var availableDriver = await CreateDriverAsync(companyA, "Available");
+        var unavailableDriver = await CreateDriverAsync(companyA, "Unavailable");
+        var reservedDriver = await CreateDriverAsync(companyA, "Reserved");
+        var foreignTruck = await CreateTruckAsync(companyB, "FOREIGN");
+        var foreignDriver = await CreateDriverAsync(companyB, "Foreign");
+        await companyA.PutAsJsonAsync($"/api/trucks/{maintenanceTruck}/status",
+            new { status = "Maintenance" }, TestContext.Current.CancellationToken);
+        await companyA.PutAsJsonAsync($"/api/drivers/{unavailableDriver}/status",
+            new { status = "Unavailable" }, TestContext.Current.CancellationToken);
+        await (await companyA.PostJsonAsync(
+            $"/api/trips/{reservedTrip.GetProperty("id").GetGuid()}/assign",
+            new { truckId = reservedTruck, driverId = reservedDriver })).RequiredJsonAsync();
+
+        var options = await companyA.GetJsonAsync<JsonElement>(
+            $"/api/trips/{target.GetProperty("id").GetGuid()}/assignment-options");
+        Assert.True(options.GetProperty("canAssign").GetBoolean());
+        var trucks = options.GetProperty("trucks").EnumerateArray().ToArray();
+        var drivers = options.GetProperty("drivers").EnumerateArray().ToArray();
+        Assert.True(trucks.Single(x => x.GetProperty("id").GetGuid() == availableTruck)
+            .GetProperty("isEligible").GetBoolean());
+        Assert.Equal("TRUCK_MAINTENANCE", trucks.Single(x =>
+            x.GetProperty("id").GetGuid() == maintenanceTruck).GetProperty("reasonCode").GetString());
+        var reservedTruckOption = trucks.Single(x => x.GetProperty("id").GetGuid() == reservedTruck);
+        Assert.Equal("TRUCK_ALREADY_ASSIGNED", reservedTruckOption.GetProperty("reasonCode").GetString());
+        Assert.Equal(reservedTrip.GetProperty("tripNumber").GetString(),
+            reservedTruckOption.GetProperty("conflictingTripNumber").GetString());
+        Assert.True(drivers.Single(x => x.GetProperty("id").GetGuid() == availableDriver)
+            .GetProperty("isEligible").GetBoolean());
+        Assert.Equal("DRIVER_NOT_AVAILABLE", drivers.Single(x =>
+            x.GetProperty("id").GetGuid() == unavailableDriver).GetProperty("reasonCode").GetString());
+        Assert.Equal("DRIVER_ALREADY_ASSIGNED", drivers.Single(x =>
+            x.GetProperty("id").GetGuid() == reservedDriver).GetProperty("reasonCode").GetString());
+        Assert.DoesNotContain(trucks, x => x.GetProperty("id").GetGuid() == foreignTruck);
+        Assert.DoesNotContain(drivers, x => x.GetProperty("id").GetGuid() == foreignDriver);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await companyB.GetAsync(
+                $"/api/trips/{target.GetProperty("id").GetGuid()}/assignment-options",
                 TestContext.Current.CancellationToken)).StatusCode);
     }
 
@@ -239,6 +377,26 @@ public sealed class Sprint34TripOperationsTests(ApiFactory factory) : IClassFixt
         var response = await client.PostJsonAsync("/api/clients", new
         {
             name = $"{prefix}-{Guid.NewGuid():N}"
+        });
+        return (await response.RequiredJsonAsync()).GetProperty("id").GetGuid();
+    }
+
+    private static async Task<Guid> CreateTruckAsync(HttpClient client, string prefix)
+    {
+        var response = await client.PostJsonAsync("/api/trucks", new
+        {
+            plateNumber = $"{prefix}-{Guid.NewGuid():N}"[..Math.Min(18, prefix.Length + 11)]
+        });
+        return (await response.RequiredJsonAsync()).GetProperty("id").GetGuid();
+    }
+
+    private static async Task<Guid> CreateDriverAsync(HttpClient client, string prefix)
+    {
+        var suffix = Guid.NewGuid().ToString("N")[..10];
+        var response = await client.PostJsonAsync("/api/drivers", new
+        {
+            fullName = $"{prefix} Driver {suffix}",
+            licenseNumber = $"{prefix}-{suffix}"
         });
         return (await response.RequiredJsonAsync()).GetProperty("id").GetGuid();
     }

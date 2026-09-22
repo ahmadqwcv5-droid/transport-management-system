@@ -29,7 +29,7 @@ Before starting implementation:
 1. Inspect the repository.
 2. Read the existing README.
 3. Read `docs/architecture.md`.
-4. Read `SPRINT1_IMPLEMENTATION_PLAN.md`.
+4. Read `docs/sprints/sprint-1/SPRINT1_IMPLEMENTATION_PLAN.md`.
 5. Preserve all working Sprint 1 functionality.
 6. Run the existing build/tests first and establish a clean baseline.
 
@@ -76,7 +76,7 @@ This requirement is part of the Definition of Done.
 Create a new root-level file:
 
 ```text
-SPRINT2_IMPLEMENTATION_PLAN.md
+docs/sprints/sprint-2/SPRINT2_IMPLEMENTATION_PLAN.md
 ```
 
 Before implementation begins, create the initial execution plan.
@@ -844,7 +844,7 @@ If Android SDK becomes available:
 
 If Android tooling remains unavailable, record it as an environment limitation.
 
-Record all major verification events and elapsed times in `SPRINT2_IMPLEMENTATION_PLAN.md`.
+Record all major verification events and elapsed times in `docs/sprints/sprint-2/SPRINT2_IMPLEMENTATION_PLAN.md`.
 
 ---
 
@@ -941,7 +941,7 @@ Sprint 2 is complete only when:
 22. Docker Compose remains valid.
 23. README is updated.
 24. `docs/architecture.md` is updated.
-25. `SPRINT2_IMPLEMENTATION_PLAN.md` is complete.
+25. `docs/sprints/sprint-2/SPRINT2_IMPLEMENTATION_PLAN.md` is complete.
 26. All task start/finish timestamps and elapsed times are recorded.
 27. The final timing summary is recorded.
 28. Environmental validation limitations are documented.
@@ -968,7 +968,7 @@ When Sprint 2 is complete, return a concise report containing:
 14. Environment/tooling limitations
 15. Total sprint wall-clock elapsed time
 16. Per-task elapsed times
-17. Reference to `SPRINT2_IMPLEMENTATION_PLAN.md`
+17. Reference to `docs/sprints/sprint-2/SPRINT2_IMPLEMENTATION_PLAN.md`
 18. Anything intentionally deferred to Sprint 3
 
 Do not continue into Sprint 3 unless explicitly requested.

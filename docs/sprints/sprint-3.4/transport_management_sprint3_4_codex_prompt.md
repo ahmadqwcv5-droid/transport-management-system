@@ -88,7 +88,7 @@ This sprint completes trip operations before real-customer validation and before
 
 ## Mandatory Working Process
 
-Create `SPRINT3_4_IMPLEMENTATION_PLAN.md` before material implementation.
+Create `docs/sprints/sprint-3.4/SPRINT3_4_IMPLEMENTATION_PLAN.md` before material implementation.
 
 The plan must include:
 
@@ -851,7 +851,7 @@ Update at least:
 - `README.md`;
 - `docs/architecture.md`;
 - API/configuration documentation;
-- `SPRINT3_4_IMPLEMENTATION_PLAN.md`.
+- `docs/sprints/sprint-3.4/SPRINT3_4_IMPLEMENTATION_PLAN.md`.
 
 Document:
 

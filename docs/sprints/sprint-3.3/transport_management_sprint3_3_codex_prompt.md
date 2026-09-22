@@ -133,7 +133,7 @@ All important rules must be enforced by the backend. Flutter must not be the onl
 
 ## Mandatory Working Process
 
-Create `SPRINT3_3_IMPLEMENTATION_PLAN.md` before material implementation.
+Create `docs/sprints/sprint-3.3/SPRINT3_3_IMPLEMENTATION_PLAN.md` before material implementation.
 
 The plan must contain:
 
@@ -592,7 +592,7 @@ Update at least:
 - `README.md`;
 - `docs/architecture.md`;
 - API/configuration documentation used by the repository;
-- `SPRINT3_3_IMPLEMENTATION_PLAN.md`.
+- `docs/sprints/sprint-3.3/SPRINT3_3_IMPLEMENTATION_PLAN.md`.
 
 Document:
 

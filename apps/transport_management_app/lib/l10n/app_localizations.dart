@@ -1789,6 +1789,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Imported baseline'**
   String get eventImportedBaseline;
+
+  /// No description provided for @eventRouteInvalidated.
+  ///
+  /// In en, this message translates to:
+  /// **'Route invalidated'**
+  String get eventRouteInvalidated;
+
+  /// No description provided for @identicalStops.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup and delivery must be different locations.'**
+  String get identicalStops;
+
+  /// No description provided for @routeStale.
+  ///
+  /// In en, this message translates to:
+  /// **'The locations changed. Recalculate the route before continuing.'**
+  String get routeStale;
+
+  /// No description provided for @routeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculate the route before continuing.'**
+  String get routeRequired;
+
+  /// No description provided for @assignmentSelectionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an eligible truck and driver, or skip assignment for now.'**
+  String get assignmentSelectionRequired;
+
+  /// No description provided for @tripCreatedAndAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip saved and resources assigned.'**
+  String get tripCreatedAndAssigned;
+
+  /// No description provided for @draftSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft saved.'**
+  String get draftSaved;
+
+  /// No description provided for @tripDetailsStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip details'**
+  String get tripDetailsStep;
+
+  /// No description provided for @tripNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip number'**
+  String get tripNumber;
+
+  /// No description provided for @locationsAndRouteStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup, delivery and route'**
+  String get locationsAndRouteStep;
+
+  /// No description provided for @truckAndDriverStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck and driver'**
+  String get truckAndDriverStep;
+
+  /// No description provided for @reviewAndConfirmStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Review and confirm'**
+  String get reviewAndConfirmStep;
+
+  /// No description provided for @invalidNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid non-negative number.'**
+  String get invalidNumber;
+
+  /// No description provided for @recalculateRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Recalculate route'**
+  String get recalculateRoute;
+
+  /// No description provided for @refreshAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh availability'**
+  String get refreshAvailability;
+
+  /// No description provided for @skipForNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip assignment for now'**
+  String get skipForNow;
+
+  /// No description provided for @keepAsUnassignedDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this trip as an unassigned Draft.'**
+  String get keepAsUnassignedDraft;
+
+  /// No description provided for @noEligibleTruck.
+  ///
+  /// In en, this message translates to:
+  /// **'No eligible truck is currently available.'**
+  String get noEligibleTruck;
+
+  /// No description provided for @noEligibleDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'No eligible driver is currently available.'**
+  String get noEligibleDriver;
+
+  /// No description provided for @allocatedAfterSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Allocated after save'**
+  String get allocatedAfterSave;
+
+  /// No description provided for @notAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get notAvailable;
+
+  /// No description provided for @distance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get distance;
+
+  /// No description provided for @estimatedDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated duration'**
+  String get estimatedDuration;
+
+  /// No description provided for @readiness.
+  ///
+  /// In en, this message translates to:
+  /// **'Readiness'**
+  String get readiness;
+
+  /// No description provided for @ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get ready;
+
+  /// No description provided for @editTripDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit trip details'**
+  String get editTripDetails;
+
+  /// No description provided for @editLocationsAndRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit locations and route'**
+  String get editLocationsAndRoute;
+
+  /// No description provided for @editAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit assignment'**
+  String get editAssignment;
+
+  /// No description provided for @createAndAssignTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and assign trip'**
+  String get createAndAssignTrip;
+
+  /// No description provided for @assignTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign trip'**
+  String get assignTrip;
+
+  /// No description provided for @routeSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Route summary'**
+  String get routeSummary;
+
+  /// No description provided for @resourceInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get resourceInactive;
+
+  /// No description provided for @truckInMaintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'In maintenance'**
+  String get truckInMaintenance;
+
+  /// No description provided for @truckOutOfServiceReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of service'**
+  String get truckOutOfServiceReason;
+
+  /// No description provided for @resourceAssignedToTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserved by trip {tripNumber}'**
+  String resourceAssignedToTrip(String tripNumber);
 }
 
 class _AppLocalizationsDelegate

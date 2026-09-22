@@ -889,4 +889,112 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get eventImportedBaseline => 'سجل الاستيراد الأساسي';
+
+  @override
+  String get eventRouteInvalidated => 'تم إبطال المسار';
+
+  @override
+  String get identicalStops => 'يجب أن يكون موقعا الاستلام والتسليم مختلفين.';
+
+  @override
+  String get routeStale => 'تغيرت المواقع. أعد حساب المسار قبل المتابعة.';
+
+  @override
+  String get routeRequired => 'احسب المسار قبل المتابعة.';
+
+  @override
+  String get assignmentSelectionRequired =>
+      'اختر شاحنة وسائقاً مؤهلين أو تجاوز التعيين الآن.';
+
+  @override
+  String get tripCreatedAndAssigned => 'تم حفظ الرحلة وتعيين الموارد.';
+
+  @override
+  String get draftSaved => 'تم حفظ المسودة.';
+
+  @override
+  String get tripDetailsStep => 'تفاصيل الرحلة';
+
+  @override
+  String get tripNumber => 'رقم الرحلة';
+
+  @override
+  String get locationsAndRouteStep => 'الاستلام والتسليم والمسار';
+
+  @override
+  String get truckAndDriverStep => 'الشاحنة والسائق';
+
+  @override
+  String get reviewAndConfirmStep => 'المراجعة والتأكيد';
+
+  @override
+  String get invalidNumber => 'أدخل رقماً صحيحاً غير سالب.';
+
+  @override
+  String get recalculateRoute => 'إعادة حساب المسار';
+
+  @override
+  String get refreshAvailability => 'تحديث التوفر';
+
+  @override
+  String get skipForNow => 'تجاوز التعيين الآن';
+
+  @override
+  String get keepAsUnassignedDraft => 'احتفظ بهذه الرحلة كمسودة غير معيّنة.';
+
+  @override
+  String get noEligibleTruck => 'لا توجد شاحنة مؤهلة متاحة حالياً.';
+
+  @override
+  String get noEligibleDriver => 'لا يوجد سائق مؤهل متاح حالياً.';
+
+  @override
+  String get allocatedAfterSave => 'يُخصّص بعد الحفظ';
+
+  @override
+  String get notAvailable => 'غير متوفر';
+
+  @override
+  String get distance => 'المسافة';
+
+  @override
+  String get estimatedDuration => 'المدة المقدرة';
+
+  @override
+  String get readiness => 'الجاهزية';
+
+  @override
+  String get ready => 'جاهزة';
+
+  @override
+  String get editTripDetails => 'تعديل تفاصيل الرحلة';
+
+  @override
+  String get editLocationsAndRoute => 'تعديل المواقع والمسار';
+
+  @override
+  String get editAssignment => 'تعديل التعيين';
+
+  @override
+  String get createAndAssignTrip => 'إنشاء الرحلة وتعيينها';
+
+  @override
+  String get assignTrip => 'تعيين الرحلة';
+
+  @override
+  String get routeSummary => 'ملخص المسار';
+
+  @override
+  String get resourceInactive => 'غير نشط';
+
+  @override
+  String get truckInMaintenance => 'قيد الصيانة';
+
+  @override
+  String get truckOutOfServiceReason => 'خارج الخدمة';
+
+  @override
+  String resourceAssignedToTrip(String tripNumber) {
+    return 'محجوز للرحلة $tripNumber';
+  }
 }

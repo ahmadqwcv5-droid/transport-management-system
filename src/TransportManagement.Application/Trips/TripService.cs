@@ -40,9 +40,10 @@ public sealed class TripService(
     {
         var trip = await RequiredTripAsync(id, cancellationToken);
         await RequiredActiveClientAsync(request.ClientId, cancellationToken);
-        trip.UpdateDraft(request.ClientId, request.CargoDescription,
+        var changed = trip.UpdateDraft(request.ClientId, request.CargoDescription,
             request.PlannedStartAt, request.Price, request.Notes,
             request.ExpectedVersion ?? trip.Version, clock.UtcNow);
+        if (!changed) return Map(trip);
         AppendEvent(trip, "DraftUpdated");
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
@@ -56,10 +57,16 @@ public sealed class TripService(
         var replacesStopEntities = trip.Stops.Count != stops.Length
             || !trip.Stops.OrderBy(x => x.Sequence).Select(x => (x.Sequence, x.Type))
                 .SequenceEqual(stops.OrderBy(x => x.Sequence).Select(x => (x.Sequence, x.Type)));
-        trip.ReplaceStops(stops, request.ExpectedVersion, clock.UtcNow);
+        var invalidateRoute = RouteInputsChanged(trip, request.Stops);
+        var previousRouteId = trip.RoutePlan?.Id;
+        var replacement = trip.ReplaceStops(
+            stops, request.ExpectedVersion, clock.UtcNow, invalidateRoute);
+        if (!replacement.StopsChanged) return Map(trip);
         if (replacesStopEntities)
             store.AddTripStops(stops);
         AppendEvent(trip, "StopsUpdated");
+        if (replacement.RouteInvalidated)
+            AppendEvent(trip, "RouteInvalidated", new { previousRouteId });
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
     }
@@ -131,6 +138,28 @@ public sealed class TripService(
                 actor ?? "System", item.Source, item.Metadata));
         }
         return new(items, total, page, pageSize, (int)Math.Ceiling(total / (double)pageSize));
+    }
+
+    public async Task<AssignmentOptionsResponse> AssignmentOptionsAsync(
+        Guid id, CancellationToken cancellationToken)
+    {
+        var trip = await RequiredTripAsync(id, cancellationToken);
+        var readiness = Readiness(trip);
+        var canChoose = trip.Status == TripStatus.Draft
+            ? readiness.CanAssign
+            : trip.Status == TripStatus.Assigned;
+        var trucks = await store.ListTrucksAsync(null, null, null, cancellationToken);
+        var drivers = await store.ListDriversAsync(null, null, null, cancellationToken);
+        var truckReservations = (await store.TruckReservationsAsync(trip.Id, cancellationToken))
+            .GroupBy(x => x.ResourceId).ToDictionary(x => x.Key, x => x.First());
+        var driverReservations = (await store.DriverReservationsAsync(trip.Id, cancellationToken))
+            .GroupBy(x => x.ResourceId).ToDictionary(x => x.Key, x => x.First());
+
+        return new(trip.Id, trip.TruckId, trip.DriverId, canChoose,
+            trucks.Select(truck => TruckOption(truck, canChoose,
+                truckReservations.GetValueOrDefault(truck.Id))).ToArray(),
+            drivers.Select(driver => DriverOption(driver, canChoose,
+                driverReservations.GetValueOrDefault(driver.Id))).ToArray());
     }
 
     public async Task<TripResponse> AssignAsync(Guid id, AssignTripRequest request, CancellationToken cancellationToken)
@@ -546,6 +575,43 @@ public sealed class TripService(
             Enum.Parse<TripStopType>(stop.Type, true), stop.Name, stop.Address,
             stop.Latitude, stop.Longitude, stop.PlannedArrivalAt,
             stop.PlannedServiceDurationMinutes, clock.UtcNow)).ToArray();
+
+    private static bool RouteInputsChanged(Trip trip, IReadOnlyList<RouteStopRequest> stops)
+    {
+        if (trip.RoutePlan is null) return true;
+        return !Enum.TryParse<RouteProfile>(trip.RoutePlan.RouteProfile, out var profile)
+            || RoutePlanningService.Fingerprint(stops, profile)
+                != trip.RoutePlan.StopsFingerprint;
+    }
+
+    private static AssignmentResourceOptionResponse TruckOption(
+        Truck truck, bool tripCanAssign, ResourceReservation? reservation)
+    {
+        var reason = !tripCanAssign ? "TRIP_NOT_READY_FOR_ASSIGNMENT"
+            : !truck.IsActive ? "RESOURCE_INACTIVE"
+            : reservation is not null ? "TRUCK_ALREADY_ASSIGNED"
+            : truck.Status == TruckStatus.Maintenance ? "TRUCK_MAINTENANCE"
+            : truck.Status == TruckStatus.OutOfService ? "TRUCK_OUT_OF_SERVICE"
+            : truck.Status == TruckStatus.OnTrip ? "TRUCK_ALREADY_ASSIGNED"
+            : "AVAILABLE";
+        return new(truck.Id, truck.PlateNumber, truck.Status.ToString(),
+            reason == "AVAILABLE", reason, reservation?.TripId,
+            reservation?.TripNumber);
+    }
+
+    private static AssignmentResourceOptionResponse DriverOption(
+        Driver driver, bool tripCanAssign, ResourceReservation? reservation)
+    {
+        var reason = !tripCanAssign ? "TRIP_NOT_READY_FOR_ASSIGNMENT"
+            : !driver.IsActive ? "RESOURCE_INACTIVE"
+            : reservation is not null ? "DRIVER_ALREADY_ASSIGNED"
+            : driver.Status == DriverStatus.OnTrip ? "DRIVER_ON_TRIP"
+            : driver.Status != DriverStatus.Available ? "DRIVER_NOT_AVAILABLE"
+            : "AVAILABLE";
+        return new(driver.Id, driver.FullName, driver.Status.ToString(),
+            reason == "AVAILABLE", reason, reservation?.TripId,
+            reservation?.TripNumber);
+    }
 
     private TripRoutePlan CreateRoutePlan(Guid tripId, RouteResultResponse route) => new(
         Guid.NewGuid(), currentUser.CompanyId, tripId, route.Geometry,

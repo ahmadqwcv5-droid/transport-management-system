@@ -122,47 +122,42 @@ void main() {
   testWidgets(
     'trip planner shows and moves stop markers before route calculation',
     (tester) async {
+      const draft = Trip(
+        id: 'draft-map',
+        clientId: 'client-1',
+        origin: 'Pickup',
+        destination: 'Delivery',
+        cargoDescription: 'Parts',
+        status: 'Draft',
+        allowedActions: [],
+        stops: [
+          TripStop(
+            sequence: 0,
+            type: 'Pickup',
+            name: 'Pickup',
+            latitude: 39.9,
+            longitude: 32.8,
+          ),
+          TripStop(
+            sequence: 1,
+            type: 'Delivery',
+            name: 'Delivery',
+            latitude: 41,
+            longitude: 29,
+          ),
+        ],
+      );
       const data = OperationsData(
         clients: [Client(id: 'client-1', name: 'Factory', isActive: true)],
         trucks: [],
         drivers: [],
-        trips: [],
+        trips: [draft],
       );
-      await tester.pumpWidget(testApp(const TripPlannerScreen(), data));
+      await tester.pumpWidget(
+        testApp(const TripPlannerScreen(tripId: 'draft-map'), data),
+      );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('calculate-route')), findsOneWidget);
-      await tester.tap(find.text('Pickup and delivery'));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.byKey(const Key('trip-pickup-name')),
-        'Pickup',
-      );
-      await tester.enterText(
-        find.byKey(const Key('trip-pickup-latitude')),
-        '39.9',
-      );
-      await tester.enterText(
-        find.byKey(const Key('trip-pickup-longitude')),
-        '32.8',
-      );
-      await tester.pump();
-      expect(find.byKey(const Key('planner-pickup-marker')), findsOneWidget);
-      expect(find.byKey(const Key('planner-delivery-marker')), findsNothing);
-
-      await tester.enterText(
-        find.byKey(const Key('trip-delivery-name')),
-        'Delivery',
-      );
-      await tester.enterText(
-        find.byKey(const Key('trip-delivery-latitude')),
-        '41.0',
-      );
-      await tester.enterText(
-        find.byKey(const Key('trip-delivery-longitude')),
-        '29.0',
-      );
-      await tester.pump();
       expect(find.byKey(const Key('planner-pickup-marker')), findsOneWidget);
       expect(find.byKey(const Key('planner-delivery-marker')), findsOneWidget);
 

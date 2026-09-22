@@ -1,0 +1,31 @@
+Sprint 3.4.1 retained PostgreSQL verification
+Captured: 2026-09-22
+Tenant: owner@sprint322.local (dedicated Development/Testing smoke tenant)
+
+Browser-created assigned trip:
+  Id: e5f08574-2bf1-4b36-a894-29ad49fe85ea
+  Number: TRP-2026-000065
+  Status: Assigned
+  Truck and driver present: true
+  Events: TripCreated=1, StopsUpdated=1, RouteCalculated=1, Assigned=1
+
+Browser-created unassigned Draft and assignment-race survivor:
+  Id: c045370b-71d0-4e1e-a66d-abacd35d7d12
+  Number: TRP-2026-000066
+  Status: Draft
+  Truck and driver present: false
+  Route Id: b47c61f6-925a-4cc9-bb57-90ff238518a7
+  Stops fingerprint: da63021dfdb43e1ce1b52532863ca73f88c278bb67ae130ddf69bab20430500f
+  Events: TripCreated=1, StopsUpdated=1, RouteCalculated=1
+  RouteInvalidated events: 0
+
+The Draft route ID equals both routeIdBeforeUnchangedSave and
+routeIdAfterUnchangedSave in browser_workflow.json. The deterministic
+assignment conflict retained exactly one Draft and the selected truck was
+restored to Available after verification.
+
+Latest applied migration:
+  20260922045016_Sprint34TripOperations
+
+EF model drift check:
+  No changes have been made to the model since the last migration.

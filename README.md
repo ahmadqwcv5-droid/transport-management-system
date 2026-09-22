@@ -558,14 +558,26 @@ apps/
   transport_management_app/            Flutter Web + Android client
 docs/
   architecture.md
+  sprints/                             prompts and execution plans by Sprint
+    README.md                           Sprint documentation index
+    sprint-1/
+    sprint-2/
+    sprint-3/
+    sprint-3.1/
+    sprint-3.2/
+    sprint-3.2.1/
+    sprint-3.2.2/
+    sprint-3.3/
+    sprint-3.3.1/
+    sprint-3.4/
+    sprint-3.4.1/
 compose.yaml
 Dockerfile
-SPRINT1_IMPLEMENTATION_PLAN.md
-SPRINT2_IMPLEMENTATION_PLAN.md
-SPRINT3_IMPLEMENTATION_PLAN.md
-SPRINT3_1_IMPLEMENTATION_PLAN.md
-SPRINT3_2_IMPLEMENTATION_PLAN.md
 ```
+
+Each Sprint folder contains its original implementation prompt and the
+corresponding plan/execution log. See [`docs/sprints/README.md`](docs/sprints/README.md)
+for direct links to every Sprint document.
 
 ## Key engineering decisions
 
@@ -623,6 +635,47 @@ older schema requires schedule, price, and route labels. Back up the database
 and resolve those Drafts before downgrading. Finance, recurring templates,
 multi-vehicle optimization, real GPS ingestion, and telemetry retention remain
 deferred.
+
+### Sprint 3.4.1 corrective trip workflow
+
+The trip planner now has four functional steps: Trip Details; Pickup, Delivery
+and Route; Truck and Driver; and Review and Confirm. `Next` is gated by the
+current step, assignment may be explicitly skipped to retain an unassigned
+Draft, and a saved Draft resumes at its latest meaningful step. The final
+assignment action operates on the same Draft, so an availability race returns
+the user to assignment without creating another trip.
+
+An unchanged stop submission is idempotent. The API compares the normalized
+ordered coordinate/profile fingerprint and preserves the route ID, readiness,
+and version when route inputs are unchanged. Names and addresses are
+display-only. A genuine coordinate/order/profile change removes the route and
+appends one `RouteInvalidated` event. Unrelated Draft edits also preserve it.
+
+`GET /api/trips/{id}/assignment-options` returns all tenant trucks and drivers,
+including ineligible resources, with stable reasons such as
+`RESOURCE_INACTIVE`, `TRUCK_MAINTENANCE`, `TRUCK_ALREADY_ASSIGNED`,
+`DRIVER_NOT_AVAILABLE`, and `DRIVER_ALREADY_ASSIGNED`. The assign command
+always rechecks readiness, live status, and reservations.
+
+To rerun the authenticated Firefox acceptance workflow, start the Compose stack
+and geckodriver, then from `apps/transport_management_app` run:
+
+```bash
+flutter drive \
+  --driver=test_driver/integration_test_sprint3_4_1.dart \
+  --target=integration_test/sprint3_4_1_smoke_test.dart \
+  -d web-server --browser-name=firefox --driver-port=4444 \
+  --headless --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=E2E_EMAIL=YOUR_DEDICATED_SMOKE_OWNER \
+  --dart-define=E2E_PASSWORD=YOUR_DEVELOPMENT_PASSWORD \
+  --dart-define=MAP_STYLE_URL=https://demotiles.maplibre.org/style.json \
+  --dart-define=TRACKING_SIMULATOR_ENABLED=true
+```
+
+Use a dedicated Development/Testing owner; never reset a retained user's
+password or database volume. Evidence is written to
+`docs/evidence/sprint3_4_1/`.
 
 ## Authorization matrix
 

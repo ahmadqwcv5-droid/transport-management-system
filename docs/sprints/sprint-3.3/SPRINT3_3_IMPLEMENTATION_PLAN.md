@@ -11,7 +11,7 @@ tracking, and map layers separate from the immutable commercial cargo route.
 
 - Baseline is `main` at `133134a`; `origin/main` matches after fetch.
 - The only pre-existing unrelated change is the untracked
-  `transport_management_sprint3_1_codex_prompt.md`; it will remain untouched.
+  `docs/sprints/sprint-3.1/transport_management_sprint3_1_codex_prompt.md`; it will remain untouched.
 - `Trip` currently follows `Draft -> Assigned -> Started -> InTransit ->
   Delivered -> Completed`, with Assigned/Started/InTransit/Delivered reserving
   resources.

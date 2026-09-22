@@ -8,7 +8,7 @@
 - Status: Complete
 - Starting commit: `1e003066e0c63cc499576e7c45dbf710aa243d66`
 - Starting branch: `main` tracking `origin/main`
-- Starting worktree: untracked `transport_management_sprint3_1_codex_prompt.md` and `transport_management_sprint3_2_1_codex_prompt.md`; no tracked modifications
+- Starting worktree: untracked `docs/sprints/sprint-3.1/transport_management_sprint3_1_codex_prompt.md` and `docs/sprints/sprint-3.2.1/transport_management_sprint3_2_1_codex_prompt.md`; no tracked modifications
 - Preservation rule: the pre-existing untracked Sprint 3.1 prompt is unrelated user work and will not be modified.
 
 ## Confirmed Root Causes
@@ -148,6 +148,6 @@ Total actual elapsed time: **00:40:06**.
 ## Git Status
 
 Sprint 3.2.1 changes, this plan, the retained evidence, and
-`transport_management_sprint3_2_1_codex_prompt.md` are included in the Git
+`docs/sprints/sprint-3.2.1/transport_management_sprint3_2_1_codex_prompt.md` are included in the Git
 commit containing this final plan and pushed to `origin/main`. The pre-existing
-untracked `transport_management_sprint3_1_codex_prompt.md` remains untouched.
+untracked `docs/sprints/sprint-3.1/transport_management_sprint3_1_codex_prompt.md` remains untouched.

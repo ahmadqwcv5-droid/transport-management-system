@@ -56,7 +56,10 @@ final class TripRoutePlan {
     required this.routeProfile,
     required this.calculatedAt,
     required this.warnings,
+    this.id,
+    this.stopsFingerprint,
   });
+  final String? id, stopsFingerprint;
   final List<GeoPoint> coordinates;
   final String geometry, providerName, routeProfile, calculatedAt;
   final double distanceMeters;
@@ -89,8 +92,60 @@ final class TripRoutePlan {
       warnings: json['warnings'] is List<dynamic>
           ? (json['warnings'] as List<dynamic>).cast<String>()
           : const [],
+      id: json['id'] as String?,
+      stopsFingerprint: json['stopsFingerprint'] as String?,
     );
   }
+}
+
+final class AssignmentResourceOption {
+  const AssignmentResourceOption({
+    required this.id,
+    required this.displayName,
+    required this.status,
+    required this.isEligible,
+    required this.reasonCode,
+    this.conflictingTripId,
+    this.conflictingTripNumber,
+  });
+  final String id, displayName, status, reasonCode;
+  final bool isEligible;
+  final String? conflictingTripId, conflictingTripNumber;
+  factory AssignmentResourceOption.fromJson(Json json) =>
+      AssignmentResourceOption(
+        id: json['id'] as String,
+        displayName: json['displayName'] as String,
+        status: json['status'] as String,
+        isEligible: json['isEligible'] as bool,
+        reasonCode: json['reasonCode'] as String,
+        conflictingTripId: json['conflictingTripId'] as String?,
+        conflictingTripNumber: json['conflictingTripNumber'] as String?,
+      );
+}
+
+final class AssignmentOptions {
+  const AssignmentOptions({
+    required this.tripId,
+    required this.canAssign,
+    required this.trucks,
+    required this.drivers,
+    this.currentTruckId,
+    this.currentDriverId,
+  });
+  final String tripId;
+  final String? currentTruckId, currentDriverId;
+  final bool canAssign;
+  final List<AssignmentResourceOption> trucks, drivers;
+  factory AssignmentOptions.fromJson(Json json) => AssignmentOptions(
+    tripId: json['tripId'] as String,
+    currentTruckId: json['currentTruckId'] as String?,
+    currentDriverId: json['currentDriverId'] as String?,
+    canAssign: json['canAssign'] as bool,
+    trucks: (json['trucks'] as List<dynamic>)
+        .cast<Json>().map(AssignmentResourceOption.fromJson).toList(),
+    drivers: (json['drivers'] as List<dynamic>)
+        .cast<Json>().map(AssignmentResourceOption.fromJson).toList(),
+  );
 }
 
 final class TripRepositioningPlan {

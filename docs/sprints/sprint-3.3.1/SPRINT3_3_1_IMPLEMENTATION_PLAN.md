@@ -10,7 +10,7 @@ heartbeats, and show trip-planner stop markers immediately before route calculat
 ## Baseline Findings and Failure Reproduction
 
 - Baseline is `main` at `3460546`; `origin/main` matched after fetch.
-- The pre-existing untracked `transport_management_sprint3_1_codex_prompt.md`
+- The pre-existing untracked `docs/sprints/sprint-3.1/transport_management_sprint3_1_codex_prompt.md`
   is unrelated and will remain untouched. The Sprint 3.3.1 prompt is task input.
 - The simulator panel receives only `DashboardResponse.Positions`. That response
   is an inner join between latest positions and active trucks, so a newly created

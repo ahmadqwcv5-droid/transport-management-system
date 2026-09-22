@@ -67,6 +67,7 @@ String localizedTripEvent(AppLocalizations l10n, String value) => switch (value)
   'DraftUpdated' => l10n.eventDraftUpdated,
   'StopsUpdated' => l10n.eventStopsUpdated,
   'RouteCalculated' => l10n.eventRouteCalculated,
+  'RouteInvalidated' => l10n.eventRouteInvalidated,
   'Assigned' => l10n.eventAssigned,
   'Reassigned' => l10n.eventReassigned,
   'Unassigned' => l10n.eventUnassigned,

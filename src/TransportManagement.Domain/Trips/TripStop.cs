@@ -54,11 +54,16 @@ public sealed class TripStop : Entity, ITenantOwned
     public int? PlannedServiceDurationMinutes { get; private set; }
     public bool HasCoordinates => Latitude.HasValue && Longitude.HasValue;
 
-    internal void UpdateFrom(TripStop value, DateTimeOffset now)
+    internal bool UpdateFrom(TripStop value, DateTimeOffset now)
     {
         if (value.CompanyId != CompanyId || value.TripId != TripId
             || value.Sequence != Sequence || value.Type != Type)
             throw new DomainRuleException("The stop identity cannot be changed.", "INVALID_TRIP_STOPS");
+        if (Name == value.Name && Address == value.Address
+            && Latitude == value.Latitude && Longitude == value.Longitude
+            && PlannedArrivalAt == value.PlannedArrivalAt
+            && PlannedServiceDurationMinutes == value.PlannedServiceDurationMinutes)
+            return false;
         Name = value.Name;
         Address = value.Address;
         Latitude = value.Latitude;
@@ -66,6 +71,7 @@ public sealed class TripStop : Entity, ITenantOwned
         PlannedArrivalAt = value.PlannedArrivalAt;
         PlannedServiceDurationMinutes = value.PlannedServiceDurationMinutes;
         Touch(now);
+        return true;
     }
 
     public static void ValidateCoordinates(decimal latitude, decimal longitude)

@@ -111,7 +111,7 @@ The previous implementation plan marked road-detail and truck-icon requirements 
 Create and maintain:
 
 ```text
-SPRINT3_2_1_IMPLEMENTATION_PLAN.md
+docs/sprints/sprint-3.2.1/SPRINT3_2_1_IMPLEMENTATION_PLAN.md
 ```
 
 It must include:

@@ -44,8 +44,8 @@ Before implementation:
 1. Inspect the repository.
 2. Read the root `README.md`.
 3. Read `docs/architecture.md`.
-4. Read `SPRINT1_IMPLEMENTATION_PLAN.md`.
-5. Read `SPRINT2_IMPLEMENTATION_PLAN.md`.
+4. Read `docs/sprints/sprint-1/SPRINT1_IMPLEMENTATION_PLAN.md`.
+5. Read `docs/sprints/sprint-2/SPRINT2_IMPLEMENTATION_PLAN.md`.
 6. Run the existing backend build/tests.
 7. Run Flutter analyze/tests.
 8. Establish a clean baseline before changing code.
@@ -72,7 +72,7 @@ This requirement is mandatory and part of the Definition of Done.
 Create a new root-level file:
 
 ```text
-SPRINT3_IMPLEMENTATION_PLAN.md
+docs/sprints/sprint-3/SPRINT3_IMPLEMENTATION_PLAN.md
 ```
 
 Before implementation begins, create the initial execution plan.
@@ -106,7 +106,7 @@ Do not fabricate timing values.
 
 Record actual timestamps when tasks begin and finish.
 
-Update `SPRINT3_IMPLEMENTATION_PLAN.md` continuously during execution, not only at the end.
+Update `docs/sprints/sprint-3/SPRINT3_IMPLEMENTATION_PLAN.md` continuously during execution, not only at the end.
 
 Also include:
 
@@ -953,7 +953,7 @@ Sprint 3 is complete only when:
 31. Docker Compose remains healthy.
 32. README is updated.
 33. `docs/architecture.md` is updated.
-34. `SPRINT3_IMPLEMENTATION_PLAN.md` is complete.
+34. `docs/sprints/sprint-3/SPRINT3_IMPLEMENTATION_PLAN.md` is complete.
 35. Per-task actual elapsed times are documented.
 36. Total actual sprint elapsed time is documented.
 37. Any Android/tooling limitations are documented.
@@ -985,7 +985,7 @@ When Sprint 3 is complete, return a concise report containing:
 19. Environment/tooling limitations
 20. Total sprint wall-clock time
 21. Per-task elapsed times
-22. Reference to `SPRINT3_IMPLEMENTATION_PLAN.md`
+22. Reference to `docs/sprints/sprint-3/SPRINT3_IMPLEMENTATION_PLAN.md`
 23. Anything intentionally deferred to Sprint 4
 
 Do not continue into Sprint 4 unless explicitly requested.

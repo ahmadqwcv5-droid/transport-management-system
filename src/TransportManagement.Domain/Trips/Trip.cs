@@ -68,7 +68,7 @@ public sealed class Trip : Entity, ITenantOwned
         .OrderByDescending(x => x.CalculatedAt)
         .FirstOrDefault();
 
-    public void UpdateDraft(
+    public bool UpdateDraft(
         Guid clientId,
         string cargoDescription,
         DateTimeOffset? plannedStartAt,
@@ -79,8 +79,10 @@ public sealed class Trip : Entity, ITenantOwned
     {
         EnsureStatus(TripStatus.Draft);
         EnsureVersion(expectedVersion);
+        var clientChanged = ClientId != clientId;
         ClientId = clientId;
-        ApplyDraft(cargoDescription, plannedStartAt, price, notes, now);
+        return ApplyDraft(cargoDescription, plannedStartAt, price, notes, now)
+            || ApplyClientChange(clientChanged, now);
     }
 
     public void Assign(Guid truckId, Guid driverId, DateTimeOffset now)
@@ -111,29 +113,38 @@ public sealed class Trip : Entity, ITenantOwned
         Changed(now);
     }
 
-    public void ReplaceStops(IReadOnlyCollection<TripStop> stops, long expectedVersion, DateTimeOffset now)
+    public (bool StopsChanged, bool RouteInvalidated) ReplaceStops(
+        IReadOnlyCollection<TripStop> stops,
+        long expectedVersion,
+        DateTimeOffset now,
+        bool invalidateRoute = true)
     {
         EnsureStatus(TripStatus.Draft);
         EnsureVersion(expectedVersion);
         ValidateStops(stops, requireCoordinates: false);
         var ordered = stops.OrderBy(x => x.Sequence).ToArray();
+        var stopsChanged = false;
         if (_stops.Count == ordered.Length
             && _stops.OrderBy(x => x.Sequence).Select(x => (x.Sequence, x.Type))
                 .SequenceEqual(ordered.Select(x => (x.Sequence, x.Type))))
         {
             var existing = _stops.OrderBy(x => x.Sequence).ToArray();
             for (var index = 0; index < existing.Length; index++)
-                existing[index].UpdateFrom(ordered[index], now);
+                stopsChanged |= existing[index].UpdateFrom(ordered[index], now);
         }
         else
         {
             _stops.Clear();
             _stops.AddRange(ordered);
+            stopsChanged = true;
         }
-        RoutePlan = null;
+        var routeInvalidated = stopsChanged && invalidateRoute && RoutePlan is not null;
+        if (routeInvalidated) RoutePlan = null;
+        if (!stopsChanged) return (false, false);
         Origin = _stops.OrderBy(x => x.Sequence).FirstOrDefault()?.Name;
         Destination = _stops.OrderBy(x => x.Sequence).LastOrDefault()?.Name;
         Changed(now);
+        return (true, routeInvalidated);
     }
 
     public void ReplaceRoute(
@@ -255,7 +266,7 @@ public sealed class Trip : Entity, ITenantOwned
         Changed(now);
     }
 
-    private void ApplyDraft(
+    private bool ApplyDraft(
         string cargoDescription,
         DateTimeOffset? plannedStartAt,
         decimal? price,
@@ -266,11 +277,27 @@ public sealed class Trip : Entity, ITenantOwned
             throw new DomainRuleException("Cargo description is required.");
         if (price < 0)
             throw new DomainRuleException("Trip price cannot be negative.");
-        CargoDescription = cargoDescription.Trim();
+        var normalizedCargo = cargoDescription.Trim();
+        decimal? normalizedPrice = price.HasValue
+            ? decimal.Round(price.Value, 2, MidpointRounding.AwayFromZero)
+            : null;
+        var normalizedNotes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        if (CargoDescription == normalizedCargo && PlannedStartAt == plannedStartAt
+            && Price == normalizedPrice && Notes == normalizedNotes)
+            return false;
+        CargoDescription = normalizedCargo;
         PlannedStartAt = plannedStartAt;
-        Price = price.HasValue ? decimal.Round(price.Value, 2, MidpointRounding.AwayFromZero) : null;
-        Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        Price = normalizedPrice;
+        Notes = normalizedNotes;
         Changed(now);
+        return true;
+    }
+
+    private bool ApplyClientChange(bool changed, DateTimeOffset now)
+    {
+        if (!changed) return false;
+        Changed(now);
+        return true;
     }
 
     private void ValidateStops(IReadOnlyCollection<TripStop> stops, bool requireCoordinates)

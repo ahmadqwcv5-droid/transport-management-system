@@ -100,8 +100,14 @@ class _TripDetailsContent extends ConsumerWidget {
                     context.l10n.driver,
                     driver?.fullName ?? context.l10n.notAssigned,
                   ),
-                  _Fact(context.l10n.planned, trip.plannedStartAt ?? context.l10n.notAssigned),
-                  _Fact(context.l10n.price, trip.price?.toStringAsFixed(2) ?? context.l10n.notAssigned),
+                  _Fact(
+                    context.l10n.planned,
+                    trip.plannedStartAt ?? context.l10n.notAssigned,
+                  ),
+                  _Fact(
+                    context.l10n.price,
+                    trip.price?.toStringAsFixed(2) ?? context.l10n.notAssigned,
+                  ),
                   if (trip.actualStartAt != null)
                     _Fact(context.l10n.started, trip.actualStartAt!),
                   if (trip.arrivedPickupAt != null)
@@ -186,24 +192,42 @@ class _TripDetailsContent extends ConsumerWidget {
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(context.l10n.timeline,
-                    style: Theme.of(context).textTheme.titleMedium),
-                FutureBuilder<List<TripEvent>>(
-                  future: ref.read(operationsRepositoryProvider).timeline(trip.id),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) return Text(context.l10n.loading);
-                    return Column(children: snapshot.data!.map((event) => ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.history),
-                      title: Text(localizedTripEvent(context.l10n, event.eventType)),
-                      subtitle: Text(
-                        '${event.actorDisplayName} · ${DateFormat.yMd(Localizations.localeOf(context).toLanguageTag()).add_jm().format(DateTime.parse(event.occurredAt).toLocal())}',
-                      ),
-                    )).toList());
-                  },
-                ),
-              ]),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.timeline,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  FutureBuilder<List<TripEvent>>(
+                    future: ref
+                        .read(operationsRepositoryProvider)
+                        .timeline(trip.id),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return Text(context.l10n.loading);
+                      return Column(
+                        children: snapshot.data!
+                            .map(
+                              (event) => ListTile(
+                                dense: true,
+                                leading: const Icon(Icons.history),
+                                title: Text(
+                                  localizedTripEvent(
+                                    context.l10n,
+                                    event.eventType,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${event.actorDisplayName} · ${DateFormat.yMd(Localizations.localeOf(context).toLanguageTag()).add_jm().format(DateTime.parse(event.occurredAt).toLocal())}',
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -225,13 +249,21 @@ class _TripDetailsContent extends ConsumerWidget {
                     key: Key('trip-action-$action'),
                     style: const {'delete', 'cancel'}.contains(action)
                         ? FilledButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.error,
-                            foregroundColor: Theme.of(context).colorScheme.onError,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.error,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onError,
                           )
                         : null,
                     onPressed: () => action == 'assign' || action == 'reassign'
-                        ? _assign(context, ref, data, trip,
-                            reassign: action == 'reassign')
+                        ? _assign(
+                            context,
+                            ref,
+                            trip,
+                            reassign: action == 'reassign',
+                          )
                         : action == 'preview-repositioning'
                         ? _previewAndDispatch(
                             context,
@@ -417,58 +449,115 @@ class _TripDetailsContent extends ConsumerWidget {
     String? reason;
     if (action == 'cancel') {
       final controller = TextEditingController();
-      reason = await showDialog<String>(context: context, builder: (dialogContext) =>
-        AlertDialog(title: Text(context.l10n.cancelTrip), content: TextField(
-          key: const Key('cancel-reason'), controller: controller, maxLength: 500,
-          decoration: InputDecoration(labelText: context.l10n.cancellationReason)),
-          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext),
-            child: Text(context.l10n.cancel)), FilledButton(
-            key: const Key('confirm-cancel-trip'),
-            onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
-            child: Text(context.l10n.confirm))]));
+      reason = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(context.l10n.cancelTrip),
+          content: TextField(
+            key: const Key('cancel-reason'),
+            controller: controller,
+            maxLength: 500,
+            decoration: InputDecoration(
+              labelText: context.l10n.cancellationReason,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              key: const Key('confirm-cancel-trip'),
+              onPressed: () =>
+                  Navigator.pop(dialogContext, controller.text.trim()),
+              child: Text(context.l10n.confirm),
+            ),
+          ],
+        ),
+      );
       controller.dispose();
       if (reason == null || reason.isEmpty) return;
-    } else if (const {'delete', 'unassign', 'archive', 'unarchive', 'duplicate'}.contains(action)) {
-      final confirmed = await showDialog<bool>(context: context,
+    } else if (const {
+      'delete',
+      'unassign',
+      'archive',
+      'unarchive',
+      'duplicate',
+    }.contains(action)) {
+      final confirmed = await showDialog<bool>(
+        context: context,
         builder: (dialogContext) => AlertDialog(
           title: Text(_label(context, action)),
-          content: Text(action == 'delete'
-              ? context.l10n.deleteDraftWarning(trip.tripNumber)
-              : context.l10n.confirmTripAction(trip.tripNumber)),
-          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(context.l10n.cancel)), FilledButton(
-            key: Key('confirm-$action'), onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(context.l10n.confirm))]));
+          content: Text(
+            action == 'delete'
+                ? context.l10n.deleteDraftWarning(trip.tripNumber)
+                : context.l10n.confirmTripAction(trip.tripNumber),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              key: Key('confirm-$action'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(context.l10n.confirm),
+            ),
+          ],
+        ),
+      );
       if (confirmed != true) return;
     }
     final ok = await ref
         .read(operationsControllerProvider.notifier)
-        .mutate((repo) => switch (action) {
-          'cancel' => repo.cancelTrip(trip.id, reason!),
-          'delete' => repo.deleteDraft(trip.id),
-          'unassign' => repo.unassignTrip(trip.id),
-          'archive' => repo.archiveTrip(trip.id, archive: true),
-          'unarchive' => repo.archiveTrip(trip.id, archive: false),
-          'duplicate' => repo.duplicateTrip(trip.id),
-          _ => repo.tripAction(trip.id, action),
-        });
+        .mutate(
+          (repo) => switch (action) {
+            'cancel' => repo.cancelTrip(trip.id, reason!),
+            'delete' => repo.deleteDraft(trip.id),
+            'unassign' => repo.unassignTrip(trip.id),
+            'archive' => repo.archiveTrip(trip.id, archive: true),
+            'unarchive' => repo.archiveTrip(trip.id, archive: false),
+            'duplicate' => repo.duplicateTrip(trip.id),
+            _ => repo.tripAction(trip.id, action),
+          },
+        );
     if (context.mounted) {
       showResult(context, ok, successMessage: context.l10n.tripStatusUpdated);
       if (ok && action == 'delete') context.go('/trips');
-      if (ok && action != 'delete') ref.invalidate(tripDetailsProvider(trip.id));
+      if (ok && action != 'delete') {
+        ref.invalidate(tripDetailsProvider(trip.id));
+      }
     }
   }
 
   static Future<void> _assign(
     BuildContext context,
     WidgetRef ref,
-    OperationsData data,
-    Trip trip,
-    {bool reassign = false}
-  ) async {
+    Trip trip, {
+    bool reassign = false,
+  }) async {
+    AssignmentOptions options;
+    try {
+      options = await ref
+          .read(operationsRepositoryProvider)
+          .assignmentOptions(trip.id);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error is ApiException
+                ? localizedApiError(context, error)
+                : context.l10n.genericError,
+          ),
+        ),
+      );
+      return;
+    }
+    if (!context.mounted) return;
     final assignment = await showDialog<List<String>>(
       context: context,
-      builder: (_) => _AssignmentDialog(data),
+      builder: (_) => _AssignmentDialog(options),
     );
     if (assignment == null || !context.mounted) return;
     final ok = await ref
@@ -503,21 +592,19 @@ class _Fact extends StatelessWidget {
 }
 
 class _AssignmentDialog extends StatefulWidget {
-  const _AssignmentDialog(this.data);
-  final OperationsData data;
+  const _AssignmentDialog(this.options);
+  final AssignmentOptions options;
   @override
   State<_AssignmentDialog> createState() => _AssignmentDialogState();
 }
 
 class _AssignmentDialogState extends State<_AssignmentDialog> {
-  late String? truckId = widget.data.trucks
-      .where((item) => item.isActive && item.status == 'Available')
-      .firstOrNull
-      ?.id;
-  late String? driverId = widget.data.drivers
-      .where((item) => item.isActive && item.status == 'Available')
-      .firstOrNull
-      ?.id;
+  late String? truckId =
+      widget.options.currentTruckId ??
+      widget.options.trucks.where((item) => item.isEligible).firstOrNull?.id;
+  late String? driverId =
+      widget.options.currentDriverId ??
+      widget.options.drivers.where((item) => item.isEligible).firstOrNull?.id;
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: Text(context.l10n.assignResources),
@@ -530,12 +617,15 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
             key: const Key('assign-truck'),
             initialValue: truckId,
             decoration: InputDecoration(labelText: context.l10n.truck),
-            items: widget.data.trucks
-                .where((item) => item.isActive && item.status == 'Available')
+            items: widget.options.trucks
                 .map(
                   (item) => DropdownMenuItem(
                     value: item.id,
-                    child: Text(item.plateNumber),
+                    enabled: item.isEligible,
+                    child: Text(
+                      '${item.displayName} — ${_assignmentReason(context, item)}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 )
                 .toList(),
@@ -546,12 +636,15 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
             key: const Key('assign-driver'),
             initialValue: driverId,
             decoration: InputDecoration(labelText: context.l10n.driver),
-            items: widget.data.drivers
-                .where((item) => item.isActive && item.status == 'Available')
+            items: widget.options.drivers
                 .map(
                   (item) => DropdownMenuItem(
                     value: item.id,
-                    child: Text(item.fullName),
+                    enabled: item.isEligible,
+                    child: Text(
+                      '${item.displayName} — ${_assignmentReason(context, item)}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 )
                 .toList(),
@@ -575,3 +668,20 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
     ],
   );
 }
+
+String _assignmentReason(
+  BuildContext context,
+  AssignmentResourceOption option,
+) => switch (option.reasonCode) {
+  'AVAILABLE' => context.l10n.available,
+  'RESOURCE_INACTIVE' => context.l10n.resourceInactive,
+  'TRUCK_MAINTENANCE' => context.l10n.truckInMaintenance,
+  'TRUCK_OUT_OF_SERVICE' => context.l10n.truckOutOfServiceReason,
+  'TRUCK_ALREADY_ASSIGNED' || 'DRIVER_ALREADY_ASSIGNED' || 'DRIVER_ON_TRIP' =>
+    option.conflictingTripNumber == null
+        ? context.l10n.notAvailable
+        : context.l10n.resourceAssignedToTrip(option.conflictingTripNumber!),
+  'DRIVER_NOT_AVAILABLE' => context.l10n.driverNotAvailable,
+  'TRIP_NOT_READY_FOR_ASSIGNMENT' => context.l10n.tripNotReadyForAssignment,
+  _ => localizedStatus(context.l10n, option.status),
+};
