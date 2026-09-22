@@ -698,4 +698,204 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deliveryMarker => 'Delivery marker';
+
+  @override
+  String get tripTabActive => 'Active';
+
+  @override
+  String get tripTabPlanned => 'Planned';
+
+  @override
+  String get tripTabCompleted => 'Completed';
+
+  @override
+  String get tripTabCancelled => 'Cancelled';
+
+  @override
+  String get tripTabArchived => 'Archived';
+
+  @override
+  String get searchTrips => 'Search trip number, client, stop, or plate';
+
+  @override
+  String get tripFilters => 'Trip filters';
+
+  @override
+  String get clearFilters => 'Clear filters';
+
+  @override
+  String get previousPage => 'Previous page';
+
+  @override
+  String get nextPage => 'Next page';
+
+  @override
+  String pageOf(int page, int pages, int total) {
+    return 'Page $page of $pages · $total trips';
+  }
+
+  @override
+  String get incompleteDraft => 'Incomplete Draft';
+
+  @override
+  String get draftIncomplete => 'Needs planning details';
+
+  @override
+  String get saveDraft => 'Save Draft';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get tripBasics => 'Trip basics';
+
+  @override
+  String get pickupAndDelivery => 'Pickup and delivery';
+
+  @override
+  String get scheduleAndCommercial => 'Schedule and commercial details';
+
+  @override
+  String get routeNotCalculated =>
+      'Save the stops, then calculate the authoritative route.';
+
+  @override
+  String get assignmentOptional => 'Assignment (optional)';
+
+  @override
+  String get assignmentAfterDraft =>
+      'Finish the planning checklist, then assign eligible resources from trip details.';
+
+  @override
+  String get review => 'Review';
+
+  @override
+  String get saveDraftReview =>
+      'Review the readiness checklist and save this Draft.';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get reassign => 'Reassign';
+
+  @override
+  String get unassign => 'Unassign';
+
+  @override
+  String get archive => 'Archive';
+
+  @override
+  String get unarchive => 'Unarchive';
+
+  @override
+  String get duplicateAsDraft => 'Duplicate as Draft';
+
+  @override
+  String get cancelTrip => 'Cancel trip';
+
+  @override
+  String get cancellationReason => 'Cancellation reason';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get timeline => 'Timeline';
+
+  @override
+  String deleteDraftWarning(String tripNumber) {
+    return 'Permanently delete $tripNumber? This cannot be undone.';
+  }
+
+  @override
+  String confirmTripAction(String tripNumber) {
+    return 'Apply this action to $tripNumber?';
+  }
+
+  @override
+  String get tripNotReadyForRoute =>
+      'Add valid pickup and delivery coordinates before calculating a route.';
+
+  @override
+  String get tripNotReadyForAssignment =>
+      'Complete the planning checklist and calculate the current route before assignment.';
+
+  @override
+  String get tripDeleteNotAllowed =>
+      'Only a Draft that has never started dispatch can be permanently deleted.';
+
+  @override
+  String get tripCancelReasonRequired =>
+      'Enter a cancellation reason of 500 characters or fewer.';
+
+  @override
+  String get tripArchiveNotAllowed =>
+      'Only completed or cancelled trips can be archived or restored.';
+
+  @override
+  String get tripReassignNotAllowed =>
+      'This trip can no longer be reassigned because dispatch has started.';
+
+  @override
+  String get tripUnassignNotAllowed =>
+      'This trip can no longer be unassigned because dispatch has started.';
+
+  @override
+  String get tripConcurrencyConflict =>
+      'This trip was changed by another user. Reload it and try again.';
+
+  @override
+  String get eventTripCreated => 'Trip created';
+
+  @override
+  String get eventDraftUpdated => 'Draft updated';
+
+  @override
+  String get eventStopsUpdated => 'Stops updated';
+
+  @override
+  String get eventRouteCalculated => 'Route calculated';
+
+  @override
+  String get eventAssigned => 'Resources assigned';
+
+  @override
+  String get eventReassigned => 'Resources reassigned';
+
+  @override
+  String get eventUnassigned => 'Resources unassigned';
+
+  @override
+  String get eventDispatchedToPickup => 'Dispatched to pickup';
+
+  @override
+  String get eventArrivedAtPickup => 'Arrived at pickup';
+
+  @override
+  String get eventTripStarted => 'Trip started';
+
+  @override
+  String get eventMarkedInTransit => 'Marked in transit';
+
+  @override
+  String get eventDelivered => 'Delivered';
+
+  @override
+  String get eventCompleted => 'Completed';
+
+  @override
+  String get eventCancelled => 'Cancelled';
+
+  @override
+  String get eventArchived => 'Archived';
+
+  @override
+  String get eventUnarchived => 'Unarchived';
+
+  @override
+  String get eventImportedBaseline => 'Imported baseline';
 }

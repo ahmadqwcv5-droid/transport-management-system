@@ -366,3 +366,52 @@ Latest trusted truck position
   -> explicit cargo start
   -> cargo route execution
 ```
+
+## ADR-021: Resumable Drafts, operational lists, and immutable trip audit
+
+**Status:** Accepted
+
+Trip persistence is intentionally split into Draft basics, stops, and an
+explicit authoritative route calculation. An active client and cargo summary
+are the minimum first save. Nullable schedule, price, route labels, and stop
+coordinates represent unfinished work directly; placeholder geography is
+forbidden. The backend derives readiness from current data and the route's stop
+fingerprint, so Flutter cannot assert that a trip is assignable.
+
+```text
+minimal Draft -> saved stops -> authoritative route -> assignment
+      |               |                 |
+      +------- resumable/versioned -----+
+```
+
+Each company/year owns an atomic `TripNumberCounter`. PostgreSQL `INSERT ... ON
+CONFLICT DO UPDATE ... RETURNING` allocates `TRP-YYYY-NNNNNN`; the unique
+`(CompanyId, TripNumber)` index is the final invariant. Migration backfill uses
+UTC `CreatedAt`, partitions by tenant/year, and orders by `CreatedAt, Id` before
+seeding counters. Deleted Draft numbers remain consumed.
+
+The list API owns operational group membership and performs tenant-scoped
+filtering, searching, safe sorting, counting, and bounded paging. Flutter's
+dedicated trip-list controller debounces search and uses a request generation
+to prevent stale responses from replacing newer filters. Individual detail and
+edit routes fetch by ID, independent of the current page.
+
+Hard deletion is limited to a never-executed Draft with no repositioning or
+tracking history. Cancellation requires a bounded reason and actor and releases
+operational targeting. Archive state is orthogonal to Completed/Cancelled.
+Only Assigned-before-dispatch trips may be reassigned or unassigned; proposed
+repositioning is expired while the immutable cargo route is retained. Database
+reservation indexes remain the concurrent double-assignment backstop, and
+Draft version is an EF optimistic concurrency token.
+
+`TripEvent` is append-only through public application paths. It stores company,
+trip, stable event code, UTC occurrence, authenticated actor, User/System/
+Migration source, and bounded JSON metadata. The timeline is tenant-filtered,
+newest-first, and paginated. Migration creates only `ImportedBaseline` with the
+known status for legacy records.
+
+The Development stationary simulator heartbeat is 60 seconds, limiting normal
+unchanged writes to 60 per truck/hour while remaining below the 300-second
+dispatch freshness window. Once a trip is terminal or unassigned, future idle
+samples retain the physical fleet position but use CurrentLocation with no stale
+trip/route/repositioning association; historical samples are never rewritten.

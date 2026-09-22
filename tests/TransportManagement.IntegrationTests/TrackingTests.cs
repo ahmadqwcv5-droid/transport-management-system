@@ -88,8 +88,7 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         {
             fullName = $"Heartbeat Driver {suffix}", licenseNumber = $"HB-L-{suffix}"
         })).RequiredJsonAsync()).GetProperty("id").GetGuid();
-        var tripId = (await (await client.PostJsonAsync(
-            "/api/trips", RouteTestData.TripPayload(clientId))).RequiredJsonAsync())
+        var tripId = (await RouteTestData.CreateReadyTripAsync(client, clientId))
             .GetProperty("id").GetGuid();
         await (await client.PostJsonAsync(
             $"/api/trips/{tripId}/assign", new { truckId, driverId })).RequiredJsonAsync();
@@ -161,9 +160,8 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
             licenseNumber = $"NT-L-{suffix}"
         })).RequiredJsonAsync()).GetProperty("id").GetGuid();
 
-        var tripAId = (await (await client.PostJsonAsync("/api/trips",
-            RouteTestData.TripPayload(clientId, 39, 32, 40, 31))).RequiredJsonAsync())
-            .GetProperty("id").GetGuid();
+        var tripAId = (await RouteTestData.CreateReadyTripAsync(
+            client, clientId, 39, 32, 40, 31)).GetProperty("id").GetGuid();
         await (await client.PostJsonAsync($"/api/trips/{tripAId}/assign", new { truckId, driverId })).RequiredJsonAsync();
         await (await client.PostJsonAsync("/api/tracking/simulator/control", new
         {
@@ -185,9 +183,8 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var tripBId = (await (await client.PostJsonAsync("/api/trips",
-            RouteTestData.TripPayload(clientId, 41, 28, 40.5m, 29))).RequiredJsonAsync())
-            .GetProperty("id").GetGuid();
+        var tripBId = (await RouteTestData.CreateReadyTripAsync(
+            client, clientId, 41, 28, 40.5m, 29)).GetProperty("id").GetGuid();
         await client.PostJsonAsync($"/api/trips/{tripBId}/assign", new { truckId, driverId });
         await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
         await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
@@ -218,8 +215,9 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         var paused1 = await client.GetJsonAsync<JsonElement>( $"/api/tracking/trucks/{truckId}/position");
         var paused2 = await client.GetJsonAsync<JsonElement>( $"/api/tracking/trucks/{truckId}/position");
         Assert.Equal(paused1.GetProperty("longitude").GetDecimal(), paused2.GetProperty("longitude").GetDecimal());
-        var trips = await client.GetJsonAsync<JsonElement[]>("/api/trips");
-        var tripId = trips!.Single(x => x.GetProperty("truckId").GetGuid() == truckId).GetProperty("id").GetGuid();
+        var trips = await client.GetJsonAsync<JsonElement>("/api/trips?pageSize=100");
+        var tripId = trips.GetProperty("items").EnumerateArray()
+            .Single(x => x.GetProperty("truckId").GetGuid() == truckId).GetProperty("id").GetGuid();
         var progressBefore = await client.GetJsonAsync<JsonElement>($"/api/trips/{tripId}/route-progress");
 
         await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "step" });
@@ -292,7 +290,8 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
     {
         using var client = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
         var truckId = await CreateStartedRouteTripAsync(client);
-        var tripId = (await client.GetJsonAsync<JsonElement[]>("/api/trips"))!
+        var tripPage = await client.GetJsonAsync<JsonElement>("/api/trips?pageSize=100");
+        var tripId = tripPage.GetProperty("items").EnumerateArray()
             .Single(x => x.GetProperty("truckId").GetGuid() == truckId)
             .GetProperty("id").GetGuid();
 
@@ -329,8 +328,8 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
                     TestContext.Current.CancellationToken);
             tripAId = tripA.Id;
             var tripB = new Trip(
-                Guid.NewGuid(), ApiFactory.CompanyAId, tripA.ClientId,
-                "Previous pickup", "Previous delivery", "Previous cargo",
+                Guid.NewGuid(), ApiFactory.CompanyAId, "TRP-2026-900002", tripA.ClientId,
+                "Previous cargo",
                 now.AddDays(-1), 100, null, now.AddDays(-2));
             tripB.Assign(truckId, tripA.DriverId!.Value, now.AddDays(-2));
             tripBId = tripB.Id;
@@ -398,7 +397,7 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         {
             fullName = $"Driver {suffix}", licenseNumber = $"SIM-L-{suffix}"
         })).RequiredJsonAsync()).GetProperty("id").GetGuid();
-        var tripId = (await (await client.PostJsonAsync("/api/trips", RouteTestData.TripPayload(clientId))).RequiredJsonAsync())
+        var tripId = (await RouteTestData.CreateReadyTripAsync(client, clientId))
             .GetProperty("id").GetGuid();
         await (await client.PostJsonAsync($"/api/trips/{tripId}/assign", new { truckId, driverId })).RequiredJsonAsync();
         await (await client.PostJsonAsync("/api/tracking/simulator/control", new

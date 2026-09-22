@@ -7,7 +7,8 @@ public sealed record FleetSummaryResponse(
 public sealed record TripSummaryResponse(int Active, int CompletedToday);
 public sealed record TrackingSummaryResponse(int Online, int Offline);
 public sealed record RecentTripResponse(
-    Guid Id, string Origin, string Destination, string Status, DateTimeOffset PlannedStartAt);
+    Guid Id, string TripNumber, string? Origin, string? Destination, string Status,
+    DateTimeOffset? PlannedStartAt);
 public sealed record DashboardResponse(
     FleetSummaryResponse Fleet,
     TripSummaryResponse Trips,

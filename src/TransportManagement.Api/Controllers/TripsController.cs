@@ -12,15 +12,24 @@ namespace TransportManagement.Api.Controllers;
 public sealed class TripsController(TripService service, RouteProgressService progressService) : ControllerBase
 {
     [HttpGet]
-    public async Task<IReadOnlyList<TripResponse>> List(
-        [FromQuery] TripStatus? status,
-        [FromQuery] Guid? clientId,
-        [FromQuery] Guid? truckId,
-        [FromQuery] Guid? driverId,
-        [FromQuery] DateTimeOffset? plannedFrom,
-        [FromQuery] DateTimeOffset? plannedTo,
-        CancellationToken cancellationToken) =>
-        await service.ListAsync(status, clientId, truckId, driverId, plannedFrom, plannedTo, cancellationToken);
+    public async Task<TripPageResponse> List(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        [FromQuery] string? operationalGroup = null,
+        [FromQuery] TripStatus? status = null,
+        [FromQuery] bool? archived = null,
+        [FromQuery] Guid? clientId = null,
+        [FromQuery] Guid? truckId = null,
+        [FromQuery] Guid? driverId = null,
+        [FromQuery] DateTimeOffset? plannedFrom = null,
+        [FromQuery] DateTimeOffset? plannedTo = null,
+        [FromQuery] string sort = "plannedStart",
+        [FromQuery] string direction = "desc",
+        CancellationToken cancellationToken = default) =>
+        await service.QueryAsync(new(page, pageSize, search, operationalGroup,
+            status, archived, clientId, truckId, driverId, plannedFrom,
+            plannedTo, sort, direction), cancellationToken);
 
     [HttpGet("{id:guid}")]
     public async Task<TripResponse> Get(Guid id, CancellationToken cancellationToken) =>
@@ -43,10 +52,51 @@ public sealed class TripsController(TripService service, RouteProgressService pr
     public async Task<TripResponse> UpdateDraft(Guid id, TripRequest request, CancellationToken cancellationToken) =>
         await service.UpdateDraftAsync(id, request, cancellationToken);
 
+    [HttpPut("{id:guid}/stops")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TripResponse> UpdateStops(Guid id, UpdateTripStopsRequest request,
+        CancellationToken cancellationToken) =>
+        service.UpdateStopsAsync(id, request, cancellationToken);
+
+    [HttpPost("{id:guid}/calculate-route")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TripResponse> CalculateRoute(Guid id, CalculateTripRouteRequest request,
+        CancellationToken cancellationToken) =>
+        service.CalculateRouteAsync(id, request, cancellationToken);
+
+    [HttpGet("{id:guid}/timeline")]
+    public Task<TripTimelineResponse> Timeline(Guid id, [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default) =>
+        service.TimelineAsync(id, page, pageSize, cancellationToken);
+
     [HttpPost("{id:guid}/assign")]
     [Authorize(Policy = "operations.manage")]
     public Task<TripResponse> Assign(Guid id, AssignTripRequest request, CancellationToken cancellationToken) =>
         service.AssignAsync(id, request, cancellationToken);
+
+    [HttpPost("{id:guid}/reassign")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TripResponse> Reassign(Guid id, AssignTripRequest request,
+        CancellationToken cancellationToken) =>
+        service.ReassignAsync(id, request, cancellationToken);
+
+    [HttpPost("{id:guid}/unassign")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TripResponse> Unassign(Guid id, CancellationToken cancellationToken) =>
+        service.UnassignAsync(id, cancellationToken);
+
+    [HttpDelete("{id:guid}/draft")]
+    [Authorize(Policy = "operations.manage")]
+    public async Task<IActionResult> DeleteDraft(Guid id, CancellationToken cancellationToken)
+    {
+        await service.DeleteDraftAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/duplicate")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TripResponse> Duplicate(Guid id, CancellationToken cancellationToken) =>
+        service.DuplicateAsync(id, cancellationToken);
 
     [HttpPost("{id:guid}/repositioning/preview")]
     [Authorize(Policy = "operations.manage")]
@@ -92,6 +142,17 @@ public sealed class TripsController(TripService service, RouteProgressService pr
 
     [HttpPost("{id:guid}/cancel")]
     [Authorize(Policy = "operations.manage")]
-    public Task<TripResponse> Cancel(Guid id, CancellationToken cancellationToken) =>
-        service.CancelAsync(id, cancellationToken);
+    public Task<TripResponse> Cancel(Guid id, CancelTripRequest request,
+        CancellationToken cancellationToken) =>
+        service.CancelAsync(id, request, cancellationToken);
+
+    [HttpPost("{id:guid}/archive")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TripResponse> Archive(Guid id, CancellationToken cancellationToken) =>
+        service.ArchiveAsync(id, cancellationToken);
+
+    [HttpPost("{id:guid}/unarchive")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TripResponse> Unarchive(Guid id, CancellationToken cancellationToken) =>
+        service.UnarchiveAsync(id, cancellationToken);
 }

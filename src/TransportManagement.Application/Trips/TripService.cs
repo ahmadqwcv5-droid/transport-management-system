@@ -21,15 +21,17 @@ public sealed class TripService(
     public async Task<TripResponse> CreateAsync(TripRequest request, CancellationToken cancellationToken)
     {
         await RequiredActiveClientAsync(request.ClientId, cancellationToken);
-        var route = await routePlanningService.PreviewAsync(
-            new(request.Stops, request.RouteProfile), cancellationToken);
-        var orderedStops = request.Stops.OrderBy(x => x.Sequence).ToArray();
+        var now = clock.UtcNow;
+        var number = await store.AllocateTripNumberAsync(
+            currentUser.CompanyId, now.UtcDateTime.Year, cancellationToken);
         var trip = new Trip(
-            Guid.NewGuid(), currentUser.CompanyId, request.ClientId, orderedStops[0].Name,
-            orderedStops[^1].Name, request.CargoDescription, request.PlannedStartAt,
+            Guid.NewGuid(), currentUser.CompanyId, number, request.ClientId,
+            request.CargoDescription, request.PlannedStartAt,
             request.Price, request.Notes, clock.UtcNow);
-        trip.ReplaceRoute(CreateStops(trip.Id, orderedStops), CreateRoutePlan(trip.Id, route), clock.UtcNow);
+        if (request.Stops is { Count: > 0 })
+            trip.ReplaceStops(CreateStops(trip.Id, request.Stops), trip.Version, now);
         store.AddTrip(trip);
+        AppendEvent(trip, "TripCreated", new { trip.TripNumber });
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
     }
@@ -38,18 +40,68 @@ public sealed class TripService(
     {
         var trip = await RequiredTripAsync(id, cancellationToken);
         await RequiredActiveClientAsync(request.ClientId, cancellationToken);
+        trip.UpdateDraft(request.ClientId, request.CargoDescription,
+            request.PlannedStartAt, request.Price, request.Notes,
+            request.ExpectedVersion ?? trip.Version, clock.UtcNow);
+        AppendEvent(trip, "DraftUpdated");
+        await store.SaveChangesAsync(cancellationToken);
+        return Map(trip);
+    }
+
+    public async Task<TripResponse> UpdateStopsAsync(
+        Guid id, UpdateTripStopsRequest request, CancellationToken cancellationToken)
+    {
+        var trip = await RequiredTripAsync(id, cancellationToken);
+        var stops = CreateStops(trip.Id, request.Stops);
+        var replacesStopEntities = trip.Stops.Count != stops.Length
+            || !trip.Stops.OrderBy(x => x.Sequence).Select(x => (x.Sequence, x.Type))
+                .SequenceEqual(stops.OrderBy(x => x.Sequence).Select(x => (x.Sequence, x.Type)));
+        trip.ReplaceStops(stops, request.ExpectedVersion, clock.UtcNow);
+        if (replacesStopEntities)
+            store.AddTripStops(stops);
+        AppendEvent(trip, "StopsUpdated");
+        await store.SaveChangesAsync(cancellationToken);
+        return Map(trip);
+    }
+
+    public async Task<TripResponse> CalculateRouteAsync(
+        Guid id, CalculateTripRouteRequest request, CancellationToken cancellationToken)
+    {
+        var trip = await RequiredTripAsync(id, cancellationToken);
+        if (trip.Status != TripStatus.Draft || trip.Stops.Count != 2 || trip.Stops.Any(x => !x.HasCoordinates))
+            throw new ConflictException("Complete pickup and delivery before route calculation.", "TRIP_NOT_READY_FOR_ROUTE");
+        var stopRequests = trip.Stops.OrderBy(x => x.Sequence).Select(x => new RouteStopRequest(
+            x.Sequence, x.Type.ToString(), x.Name, x.Address, x.Latitude!.Value,
+            x.Longitude!.Value, x.PlannedArrivalAt, x.PlannedServiceDurationMinutes)).ToArray();
         var route = await routePlanningService.PreviewAsync(
-            new(request.Stops, request.RouteProfile), cancellationToken);
-        var orderedStops = request.Stops.OrderBy(x => x.Sequence).ToArray();
-        trip.UpdateDraft(request.ClientId, orderedStops[0].Name, orderedStops[^1].Name, request.CargoDescription,
-            request.PlannedStartAt, request.Price, request.Notes, clock.UtcNow);
-        trip.ReplaceRoute(CreateStops(trip.Id, orderedStops), CreateRoutePlan(trip.Id, route), clock.UtcNow);
+            new(stopRequests, request.RouteProfile), cancellationToken);
+        var routePlan = CreateRoutePlan(trip.Id, route);
+        trip.ReplaceRoute(trip.Stops.ToArray(), routePlan, clock.UtcNow);
+        store.AddTripRoutePlan(routePlan);
+        AppendEvent(trip, "RouteCalculated", new { route.ProviderName, route.StopsFingerprint });
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
     }
 
     public async Task<TripResponse> GetAsync(Guid id, CancellationToken cancellationToken) =>
         Map(await RequiredTripAsync(id, cancellationToken));
+
+    public async Task<TripPageResponse> QueryAsync(
+        TripListQuery query, CancellationToken cancellationToken)
+    {
+        if (query.Page < 1 || query.PageSize is < 1 or > 100)
+            throw new DomainRuleException("Page must be positive and page size must be between 1 and 100.", "INVALID_PAGINATION");
+        if (!new[] { "plannedstart", "tripnumber", "created", "status" }.Contains(query.Sort.ToLowerInvariant())
+            || !new[] { "asc", "desc" }.Contains(query.Direction.ToLowerInvariant()))
+            throw new DomainRuleException("Sort is not supported.", "INVALID_SORT");
+        if (!string.IsNullOrWhiteSpace(query.OperationalGroup)
+            && !new[] { "active", "planned", "completed", "cancelled", "archived" }
+                .Contains(query.OperationalGroup.ToLowerInvariant()))
+            throw new DomainRuleException("Operational group is not supported.", "INVALID_TRIP_FILTER");
+        var (items, total) = await store.QueryTripsAsync(query, cancellationToken);
+        return new(items.Select(Map).ToArray(), total, query.Page, query.PageSize,
+            (int)Math.Ceiling(total / (double)query.PageSize));
+    }
 
     public async Task<IReadOnlyList<TripResponse>> ListAsync(
         TripStatus? status,
@@ -62,11 +114,30 @@ public sealed class TripService(
         (await store.ListTripsAsync(status, clientId, truckId, driverId, plannedFrom, plannedTo, cancellationToken))
         .Select(Map).ToArray();
 
+    public async Task<TripTimelineResponse> TimelineAsync(
+        Guid id, int page, int pageSize, CancellationToken cancellationToken)
+    {
+        _ = await RequiredTripAsync(id, cancellationToken);
+        if (page < 1 || pageSize is < 1 or > 100)
+            throw new DomainRuleException("Timeline pagination is invalid.", "INVALID_PAGINATION");
+        var (events, total) = await store.ListTripEventsAsync(id, page, pageSize, cancellationToken);
+        var items = new List<TripEventResponse>(events.Count);
+        foreach (var item in events)
+        {
+            var actor = item.ActorUserId.HasValue
+                ? await store.UserDisplayNameAsync(item.ActorUserId.Value, cancellationToken)
+                : null;
+            items.Add(new(item.Id, item.EventType, item.OccurredAt, item.ActorUserId,
+                actor ?? "System", item.Source, item.Metadata));
+        }
+        return new(items, total, page, pageSize, (int)Math.Ceiling(total / (double)pageSize));
+    }
+
     public async Task<TripResponse> AssignAsync(Guid id, AssignTripRequest request, CancellationToken cancellationToken)
     {
         var trip = await RequiredTripAsync(id, cancellationToken);
-        if (trip.RoutePlan is null || trip.Stops.Any(x => !x.HasCoordinates))
-            throw new ConflictException("Select geographic stops and calculate a route before assignment.", "ROUTE_PLAN_REQUIRED");
+        if (!Readiness(trip).CanAssign)
+            throw new ConflictException("Complete the Draft and calculate its current route before assignment.", "TRIP_NOT_READY_FOR_ASSIGNMENT");
         await RequiredActiveClientAsync(trip.ClientId, cancellationToken);
         var truck = await RequiredTruckAsync(request.TruckId, cancellationToken);
         var driver = await RequiredDriverAsync(request.DriverId, cancellationToken);
@@ -79,8 +150,80 @@ public sealed class TripService(
         if (await store.DriverReservedAsync(driver.Id, trip.Id, cancellationToken))
             throw new ConflictException("The selected driver is already reserved by an active trip.", "DRIVER_ALREADY_ASSIGNED");
         trip.Assign(truck.Id, driver.Id, clock.UtcNow);
+        AppendEvent(trip, "Assigned", new { truckId = truck.Id, driverId = driver.Id });
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
+    }
+
+    public async Task<TripResponse> ReassignAsync(Guid id, AssignTripRequest request, CancellationToken cancellationToken)
+    {
+        var trip = await RequiredTripAsync(id, cancellationToken);
+        if (trip.Status != TripStatus.Assigned)
+            throw new ConflictException("Only a trip awaiting dispatch can be reassigned.", "TRIP_REASSIGN_NOT_ALLOWED");
+        var oldTruckId = trip.TruckId;
+        var oldDriverId = trip.DriverId;
+        var truck = await RequiredTruckAsync(request.TruckId, cancellationToken);
+        var driver = await RequiredDriverAsync(request.DriverId, cancellationToken);
+        if (!truck.IsActive || truck.Status != TruckStatus.Available)
+            throw new ConflictException("The selected truck is unavailable.", "TRUCK_NOT_AVAILABLE");
+        if (!driver.IsActive || driver.Status != DriverStatus.Available)
+            throw new ConflictException("The selected driver is unavailable.", "DRIVER_NOT_AVAILABLE");
+        if (await store.TruckReservedAsync(truck.Id, trip.Id, cancellationToken))
+            throw new ConflictException("The selected truck is already reserved.", "TRUCK_ALREADY_ASSIGNED");
+        if (await store.DriverReservedAsync(driver.Id, trip.Id, cancellationToken))
+            throw new ConflictException("The selected driver is already reserved.", "DRIVER_ALREADY_ASSIGNED");
+        trip.Reassign(truck.Id, driver.Id, clock.UtcNow);
+        AppendEvent(trip, "Reassigned", new { oldTruckId, oldDriverId, newTruckId = truck.Id, newDriverId = driver.Id });
+        await store.SaveChangesAsync(cancellationToken);
+        return Map(trip);
+    }
+
+    public async Task<TripResponse> UnassignAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var trip = await RequiredTripAsync(id, cancellationToken);
+        if (trip.Status != TripStatus.Assigned)
+            throw new ConflictException("Only a trip awaiting dispatch can be unassigned.", "TRIP_UNASSIGN_NOT_ALLOWED");
+        var oldTruckId = trip.TruckId;
+        var oldDriverId = trip.DriverId;
+        trip.Unassign(clock.UtcNow);
+        AppendEvent(trip, "Unassigned", new { oldTruckId, oldDriverId });
+        await store.SaveChangesAsync(cancellationToken);
+        return Map(trip);
+    }
+
+    public async Task DeleteDraftAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var trip = await RequiredTripAsync(id, cancellationToken);
+        if (trip.Status != TripStatus.Draft || trip.RepositioningPlans.Count != 0
+            || trip.ActualStartAt.HasValue || trip.ArrivedPickupAt.HasValue
+            || await trackingStore.HasTripHistoryAsync(id, cancellationToken))
+            throw new ConflictException("Only a never-executed Draft may be permanently deleted.", "TRIP_DELETE_NOT_ALLOWED");
+        store.RemoveTrip(trip);
+        await store.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<TripResponse> DuplicateAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var source = await RequiredTripAsync(id, cancellationToken);
+        await RequiredActiveClientAsync(source.ClientId, cancellationToken);
+        var now = clock.UtcNow;
+        var number = await store.AllocateTripNumberAsync(currentUser.CompanyId,
+            now.UtcDateTime.Year, cancellationToken);
+        var copy = new Trip(Guid.NewGuid(), currentUser.CompanyId, number,
+            source.ClientId, source.CargoDescription, source.PlannedStartAt,
+            source.Price, source.Notes, now);
+        if (source.Stops.Count > 0)
+        {
+            var stops = source.Stops.OrderBy(x => x.Sequence).Select(x => new TripStop(
+                Guid.NewGuid(), currentUser.CompanyId, copy.Id, x.Sequence, x.Type,
+                x.Name, x.Address, x.Latitude, x.Longitude, x.PlannedArrivalAt,
+                x.PlannedServiceDurationMinutes, now)).ToArray();
+            copy.ReplaceStops(stops, copy.Version, now);
+        }
+        store.AddTrip(copy);
+        AppendEvent(copy, "TripCreated", new { duplicatedFromTripId = source.Id, source.TripNumber });
+        await store.SaveChangesAsync(cancellationToken);
+        return Map(copy);
     }
 
     public async Task<RepositioningPreviewResponse> PreviewRepositioningAsync(
@@ -157,10 +300,11 @@ public sealed class TripService(
                 await store.SaveChangesAsync(cancellationToken);
                 throw new ConflictException("The truck moved after route proposal; preview again.", "REPOSITIONING_ROUTE_STALE");
             }
-            trip.DispatchToPickup(plan, now);
+        trip.DispatchToPickup(plan, now);
         }
         truck.ChangeStatus(TruckStatus.OnTrip, now);
         driver.ChangeStatus(DriverStatus.OnTrip, now);
+        AppendEvent(trip, trip.Status == TripStatus.AtPickup ? "ArrivedAtPickup" : "DispatchedToPickup");
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
     }
@@ -177,6 +321,7 @@ public sealed class TripService(
         trip.MarkAtPickup(now);
         if (truck.Status != TruckStatus.OnTrip) truck.ChangeStatus(TruckStatus.OnTrip, now);
         if (driver.Status != DriverStatus.OnTrip) driver.ChangeStatus(DriverStatus.OnTrip, now);
+        AppendEvent(trip, "ArrivedAtPickup");
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
     }
@@ -193,6 +338,7 @@ public sealed class TripService(
         ]);
         if (distance > dispatchPolicy.PickupArrivalRadiusMeters) return false;
         trip.MarkAtPickup(clock.UtcNow);
+        AppendEvent(trip, "ArrivedAtPickup", source: "System");
         await store.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -234,15 +380,16 @@ public sealed class TripService(
         trip.Start(now);
         if (truck.Status != TruckStatus.OnTrip) truck.ChangeStatus(TruckStatus.OnTrip, now);
         if (driver.Status != DriverStatus.OnTrip) driver.ChangeStatus(DriverStatus.OnTrip, now);
+        AppendEvent(trip, "TripStarted");
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
     }
 
     public Task<TripResponse> MarkInTransitAsync(Guid id, CancellationToken cancellationToken) =>
-        TransitionAsync(id, (trip, now) => trip.MarkInTransit(now), cancellationToken);
+        TransitionAsync(id, (trip, now) => trip.MarkInTransit(now), "MarkedInTransit", cancellationToken);
 
     public Task<TripResponse> DeliverAsync(Guid id, CancellationToken cancellationToken) =>
-        TransitionAsync(id, (trip, now) => trip.Deliver(now), cancellationToken);
+        TransitionAsync(id, (trip, now) => trip.Deliver(now), "Delivered", cancellationToken);
 
     public async Task<TripResponse> CompleteAsync(Guid id, CancellationToken cancellationToken)
     {
@@ -251,11 +398,12 @@ public sealed class TripService(
         trip.Complete(now);
         truck.ChangeStatus(TruckStatus.Available, now);
         driver.ChangeStatus(DriverStatus.Available, now);
+        AppendEvent(trip, "Completed");
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
     }
 
-    public async Task<TripResponse> CancelAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<TripResponse> CancelAsync(Guid id, CancelTripRequest request, CancellationToken cancellationToken)
     {
         var trip = await RequiredTripAsync(id, cancellationToken);
         var releaseResources = trip.Status is TripStatus.EnRouteToPickup or TripStatus.AtPickup
@@ -267,17 +415,40 @@ public sealed class TripService(
             (_, truck, driver) = await RequiredAssignedResourcesAsync(id, cancellationToken);
         }
         var now = clock.UtcNow;
-        trip.Cancel(now);
+        var previousStatus = trip.Status;
+        trip.Cancel(request.Reason, currentUser.UserId, now);
         truck?.ChangeStatus(TruckStatus.Available, now);
         driver?.ChangeStatus(DriverStatus.Available, now);
+        AppendEvent(trip, "Cancelled", new { previousStatus, reason = trip.CancellationReason });
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
     }
 
-    private async Task<TripResponse> TransitionAsync(Guid id, Action<Trip, DateTimeOffset> transition, CancellationToken cancellationToken)
+    public async Task<TripResponse> ArchiveAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var trip = await RequiredTripAsync(id, cancellationToken);
+        trip.Archive(currentUser.UserId, clock.UtcNow);
+        AppendEvent(trip, "Archived");
+        await store.SaveChangesAsync(cancellationToken);
+        return Map(trip);
+    }
+
+    public async Task<TripResponse> UnarchiveAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var trip = await RequiredTripAsync(id, cancellationToken);
+        trip.Unarchive(clock.UtcNow);
+        AppendEvent(trip, "Unarchived");
+        await store.SaveChangesAsync(cancellationToken);
+        return Map(trip);
+    }
+
+    private async Task<TripResponse> TransitionAsync(Guid id,
+        Action<Trip, DateTimeOffset> transition, string eventType,
+        CancellationToken cancellationToken)
     {
         var trip = await RequiredTripAsync(id, cancellationToken);
         transition(trip, clock.UtcNow);
+        AppendEvent(trip, eventType);
         await store.SaveChangesAsync(cancellationToken);
         return Map(trip);
     }
@@ -314,9 +485,11 @@ public sealed class TripService(
         ?? throw new NotFoundException("Driver was not found in the current company.", "DRIVER_NOT_FOUND");
 
     private static TripResponse Map(Trip trip) => new(
-        trip.Id, trip.ClientId, trip.TruckId, trip.DriverId, trip.Origin, trip.Destination,
+        trip.Id, trip.TripNumber, trip.ClientId, trip.TruckId, trip.DriverId, trip.Origin, trip.Destination,
         trip.CargoDescription, trip.PlannedStartAt, trip.ActualStartAt, trip.ArrivedPickupAt, trip.DeliveredAt,
-        trip.CompletedAt, trip.Price, trip.Notes, trip.Status, AllowedActions(trip.Status),
+        trip.CompletedAt, trip.Price, trip.Notes, trip.Status, trip.IsArchived,
+        trip.ArchivedAt, trip.CancellationReason, trip.CancelledAt, trip.Version,
+        Readiness(trip), AllowedActions(trip),
         trip.Stops.OrderBy(x => x.Sequence).Select(x => new TripStopResponse(
             x.Id, x.Sequence, x.Type, x.Name, x.Address, x.Latitude, x.Longitude,
             x.PlannedArrivalAt, x.PlannedServiceDurationMinutes)).ToArray(),
@@ -330,6 +503,42 @@ public sealed class TripService(
         trip.RepositioningPlans.OrderByDescending(x => x.CalculatedAt).Select(Map).FirstOrDefault(),
         trip.RoutePlan is null || trip.Stops.Any(x => !x.HasCoordinates),
         trip.CreatedAt, trip.UpdatedAt);
+
+    private static TripReadinessResponse Readiness(Trip trip)
+    {
+        var missing = new List<string>();
+        if (string.IsNullOrWhiteSpace(trip.CargoDescription)) missing.Add("CARGO_REQUIRED");
+        if (trip.PlannedStartAt is null) missing.Add("PLANNED_START_REQUIRED");
+        if (trip.Price is null) missing.Add("PRICE_REQUIRED");
+        var ordered = trip.Stops.OrderBy(x => x.Sequence).ToArray();
+        var validStops = ordered.Length == 2 && ordered[0].Type == TripStopType.Pickup
+            && ordered[^1].Type == TripStopType.Delivery && ordered.All(x => x.HasCoordinates);
+        if (!validStops) missing.Add("STOPS_REQUIRED");
+        var routeCurrent = false;
+        if (validStops && trip.RoutePlan is not null
+            && Enum.TryParse<RouteProfile>(trip.RoutePlan.RouteProfile, out var profile))
+        {
+            var requests = ordered.Select(x => new RouteStopRequest(x.Sequence,
+                x.Type.ToString(), x.Name, x.Address, x.Latitude!.Value,
+                x.Longitude!.Value, x.PlannedArrivalAt,
+                x.PlannedServiceDurationMinutes)).ToArray();
+            routeCurrent = RoutePlanningService.Fingerprint(requests, profile)
+                == trip.RoutePlan.StopsFingerprint;
+        }
+        if (!routeCurrent) missing.Add("CURRENT_ROUTE_REQUIRED");
+        return new(validStops && trip.Status == TripStatus.Draft,
+            trip.Status == TripStatus.Draft && missing.Count == 0,
+            trip.Status == TripStatus.Assigned && routeCurrent, missing);
+    }
+
+    private void AppendEvent(Trip trip, string eventType, object? metadata = null,
+        string source = "User")
+    {
+        var now = clock.UtcNow;
+        store.AddTripEvent(new TripEvent(Guid.NewGuid(), currentUser.CompanyId,
+            trip.Id, eventType, now, source == "User" ? currentUser.UserId : null,
+            source, metadata is null ? null : JsonSerializer.Serialize(metadata), now));
+    }
 
     private TripStop[] CreateStops(Guid tripId, IReadOnlyList<RouteStopRequest> stops) =>
         stops.Select(stop => new TripStop(
@@ -383,15 +592,24 @@ public sealed class TripService(
         plan.RouteProfile, plan.CalculatedAt, plan.ProviderRouteId, plan.Status,
         plan.DispatchedAt, plan.ArrivedPickupAt);
 
-    private static string[] AllowedActions(TripStatus status) => status switch
+    private static string[] AllowedActions(Trip trip)
     {
-        TripStatus.Draft => ["edit", "assign", "cancel"],
-        TripStatus.Assigned => ["preview-repositioning", "dispatch-to-pickup", "cancel"],
-        TripStatus.EnRouteToPickup => ["arrive-pickup", "cancel"],
-        TripStatus.AtPickup => ["start", "cancel"],
-        TripStatus.Started => ["mark-in-transit", "cancel"],
-        TripStatus.InTransit => ["deliver", "cancel"],
-        TripStatus.Delivered => ["complete"],
-        _ => []
-    };
+        var actions = trip.Status switch
+        {
+            TripStatus.Draft => new List<string> { "edit", "delete", "cancel" },
+            TripStatus.Assigned => ["reassign", "unassign", "preview-repositioning", "dispatch-to-pickup", "cancel"],
+            TripStatus.EnRouteToPickup => ["arrive-pickup", "cancel"],
+            TripStatus.AtPickup => ["start", "cancel"],
+            TripStatus.Started => ["mark-in-transit", "cancel"],
+            TripStatus.InTransit => ["deliver", "cancel"],
+            TripStatus.Delivered => ["complete"],
+            TripStatus.Completed or TripStatus.Cancelled when !trip.IsArchived => ["archive"],
+            TripStatus.Completed or TripStatus.Cancelled when trip.IsArchived => ["unarchive"],
+            _ => []
+        };
+        if (trip.Status == TripStatus.Draft && Readiness(trip).CanAssign)
+            actions.Insert(2, "assign");
+        actions.Add("duplicate");
+        return actions.ToArray();
+    }
 }

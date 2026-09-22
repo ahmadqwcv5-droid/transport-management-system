@@ -1423,6 +1423,372 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delivery marker'**
   String get deliveryMarker;
+
+  /// No description provided for @tripTabActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get tripTabActive;
+
+  /// No description provided for @tripTabPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get tripTabPlanned;
+
+  /// No description provided for @tripTabCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get tripTabCompleted;
+
+  /// No description provided for @tripTabCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get tripTabCancelled;
+
+  /// No description provided for @tripTabArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get tripTabArchived;
+
+  /// No description provided for @searchTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'Search trip number, client, stop, or plate'**
+  String get searchTrips;
+
+  /// No description provided for @tripFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip filters'**
+  String get tripFilters;
+
+  /// No description provided for @clearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get clearFilters;
+
+  /// No description provided for @previousPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous page'**
+  String get previousPage;
+
+  /// No description provided for @nextPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Next page'**
+  String get nextPage;
+
+  /// No description provided for @pageOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} of {pages} · {total} trips'**
+  String pageOf(int page, int pages, int total);
+
+  /// No description provided for @incompleteDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete Draft'**
+  String get incompleteDraft;
+
+  /// No description provided for @draftIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs planning details'**
+  String get draftIncomplete;
+
+  /// No description provided for @saveDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Draft'**
+  String get saveDraft;
+
+  /// No description provided for @next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// No description provided for @back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
+  /// No description provided for @tripBasics.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip basics'**
+  String get tripBasics;
+
+  /// No description provided for @pickupAndDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup and delivery'**
+  String get pickupAndDelivery;
+
+  /// No description provided for @scheduleAndCommercial.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule and commercial details'**
+  String get scheduleAndCommercial;
+
+  /// No description provided for @routeNotCalculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the stops, then calculate the authoritative route.'**
+  String get routeNotCalculated;
+
+  /// No description provided for @assignmentOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment (optional)'**
+  String get assignmentOptional;
+
+  /// No description provided for @assignmentAfterDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish the planning checklist, then assign eligible resources from trip details.'**
+  String get assignmentAfterDraft;
+
+  /// No description provided for @review.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get review;
+
+  /// No description provided for @saveDraftReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the readiness checklist and save this Draft.'**
+  String get saveDraftReview;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @reassign.
+  ///
+  /// In en, this message translates to:
+  /// **'Reassign'**
+  String get reassign;
+
+  /// No description provided for @unassign.
+  ///
+  /// In en, this message translates to:
+  /// **'Unassign'**
+  String get unassign;
+
+  /// No description provided for @archive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get archive;
+
+  /// No description provided for @unarchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive'**
+  String get unarchive;
+
+  /// No description provided for @duplicateAsDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate as Draft'**
+  String get duplicateAsDraft;
+
+  /// No description provided for @cancelTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel trip'**
+  String get cancelTrip;
+
+  /// No description provided for @cancellationReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancellation reason'**
+  String get cancellationReason;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @timeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get timeline;
+
+  /// No description provided for @deleteDraftWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete {tripNumber}? This cannot be undone.'**
+  String deleteDraftWarning(String tripNumber);
+
+  /// No description provided for @confirmTripAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply this action to {tripNumber}?'**
+  String confirmTripAction(String tripNumber);
+
+  /// No description provided for @tripNotReadyForRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Add valid pickup and delivery coordinates before calculating a route.'**
+  String get tripNotReadyForRoute;
+
+  /// No description provided for @tripNotReadyForAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the planning checklist and calculate the current route before assignment.'**
+  String get tripNotReadyForAssignment;
+
+  /// No description provided for @tripDeleteNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Only a Draft that has never started dispatch can be permanently deleted.'**
+  String get tripDeleteNotAllowed;
+
+  /// No description provided for @tripCancelReasonRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a cancellation reason of 500 characters or fewer.'**
+  String get tripCancelReasonRequired;
+
+  /// No description provided for @tripArchiveNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Only completed or cancelled trips can be archived or restored.'**
+  String get tripArchiveNotAllowed;
+
+  /// No description provided for @tripReassignNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'This trip can no longer be reassigned because dispatch has started.'**
+  String get tripReassignNotAllowed;
+
+  /// No description provided for @tripUnassignNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'This trip can no longer be unassigned because dispatch has started.'**
+  String get tripUnassignNotAllowed;
+
+  /// No description provided for @tripConcurrencyConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This trip was changed by another user. Reload it and try again.'**
+  String get tripConcurrencyConflict;
+
+  /// No description provided for @eventTripCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip created'**
+  String get eventTripCreated;
+
+  /// No description provided for @eventDraftUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft updated'**
+  String get eventDraftUpdated;
+
+  /// No description provided for @eventStopsUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops updated'**
+  String get eventStopsUpdated;
+
+  /// No description provided for @eventRouteCalculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Route calculated'**
+  String get eventRouteCalculated;
+
+  /// No description provided for @eventAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Resources assigned'**
+  String get eventAssigned;
+
+  /// No description provided for @eventReassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Resources reassigned'**
+  String get eventReassigned;
+
+  /// No description provided for @eventUnassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Resources unassigned'**
+  String get eventUnassigned;
+
+  /// No description provided for @eventDispatchedToPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Dispatched to pickup'**
+  String get eventDispatchedToPickup;
+
+  /// No description provided for @eventArrivedAtPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrived at pickup'**
+  String get eventArrivedAtPickup;
+
+  /// No description provided for @eventTripStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip started'**
+  String get eventTripStarted;
+
+  /// No description provided for @eventMarkedInTransit.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked in transit'**
+  String get eventMarkedInTransit;
+
+  /// No description provided for @eventDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get eventDelivered;
+
+  /// No description provided for @eventCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get eventCompleted;
+
+  /// No description provided for @eventCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get eventCancelled;
+
+  /// No description provided for @eventArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get eventArchived;
+
+  /// No description provided for @eventUnarchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchived'**
+  String get eventUnarchived;
+
+  /// No description provided for @eventImportedBaseline.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported baseline'**
+  String get eventImportedBaseline;
 }
 
 class _AppLocalizationsDelegate

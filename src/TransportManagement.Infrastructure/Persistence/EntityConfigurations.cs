@@ -135,15 +135,20 @@ internal sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
     {
         builder.ToTable("trips");
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Origin).HasMaxLength(300).IsRequired();
-        builder.Property(x => x.Destination).HasMaxLength(300).IsRequired();
+        builder.Property(x => x.TripNumber).HasMaxLength(20).IsRequired();
+        builder.Property(x => x.Origin).HasMaxLength(300);
+        builder.Property(x => x.Destination).HasMaxLength(300);
         builder.Property(x => x.CargoDescription).HasMaxLength(1000).IsRequired();
         builder.Property(x => x.Price).HasPrecision(18, 2);
         builder.Property(x => x.Notes).HasMaxLength(2000);
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(30);
+        builder.Property(x => x.CancellationReason).HasMaxLength(500);
+        builder.Property(x => x.Version).IsConcurrencyToken();
         builder.Ignore(x => x.ReservesResources);
         builder.Ignore(x => x.CurrentRepositioningPlan);
+        builder.Ignore(x => x.IsArchived);
         builder.HasIndex(x => x.CompanyId);
+        builder.HasIndex(x => new { x.CompanyId, x.TripNumber }).IsUnique();
         builder.HasIndex(x => new { x.CompanyId, x.Status });
         builder.HasIndex(x => new { x.CompanyId, x.PlannedStartAt });
         builder.HasIndex(x => new { x.CompanyId, x.TruckId })
@@ -157,6 +162,32 @@ internal sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         builder.HasMany(x => x.Stops).WithOne().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(x => x.RoutePlan).WithOne().HasForeignKey<TripRoutePlan>(x => x.TripId).OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(x => x.RepositioningPlans).WithOne().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasMany(x => x.Events).WithOne().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class TripNumberCounterConfiguration : IEntityTypeConfiguration<TripNumberCounter>
+{
+    public void Configure(EntityTypeBuilder<TripNumberCounter> builder)
+    {
+        builder.ToTable("trip_number_counters");
+        builder.HasKey(x => new { x.CompanyId, x.Year });
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class TripEventConfiguration : IEntityTypeConfiguration<TripEvent>
+{
+    public void Configure(EntityTypeBuilder<TripEvent> builder)
+    {
+        builder.ToTable("trip_events");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.EventType).HasMaxLength(80).IsRequired();
+        builder.Property(x => x.Source).HasMaxLength(20).IsRequired();
+        builder.Property(x => x.Metadata).HasColumnType("jsonb");
+        builder.HasIndex(x => new { x.CompanyId, x.TripId, x.OccurredAt });
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.ActorUserId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

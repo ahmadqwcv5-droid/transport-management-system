@@ -472,7 +472,7 @@ pull-to-refresh remains available.
 | `Tracking__PollingIntervalSeconds` | API/Compose | Documented polling default for clients |
 | `Tracking__OfflineThresholdSeconds` | API | Age after which the latest sample is reported offline |
 | `Tracking__HistoryHeartbeatSeconds` | API | Maximum unchanged interval before a heartbeat history row, default 300 |
-| `Tracking__SimulatorHeartbeatSeconds` | API | Bounded stationary simulator heartbeat, default 15; clamped below offline and dispatch freshness thresholds |
+| `Tracking__SimulatorHeartbeatSeconds` | API | Bounded stationary simulator heartbeat, Development default 60 seconds (at most 60 unchanged rows/hour); clamped below dispatch freshness |
 | `Tracking__TrailGapThresholdSeconds` | API | Time gap that starts a new trail segment, default 300 |
 | `Tracking__TrailJumpThresholdMeters` | API | Geographic jump that starts a new trail segment, default 5000 |
 | `Tracking__MaxTripHistoryPoints` | API | Maximum points returned by trip history, clamped to 10–2000, default 500 |
@@ -505,7 +505,13 @@ Never commit `.env`, signing keys, database passwords, or production credentials
 - `/api/clients` — list/get/create/update, plus `POST /{id}/deactivate`
 - `/api/trucks` — list/get/create/update, status update, and deactivate
 - `/api/drivers` — list/get/create/update, status update, and deactivate
-- `/api/trips` — list/get/create/update Draft, assign, start, mark in transit, deliver, complete, and cancel
+- `GET /api/trips` — server-paginated trip search with operational group/status, archive, client, truck, driver, planned-date, and allowlisted sort filters (maximum page size 100)
+- `POST/PUT /api/trips` — create a minimal resumable Draft or update Draft basics; neither operation calls the routing provider
+- `PUT /api/trips/{id}/stops` and `POST /api/trips/{id}/calculate-route` — save stops independently, then calculate the authoritative route
+- `/api/trips/{id}/assign|reassign|unassign` — pre-dispatch resource management
+- `DELETE /api/trips/{id}/draft` — checked permanent deletion for never-executed Drafts only
+- `/api/trips/{id}/cancel|archive|unarchive|duplicate` — reasoned cancellation, historical visibility, and duplicate-as-Draft
+- `GET /api/trips/{id}/timeline` — bounded newest-first immutable event history
 - `POST /api/trips/{id}/repositioning/preview` — persist a proposed approach from the latest trusted position
 - `POST /api/trips/{id}/dispatch-to-pickup` — revalidate and activate the approach leg
 - `POST /api/trips/{id}/arrive-pickup` — idempotently evaluate geographic arrival
@@ -532,10 +538,10 @@ are serialized as readable strings. All operational endpoints require the named
 - `/clients` — searchable client list and create/edit/deactivate flow
 - `/trucks` — truck list, details, create/edit, status, and deactivate flow
 - `/drivers` — driver list, details, create/edit, status, and deactivate flow
-- `/trips` — trip list
-- `/trips/new` — full-page route planner
-- `/trips/:id/edit` — Draft-only replanning
-- `/trips/:id` — route details, resource assignment, and allowed status actions
+- `/trips` — server-paginated Active/Planned/Completed/Cancelled/Archived views with search and filters
+- `/trips/new` — resumable six-step Draft wizard
+- `/trips/:id/edit` — Draft wizard restored from the individual trip endpoint
+- `/trips/:id` — trip number, readiness, route/assignment/tracking sections, timeline, and server-allowed contextual actions
 - `/settings` — persisted English/Arabic language selection
 
 ## Project structure
@@ -580,6 +586,43 @@ SPRINT3_2_IMPLEMENTATION_PLAN.md
 - Route-aware writes derive legacy origin/destination labels from ordered stops;
   assignment freezes the stored route snapshot. Legacy label-only trips remain
   readable and must be geographically replanned before assignment.
+
+## Sprint 3.4 trip operations
+
+Trip numbers use `TRP-{UTC creation year}-{six-digit sequence}`. The API allocates
+the sequence from a PostgreSQL tenant/year counter with an atomic upsert; numbers
+are immutable and are not reused after Draft deletion. The migration backfills
+existing rows deterministically per company/year in `CreatedAt, Id` order and
+seeds counters to the resulting maximum.
+
+A first Draft requires only an active client and cargo description. Schedule,
+price, stops, route, truck, and driver remain honestly nullable until supplied.
+The API derives `canCalculateRoute`, `canAssign`, `canDispatch`, and stable missing
+requirement codes. Saving basics/stops never invokes OSRM. Explicit route
+calculation stores a server-authoritative fingerprinted snapshot; changing a
+stop invalidates that Draft snapshot. Draft mutations carry a version and EF
+optimistic concurrency token.
+
+| State/condition | Manager action |
+|---|---|
+| Incomplete Draft | Resume/edit; save stops; calculate route |
+| Ready Draft | Assign, duplicate, cancel, or permanently delete if never executed |
+| Assigned before dispatch | Reassign, unassign, dispatch, or cancel with reason |
+| Active execution | Follow the lifecycle or cancel where policy permits; never hard-delete |
+| Completed/Cancelled | Archive/unarchive; never hard-delete |
+
+Every important transition appends a stable-code, tenant-owned event with UTC
+time, source, authenticated actor when applicable, and bounded JSON metadata.
+Existing trips receive one honest `ImportedBaseline` event; the migration does
+not invent historical actions. Duplicate-as-Draft copies planning fields and
+stops, but not number, route, assignment, execution, tracking, cancellation,
+archive state, or history.
+
+Rollback after users create incomplete Drafts is data-incompatible because the
+older schema requires schedule, price, and route labels. Back up the database
+and resolve those Drafts before downgrading. Finance, recurring templates,
+multi-vehicle optimization, real GPS ingestion, and telemetry retention remain
+deferred.
 
 ## Authorization matrix
 

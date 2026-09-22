@@ -78,7 +78,7 @@ public sealed class TripsTests(ApiFactory factory) : IClassFixture<ApiFactory>
         });
         Assert.Equal(HttpStatusCode.Conflict, driverConflict.StatusCode);
 
-        await AssertTransitionAsync(client, $"/api/trips/{tripOne}/cancel", "Cancelled");
+        await AssertTransitionAsync(client, $"/api/trips/{tripOne}/cancel", "Cancelled", new { reason = "Test cancellation" });
         await AssertTransitionAsync(client, $"/api/trips/{tripTwo}/assign", "Assigned", new
         {
             truckId = first.TruckId,
@@ -142,7 +142,12 @@ public sealed class TripsTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var response = await client.PostJsonAsync("/api/trips", RouteTestData.TripPayload(clientId));
         Assert.True(response.StatusCode == HttpStatusCode.Created,
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        return (await response.RequiredJsonAsync()).GetProperty("id").GetGuid();
+        var id = (await response.RequiredJsonAsync()).GetProperty("id").GetGuid();
+        var routed = await client.PostJsonAsync($"/api/trips/{id}/calculate-route",
+            new { routeProfile = "Driving" });
+        Assert.True(routed.IsSuccessStatusCode,
+            await routed.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        return id;
     }
 
     private static async Task AssertTransitionAsync(HttpClient client, string path, string expectedStatus, object? body = null)

@@ -152,8 +152,8 @@ public sealed class DispatchTests(ApiFactory factory) : IClassFixture<ApiFactory
             segment.GetProperty("movementPhase").GetString() == "Repositioning"
             && segment.GetProperty("repositioningPlanId").GetGuid() == planId);
 
-        var cancelled = await (await client.PostEmptyAsync(
-            $"/api/trips/{resources.TripId}/cancel")).RequiredJsonAsync();
+        var cancelled = await (await client.PostJsonAsync(
+            $"/api/trips/{resources.TripId}/cancel", new { reason = "Dispatch test cancellation" })).RequiredJsonAsync();
         Assert.Equal("Cancelled", cancelled.GetProperty("status").GetString());
         Assert.Equal("Available", (await client.GetJsonAsync<JsonElement>($"/api/trucks/{resources.TruckId}"))
             .GetProperty("status").GetString());
@@ -202,8 +202,7 @@ public sealed class DispatchTests(ApiFactory factory) : IClassFixture<ApiFactory
         {
             fullName = $"Dispatch Driver {suffix}", licenseNumber = $"DSP-L-{suffix}"
         })).RequiredJsonAsync()).GetProperty("id").GetGuid();
-        var tripId = (await (await client.PostJsonAsync(
-            "/api/trips", RouteTestData.TripPayload(clientId))).RequiredJsonAsync())
+        var tripId = (await RouteTestData.CreateReadyTripAsync(client, clientId))
             .GetProperty("id").GetGuid();
         await (await client.PostJsonAsync($"/api/trips/{tripId}/assign", new { truckId, driverId }))
             .RequiredJsonAsync();

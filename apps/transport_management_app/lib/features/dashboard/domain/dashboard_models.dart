@@ -125,15 +125,18 @@ final class SimulatorTruck {
 final class RecentTrip {
   const RecentTrip({
     required this.id,
-    required this.origin,
-    required this.destination,
+    required this.tripNumber,
     required this.status,
+    this.origin,
+    this.destination,
   });
-  final String id, origin, destination, status;
+  final String id, tripNumber, status;
+  final String? origin, destination;
   factory RecentTrip.fromJson(Json json) => RecentTrip(
     id: json['id'] as String,
-    origin: json['origin'] as String,
-    destination: json['destination'] as String,
+    tripNumber: json['tripNumber'] as String,
+    origin: json['origin'] as String?,
+    destination: json['destination'] as String?,
     status: json['status'] as String,
   );
 }

@@ -24,6 +24,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurren
     public DbSet<TripStop> TripStops => Set<TripStop>();
     public DbSet<TripRoutePlan> TripRoutePlans => Set<TripRoutePlan>();
     public DbSet<TripRepositioningPlan> TripRepositioningPlans => Set<TripRepositioningPlan>();
+    public DbSet<TripEvent> TripEvents => Set<TripEvent>();
+    public DbSet<TripNumberCounter> TripNumberCounters => Set<TripNumberCounter>();
     public DbSet<TruckPosition> TruckPositions => Set<TruckPosition>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

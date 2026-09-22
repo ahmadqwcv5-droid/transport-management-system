@@ -278,14 +278,20 @@ final class Driver {
 final class Trip {
   const Trip({
     required this.id,
+    this.tripNumber = 'TRP-TEST-000001',
     required this.clientId,
-    required this.origin,
-    required this.destination,
     required this.cargoDescription,
-    required this.plannedStartAt,
-    required this.price,
     required this.status,
     required this.allowedActions,
+    this.version = 1,
+    this.readiness = const TripReadiness(
+      canCalculateRoute: false, canAssign: false, canDispatch: false,
+      missingRequirements: [],
+    ),
+    this.origin,
+    this.destination,
+    this.plannedStartAt,
+    this.price,
     this.truckId,
     this.driverId,
     this.actualStartAt,
@@ -297,22 +303,33 @@ final class Trip {
     this.routePlan,
     this.repositioningPlan,
     this.requiresLocationSelection = true,
+    this.isArchived = false,
+    this.archivedAt,
+    this.cancellationReason,
+    this.cancelledAt,
   });
   final String id,
+      tripNumber,
       clientId,
-      origin,
-      destination,
       cargoDescription,
-      plannedStartAt,
       status;
-  final String? truckId,
+  final String? origin,
+      destination,
+      plannedStartAt,
+      truckId,
       driverId,
       actualStartAt,
       arrivedPickupAt,
       deliveredAt,
       completedAt,
-      notes;
-  final num price;
+      notes,
+      archivedAt,
+      cancellationReason,
+      cancelledAt;
+  final num? price;
+  final int version;
+  final TripReadiness readiness;
+  final bool isArchived;
   final List<String> allowedActions;
   final List<TripStop> stops;
   final TripRoutePlan? routePlan;
@@ -320,18 +337,19 @@ final class Trip {
   final bool requiresLocationSelection;
   factory Trip.fromJson(Json json) => Trip(
     id: json['id'] as String,
+    tripNumber: json['tripNumber'] as String? ?? 'TRP-TEST-000001',
     clientId: json['clientId'] as String,
     truckId: json['truckId'] as String?,
     driverId: json['driverId'] as String?,
-    origin: json['origin'] as String,
-    destination: json['destination'] as String,
+    origin: json['origin'] as String?,
+    destination: json['destination'] as String?,
     cargoDescription: json['cargoDescription'] as String,
-    plannedStartAt: json['plannedStartAt'] as String,
+    plannedStartAt: json['plannedStartAt'] as String?,
     actualStartAt: json['actualStartAt'] as String?,
     arrivedPickupAt: json['arrivedPickupAt'] as String?,
     deliveredAt: json['deliveredAt'] as String?,
     completedAt: json['completedAt'] as String?,
-    price: json['price'] as num,
+    price: json['price'] as num?,
     notes: json['notes'] as String?,
     status: json['status'] as String,
     allowedActions: (json['allowedActions'] as List<dynamic>).cast<String>(),
@@ -347,6 +365,63 @@ final class Trip {
         : TripRepositioningPlan.fromJson(json['repositioningPlan'] as Json),
     requiresLocationSelection:
         json['requiresLocationSelection'] as bool? ?? true,
+    isArchived: json['isArchived'] as bool? ?? false,
+    archivedAt: json['archivedAt'] as String?,
+    cancellationReason: json['cancellationReason'] as String?,
+    cancelledAt: json['cancelledAt'] as String?,
+    version: json['version'] as int? ?? 1,
+    readiness: TripReadiness.fromJson(json['readiness'] as Json? ?? const {}),
+  );
+}
+
+final class TripReadiness {
+  const TripReadiness({
+    required this.canCalculateRoute,
+    required this.canAssign,
+    required this.canDispatch,
+    required this.missingRequirements,
+  });
+  final bool canCalculateRoute, canAssign, canDispatch;
+  final List<String> missingRequirements;
+  factory TripReadiness.fromJson(Json json) => TripReadiness(
+    canCalculateRoute: json['canCalculateRoute'] as bool? ?? false,
+    canAssign: json['canAssign'] as bool? ?? false,
+    canDispatch: json['canDispatch'] as bool? ?? false,
+    missingRequirements: (json['missingRequirements'] as List<dynamic>? ?? const [])
+        .cast<String>(),
+  );
+}
+
+final class TripPage {
+  const TripPage({
+    required this.items,
+    required this.totalCount,
+    required this.page,
+    required this.pageSize,
+    required this.totalPages,
+  });
+  final List<Trip> items;
+  final int totalCount, page, pageSize, totalPages;
+  factory TripPage.fromJson(Json json) => TripPage(
+    items: (json['items'] as List<dynamic>).cast<Json>().map(Trip.fromJson).toList(),
+    totalCount: json['totalCount'] as int,
+    page: json['page'] as int,
+    pageSize: json['pageSize'] as int,
+    totalPages: json['totalPages'] as int,
+  );
+}
+
+final class TripEvent {
+  const TripEvent({required this.eventType, required this.occurredAt,
+    required this.actorDisplayName, required this.source, this.metadata});
+  final String eventType, occurredAt, actorDisplayName, source;
+  final String? metadata;
+  factory TripEvent.fromJson(Json json) => TripEvent(
+    eventType: json['eventType'] as String,
+    occurredAt: json['occurredAt'] as String,
+    actorDisplayName: json['actorDisplayName'] as String,
+    source: json['source'] as String,
+    metadata: json['metadata'] as String?,
   );
 }
 

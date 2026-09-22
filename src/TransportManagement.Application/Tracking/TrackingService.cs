@@ -244,11 +244,16 @@ public sealed class TrackingService(
                     ? RouteGeometry.FromGeoJson(trip.RoutePlan.Geometry)
                     : [];
             latestByTruck.TryGetValue(truckId, out var latest);
+            var retainStationaryContext = trip?.Status is TripStatus.AtPickup or TripStatus.Delivered;
             var phase = isApproach ? MovementPhase.Repositioning
-                : isCargo ? MovementPhase.Cargo : latest?.MovementPhase;
-            var targetTripId = isApproach || isCargo ? trip?.Id : latest?.TripId;
-            var targetRouteId = isCargo ? trip?.RoutePlan?.Id : latest?.RoutePlanId;
-            var targetApproachId = isApproach ? approach!.Id : latest?.RepositioningPlanId;
+                : isCargo ? MovementPhase.Cargo
+                : retainStationaryContext ? latest?.MovementPhase : MovementPhase.CurrentLocation;
+            var targetTripId = isApproach || isCargo ? trip?.Id
+                : retainStationaryContext ? latest?.TripId : null;
+            var targetRouteId = isCargo ? trip?.RoutePlan?.Id
+                : retainStationaryContext ? latest?.RoutePlanId : null;
+            var targetApproachId = isApproach ? approach!.Id
+                : retainStationaryContext ? latest?.RepositioningPlanId : null;
             return new TrackingTarget(
                 truckId,
                 targetTripId,

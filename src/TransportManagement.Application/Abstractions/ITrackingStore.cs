@@ -14,6 +14,7 @@ public interface ITrackingStore
     Task<IReadOnlyList<TruckPosition>> HistoryAsync(Guid truckId, int limit, CancellationToken cancellationToken);
     Task<IReadOnlyList<TruckPosition>> TripHistoryAsync(
         Guid tripId, Guid truckId, int limit, CancellationToken cancellationToken);
+    Task<bool> HasTripHistoryAsync(Guid tripId, CancellationToken cancellationToken);
     void AddPositions(IEnumerable<TruckPosition> positions);
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }

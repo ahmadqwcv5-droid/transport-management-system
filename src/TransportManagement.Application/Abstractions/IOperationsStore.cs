@@ -1,6 +1,7 @@
 using TransportManagement.Domain.Clients;
 using TransportManagement.Domain.Fleet;
 using TransportManagement.Domain.Trips;
+using TransportManagement.Application.Trips;
 
 namespace TransportManagement.Application.Abstractions;
 
@@ -23,6 +24,9 @@ public interface IOperationsStore
     void AddDriver(Driver driver);
 
     Task<Trip?> GetTripAsync(Guid id, CancellationToken cancellationToken);
+    Task<string> AllocateTripNumberAsync(Guid companyId, int year, CancellationToken cancellationToken);
+    Task<(IReadOnlyList<Trip> Items, int TotalCount)> QueryTripsAsync(
+        TripListQuery query, CancellationToken cancellationToken);
     Task<IReadOnlyList<Trip>> ListTripsAsync(
         TripStatus? status,
         Guid? clientId,
@@ -32,7 +36,14 @@ public interface IOperationsStore
         DateTimeOffset? plannedTo,
         CancellationToken cancellationToken);
     void AddTrip(Trip trip);
+    void AddTripStops(IReadOnlyCollection<TripStop> stops);
+    void RemoveTrip(Trip trip);
+    void AddTripEvent(TripEvent tripEvent);
+    Task<(IReadOnlyList<TripEvent> Items, int TotalCount)> ListTripEventsAsync(
+        Guid tripId, int page, int pageSize, CancellationToken cancellationToken);
+    Task<string?> UserDisplayNameAsync(Guid userId, CancellationToken cancellationToken);
     void AddRepositioningPlan(TripRepositioningPlan plan);
+    void AddTripRoutePlan(TripRoutePlan plan);
 
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }

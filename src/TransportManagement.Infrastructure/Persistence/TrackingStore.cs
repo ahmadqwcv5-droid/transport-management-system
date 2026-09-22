@@ -59,6 +59,10 @@ internal sealed class TrackingStore(AppDbContext dbContext) : ITrackingStore
         return newest;
     }
 
+    public Task<bool> HasTripHistoryAsync(Guid tripId, CancellationToken cancellationToken) =>
+        dbContext.TruckPositions.AsNoTracking()
+            .AnyAsync(x => x.TripId == tripId, cancellationToken);
+
     public void AddPositions(IEnumerable<TruckPosition> positions) => dbContext.TruckPositions.AddRange(positions);
     public async Task SaveChangesAsync(CancellationToken cancellationToken) => await dbContext.SaveChangesAsync(cancellationToken);
 }

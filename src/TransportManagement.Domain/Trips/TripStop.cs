@@ -14,8 +14,8 @@ public sealed class TripStop : Entity, ITenantOwned
         TripStopType type,
         string name,
         string? address,
-        decimal latitude,
-        decimal longitude,
+        decimal? latitude,
+        decimal? longitude,
         DateTimeOffset? plannedArrivalAt,
         int? plannedServiceDurationMinutes,
         DateTimeOffset now) : base(id, now)
@@ -24,7 +24,9 @@ public sealed class TripStop : Entity, ITenantOwned
             throw new DomainRuleException("Stop sequence cannot be negative.", "INVALID_STOP_SEQUENCE");
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainRuleException("Stop name is required.", "STOP_NAME_REQUIRED");
-        ValidateCoordinates(latitude, longitude);
+        if (latitude.HasValue != longitude.HasValue)
+            throw new DomainRuleException("Both coordinates must be provided together.", "INVALID_COORDINATES");
+        if (latitude.HasValue) ValidateCoordinates(latitude.Value, longitude!.Value);
         if (plannedServiceDurationMinutes is < 0)
             throw new DomainRuleException("Service duration cannot be negative.", "INVALID_SERVICE_DURATION");
 
@@ -51,6 +53,20 @@ public sealed class TripStop : Entity, ITenantOwned
     public DateTimeOffset? PlannedArrivalAt { get; private set; }
     public int? PlannedServiceDurationMinutes { get; private set; }
     public bool HasCoordinates => Latitude.HasValue && Longitude.HasValue;
+
+    internal void UpdateFrom(TripStop value, DateTimeOffset now)
+    {
+        if (value.CompanyId != CompanyId || value.TripId != TripId
+            || value.Sequence != Sequence || value.Type != Type)
+            throw new DomainRuleException("The stop identity cannot be changed.", "INVALID_TRIP_STOPS");
+        Name = value.Name;
+        Address = value.Address;
+        Latitude = value.Latitude;
+        Longitude = value.Longitude;
+        PlannedArrivalAt = value.PlannedArrivalAt;
+        PlannedServiceDurationMinutes = value.PlannedServiceDurationMinutes;
+        Touch(now);
+    }
 
     public static void ValidateCoordinates(decimal latitude, decimal longitude)
     {

@@ -3,13 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../l10n/l10n_extensions.dart';
 import '../../locations/presentation/location_picker_dialog.dart';
 import '../../operations/domain/operations_models.dart';
 import '../../operations/presentation/operations_controller.dart';
 import '../../operations/presentation/operations_view.dart';
+import 'trips_controller.dart';
 
 class TripPlannerScreen extends ConsumerStatefulWidget {
   const TripPlannerScreen({this.tripId, super.key});
@@ -27,11 +30,15 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
   final _cargo = TextEditingController();
   final _price = TextEditingController(text: '0');
   final _planned = TextEditingController();
+  DateTime? _plannedAt;
   String? _clientId;
   TripRoutePlan? _route;
   bool _initialized = false;
   bool _routing = false;
   bool _saving = false;
+  bool _loadingTrip = false;
+  int _step = 0;
+  Trip? _persistedTrip;
   Object? _error;
   _StopFields? _activeMapStop;
 
@@ -48,17 +55,56 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
   void _initialize(OperationsData data) {
     if (_initialized) return;
     _initialized = true;
-    final trip = data.trips
-        .where((item) => item.id == widget.tripId)
-        .firstOrNull;
+    if (widget.tripId != null) {
+      final cached = data.trips
+          .where((item) => item.id == widget.tripId)
+          .firstOrNull;
+      if (cached != null) {
+        _applyTrip(data, cached);
+        return;
+      }
+      _loadingTrip = true;
+      unawaited(_loadPersistedTrip(data));
+      return;
+    }
+    _applyTrip(data, null);
+  }
+
+  Future<void> _loadPersistedTrip(OperationsData data) async {
+    try {
+      final trip = await ref
+          .read(operationsRepositoryProvider)
+          .getTrip(widget.tripId!);
+      if (!mounted) return;
+      setState(() {
+        _applyTrip(data, trip);
+        _loadingTrip = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error;
+        _loadingTrip = false;
+      });
+    }
+  }
+
+  void _applyTrip(OperationsData data, Trip? trip) {
+    _persistedTrip = trip;
     _clientId =
         trip?.clientId ??
         data.clients.where((item) => item.isActive).firstOrNull?.id;
     _cargo.text = trip?.cargoDescription ?? '';
     _price.text = trip?.price.toString() ?? '0';
-    _planned.text =
-        trip?.plannedStartAt ??
-        DateTime.now().toUtc().add(const Duration(days: 1)).toIso8601String();
+    _plannedAt = DateTime.tryParse(
+      trip?.plannedStartAt ??
+          DateTime.now().toUtc().add(const Duration(days: 1)).toIso8601String(),
+    );
+    _planned.text = _plannedAt == null
+        ? ''
+        : DateFormat.yMd(
+            Localizations.localeOf(context).toLanguageTag(),
+          ).add_jm().format(_plannedAt!.toLocal());
     if (trip != null) {
       final stops = [...trip.stops]
         ..sort((a, b) => a.sequence.compareTo(b.sequence));
@@ -123,19 +169,28 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
     }
   }
 
-  Future<void> _calculate() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _calculate(Trip? trip) async {
     final stops = _stops();
-    if (stops == null) return;
+    if (stops == null) {
+      setState(() => _error = StateError(context.l10n.invalidCoordinate));
+      return;
+    }
     setState(() {
       _routing = true;
       _error = null;
     });
     try {
-      final route = await ref
-          .read(operationsRepositoryProvider)
-          .previewRoute(stops);
-      if (mounted) setState(() => _route = route);
+      final saved = await _saveDraft(trip, stay: true);
+      if (saved == null) return;
+      final routed = await ref.read(operationsRepositoryProvider)
+          .calculateTripRoute(saved.id);
+      if (mounted) {
+        setState(() {
+          _persistedTrip = routed;
+          _route = routed.routePlan;
+          _step = 4;
+        });
+      }
     } catch (error) {
       if (mounted) setState(() => _error = error);
     } finally {
@@ -143,29 +198,38 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
     }
   }
 
-  Future<void> _save(Trip? trip) async {
-    if (!_formKey.currentState!.validate() || _route == null) return;
-    final stops = _stops();
-    if (stops == null) return;
+  Future<Trip?> _saveDraft(Trip? trip, {bool stay = false}) async {
+    if (_clientId == null || _cargo.text.trim().isEmpty) {
+      setState(() => _error = StateError(context.l10n.required));
+      return null;
+    }
     setState(() => _saving = true);
-    final ok = await ref
-        .read(operationsControllerProvider.notifier)
-        .mutate(
-          (repo) => repo.saveTrip({
-            'clientId': _clientId,
-            'stops': stops.map((item) => item.toJson()).toList(),
-            'routeProfile': 'Driving',
-            'cargoDescription': _cargo.text.trim(),
-            'plannedStartAt': DateTime.parse(
-              _planned.text,
-            ).toUtc().toIso8601String(),
-            'price': num.parse(_price.text),
-            'notes': trip?.notes,
-          }, trip?.id),
-        );
-    if (!mounted) return;
-    setState(() => _saving = false);
-    if (ok) context.go('/trips');
+    try {
+      var saved = await ref.read(operationsRepositoryProvider).saveTrip({
+        'clientId': _clientId,
+        'cargoDescription': _cargo.text.trim(),
+        'plannedStartAt': _plannedAt?.toUtc().toIso8601String(),
+        'price': _price.text.trim().isEmpty ? null : num.parse(_price.text),
+        'notes': trip?.notes,
+        if (trip != null) 'expectedVersion': trip.version,
+      }, trip?.id);
+      _persistedTrip = saved;
+      final stops = _stops();
+      if (stops != null) {
+        await ref.read(operationsRepositoryProvider)
+            .saveTripStops(saved.id, stops, saved.version);
+        saved = await ref.read(operationsRepositoryProvider).getTrip(saved.id);
+      }
+      await ref.read(operationsControllerProvider.notifier).reload();
+      await ref.read(tripsControllerProvider.notifier).refresh();
+      if (!mounted) return saved;
+      setState(() { _persistedTrip = saved; _saving = false; _error = null; });
+      if (!stay) context.go('/trips/${saved.id}/edit');
+      return saved;
+    } catch (error) {
+      if (mounted) setState(() { _saving = false; _error = error; });
+      return null;
+    }
   }
 
   void _selectMapPoint(LatLng point) {
@@ -183,11 +247,38 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
     });
   }
 
+  Future<void> _pickPlanned() async {
+    final initial = _plannedAt?.toLocal() ??
+        DateTime.now().add(const Duration(days: 1));
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime.now().subtract(const Duration(days: 1)),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (time == null) return;
+    final value = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    setState(() {
+      _plannedAt = value.toUtc();
+      _planned.text = DateFormat.yMd(
+        Localizations.localeOf(context).toLanguageTag(),
+      ).add_jm().format(value);
+    });
+  }
+
   @override
   Widget build(BuildContext context) => OperationsView(
     builder: (context, ref, data) {
       _initialize(data);
-      final trip = data.trips
+      if (_loadingTrip) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      final trip = _persistedTrip ?? data.trips
           .where((item) => item.id == widget.tripId)
           .firstOrNull;
       return Form(
@@ -215,7 +306,7 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
                   children: [
                     OutlinedButton(
                       key: const Key('calculate-route'),
-                      onPressed: _routing ? null : _calculate,
+                      onPressed: _routing ? null : () => _calculate(trip),
                       child: Text(
                         _routing
                             ? context.l10n.calculatingRoute
@@ -223,13 +314,11 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
                       ),
                     ),
                     FilledButton.icon(
-                      key: const Key('save-trip'),
-                      onPressed: _route == null || _saving
-                          ? null
-                          : () => _save(trip),
+                      key: const Key('save-draft'),
+                      onPressed: _saving ? null : () => _saveDraft(trip),
                       icon: const Icon(Icons.save),
                       label: Text(
-                        _saving ? context.l10n.loading : context.l10n.saveTrip,
+                        _saving ? context.l10n.loading : context.l10n.saveDraft,
                       ),
                     ),
                   ],
@@ -265,7 +354,11 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
             if (_error != null) ...[
               const SizedBox(height: 12),
               Text(
-                context.l10n.routeProviderUnavailable,
+                _error is ApiException
+                    ? localizedApiError(context, _error! as ApiException)
+                    : _error is StateError
+                    ? (_error! as StateError).message.toString()
+                    : context.l10n.genericError,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
@@ -276,78 +369,64 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
   );
 
   Widget _form(OperationsData data) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
+    child: Stepper(
+      currentStep: _step,
+      onStepTapped: (value) => setState(() => _step = value),
+      onStepContinue: _step < 5 ? () => setState(() => _step++) : null,
+      onStepCancel: _step > 0 ? () => setState(() => _step--) : null,
+      controlsBuilder: (context, details) => Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Wrap(spacing: 8, children: [
+          if (_step < 5) FilledButton(onPressed: details.onStepContinue,
+            child: Text(context.l10n.next)),
+          if (_step > 0) TextButton(onPressed: details.onStepCancel,
+            child: Text(context.l10n.back)),
+        ]),
+      ),
+      steps: [
+        Step(title: Text(context.l10n.tripBasics), isActive: _step >= 0, content: Column(children: [
           DropdownButtonFormField<String>(
-            key: const Key('trip-client'),
-            initialValue: _clientId,
+            key: const Key('trip-client'), initialValue: _clientId,
             decoration: InputDecoration(labelText: context.l10n.client),
-            items: data.clients
-                .where((item) => item.isActive)
-                .map(
-                  (item) =>
-                      DropdownMenuItem(value: item.id, child: Text(item.name)),
-                )
-                .toList(),
+            items: data.clients.where((x) => x.isActive).map((x) =>
+              DropdownMenuItem(value: x.id, child: Text(x.name))).toList(),
             onChanged: (value) => _clientId = value,
-            validator: (value) => value == null ? context.l10n.required : null,
           ),
-          const SizedBox(height: 14),
-          _StopEditor(
-            key: const Key('pickup-editor'),
-            title: context.l10n.pickup,
-            fieldKey: 'pickup',
-            fields: _pickup,
-            onSearch: () => _search(_pickup),
+          const SizedBox(height: 12),
+          TextFormField(key: const Key('trip-cargo'), controller: _cargo,
+            decoration: InputDecoration(labelText: context.l10n.cargo)),
+        ])),
+        Step(title: Text(context.l10n.pickupAndDelivery), isActive: _step >= 1, content: Column(children: [
+          _StopEditor(key: const Key('pickup-editor'), title: context.l10n.pickup,
+            fieldKey: 'pickup', fields: _pickup, onSearch: () => _search(_pickup),
             onSelectMap: () => setState(() => _activeMapStop = _pickup),
             selectingOnMap: identical(_activeMapStop, _pickup),
-            onChanged: () => setState(() => _route = null),
-          ),
+            onChanged: () => setState(() => _route = null)),
           const SizedBox(height: 14),
-          _StopEditor(
-            key: const Key('delivery-editor'),
-            title: context.l10n.delivery,
-            fieldKey: 'delivery',
-            fields: _delivery,
-            onSearch: () => _search(_delivery),
+          _StopEditor(key: const Key('delivery-editor'), title: context.l10n.delivery,
+            fieldKey: 'delivery', fields: _delivery, onSearch: () => _search(_delivery),
             onSelectMap: () => setState(() => _activeMapStop = _delivery),
             selectingOnMap: identical(_activeMapStop, _delivery),
-            onChanged: () => setState(() => _route = null),
-          ),
-          const SizedBox(height: 14),
-          TextFormField(
-            key: const Key('trip-cargo'),
-            controller: _cargo,
-            decoration: InputDecoration(labelText: context.l10n.cargo),
-            validator: (value) => value == null || value.trim().isEmpty
-                ? context.l10n.required
-                : null,
-          ),
+            onChanged: () => setState(() => _route = null)),
+        ])),
+        Step(title: Text(context.l10n.scheduleAndCommercial), isActive: _step >= 2, content: Column(children: [
+          TextFormField(key: const Key('trip-planned-picker'), controller: _planned,
+            readOnly: true, onTap: _pickPlanned,
+            decoration: InputDecoration(labelText: context.l10n.plannedStart,
+              suffixIcon: const Icon(Icons.event))),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: _planned,
-            decoration: InputDecoration(labelText: context.l10n.plannedStart),
-            validator: (value) => DateTime.tryParse(value ?? '') == null
-                ? context.l10n.validDate
-                : null,
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            key: const Key('trip-price'),
-            controller: _price,
+          TextFormField(key: const Key('trip-price'), controller: _price,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(labelText: context.l10n.price),
-            validator: (value) {
-              final amount = num.tryParse(value ?? '');
-              return amount == null || amount < 0
-                  ? context.l10n.validPrice
-                  : null;
-            },
-          ),
-        ],
-      ),
+            decoration: InputDecoration(labelText: context.l10n.price)),
+        ])),
+        Step(title: Text(context.l10n.plannedRoute), isActive: _step >= 3,
+          content: Text(_route == null ? context.l10n.routeNotCalculated
+              : '${(_route!.distanceMeters / 1000).toStringAsFixed(1)} km · ${_route!.providerName}')),
+        Step(title: Text(context.l10n.assignmentOptional), isActive: _step >= 4,
+          content: Text(context.l10n.assignmentAfterDraft)),
+        Step(title: Text(context.l10n.review), isActive: _step >= 5,
+          content: Text(context.l10n.saveDraftReview)),
+      ],
     ),
   );
 }

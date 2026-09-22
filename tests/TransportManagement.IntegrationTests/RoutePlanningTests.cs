@@ -30,8 +30,12 @@ public sealed class RoutePlanningTests(ApiFactory factory) : IClassFixture<ApiFa
 
         var created = await (await client.PostJsonAsync("/api/trips", payload)).RequiredJsonAsync();
         Assert.Equal(2, created.GetProperty("stops").GetArrayLength());
-        Assert.False(created.GetProperty("requiresLocationSelection").GetBoolean());
-        Assert.Equal("geojson-linestring", created.GetProperty("routePlan").GetProperty("geometryFormat").GetString());
+        Assert.True(created.GetProperty("requiresLocationSelection").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, created.GetProperty("routePlan").ValueKind);
+        var routed = await (await client.PostJsonAsync(
+            $"/api/trips/{created.GetProperty("id").GetGuid()}/calculate-route",
+            new { routeProfile = "Driving" })).RequiredJsonAsync();
+        Assert.Equal("geojson-linestring", routed.GetProperty("routePlan").GetProperty("geometryFormat").GetString());
     }
 
     [Fact]
@@ -46,7 +50,7 @@ public sealed class RoutePlanningTests(ApiFactory factory) : IClassFixture<ApiFa
             fullName = "Route Driver",
             licenseNumber = $"RL-{Guid.NewGuid():N}"[..20]
         })).RequiredJsonAsync()).GetProperty("id").GetGuid();
-        var trip = await (await companyA.PostJsonAsync("/api/trips", RouteTestData.TripPayload(clientId))).RequiredJsonAsync();
+        var trip = await RouteTestData.CreateReadyTripAsync(companyA, clientId);
         var tripId = trip.GetProperty("id").GetGuid();
         await companyA.PostJsonAsync($"/api/trips/{tripId}/assign", new { truckId, driverId });
 
@@ -68,8 +72,15 @@ public sealed class RoutePlanningTests(ApiFactory factory) : IClassFixture<ApiFa
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Clients.Add(new Client(clientId, ApiFactory.CompanyAId, "Legacy Client",
                 null, null, null, null, null, now));
-            db.Trips.Add(new Trip(tripId, ApiFactory.CompanyAId, clientId,
-                "Old depot label", "Old customer label", "Legacy cargo", now.AddDays(1), 10, null, now));
+            var legacy = new Trip(tripId, ApiFactory.CompanyAId,
+                "TRP-2026-900001", clientId, "Legacy cargo", now.AddDays(1), 10, null, now);
+            legacy.ReplaceStops([
+                new(Guid.NewGuid(), ApiFactory.CompanyAId, tripId, 0,
+                    TripStopType.Pickup, "Old depot label", null, null, null, null, null, now),
+                new(Guid.NewGuid(), ApiFactory.CompanyAId, tripId, 1,
+                    TripStopType.Delivery, "Old customer label", null, null, null, null, null, now)
+            ], legacy.Version, now);
+            db.Trips.Add(legacy);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
@@ -78,7 +89,7 @@ public sealed class RoutePlanningTests(ApiFactory factory) : IClassFixture<ApiFa
         Assert.Equal("Old depot label", response.GetProperty("origin").GetString());
         Assert.Equal("Old customer label", response.GetProperty("destination").GetString());
         Assert.True(response.GetProperty("requiresLocationSelection").GetBoolean());
-        Assert.Empty(response.GetProperty("stops").EnumerateArray());
+        Assert.Equal(2, response.GetProperty("stops").GetArrayLength());
         Assert.Equal(JsonValueKind.Null, response.GetProperty("routePlan").ValueKind);
     }
 

@@ -32,6 +32,9 @@ Widget testApp(Widget child, OperationsData data, {bool canManage = true}) =>
           () => FakeOperationsController(data),
         ),
         operationsCanManageProvider.overrideWithValue(canManage),
+        tripDetailsProvider.overrideWith(
+          (ref, id) => data.trips.firstWhere((trip) => trip.id == id),
+        ),
       ],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -127,6 +130,9 @@ void main() {
       );
       await tester.pumpWidget(testApp(const TripPlannerScreen(), data));
       await tester.pumpAndSettle();
+      expect(find.byKey(const Key('calculate-route')), findsOneWidget);
+      await tester.tap(find.text('Pickup and delivery'));
+      await tester.pumpAndSettle();
 
       await tester.enterText(
         find.byKey(const Key('trip-pickup-name')),
@@ -167,7 +173,6 @@ void main() {
       await tester.pump();
       expect(find.byKey(const Key('planner-pickup-marker')), findsOneWidget);
       expect(find.byKey(const Key('planner-delivery-marker')), findsOneWidget);
-      expect(find.byKey(const Key('calculate-route')), findsOneWidget);
     },
   );
 

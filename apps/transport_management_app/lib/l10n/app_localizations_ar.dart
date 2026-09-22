@@ -692,4 +692,201 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deliveryMarker => 'علامة التسليم';
+
+  @override
+  String get tripTabActive => 'نشطة';
+
+  @override
+  String get tripTabPlanned => 'مخططة';
+
+  @override
+  String get tripTabCompleted => 'مكتملة';
+
+  @override
+  String get tripTabCancelled => 'ملغاة';
+
+  @override
+  String get tripTabArchived => 'مؤرشفة';
+
+  @override
+  String get searchTrips => 'ابحث برقم الرحلة أو العميل أو الموقع أو اللوحة';
+
+  @override
+  String get tripFilters => 'مرشحات الرحلات';
+
+  @override
+  String get clearFilters => 'مسح المرشحات';
+
+  @override
+  String get previousPage => 'الصفحة السابقة';
+
+  @override
+  String get nextPage => 'الصفحة التالية';
+
+  @override
+  String pageOf(int page, int pages, int total) {
+    return 'الصفحة $page من $pages · $total رحلة';
+  }
+
+  @override
+  String get incompleteDraft => 'مسودة غير مكتملة';
+
+  @override
+  String get draftIncomplete => 'تحتاج تفاصيل التخطيط';
+
+  @override
+  String get saveDraft => 'حفظ المسودة';
+
+  @override
+  String get next => 'التالي';
+
+  @override
+  String get back => 'رجوع';
+
+  @override
+  String get tripBasics => 'أساسيات الرحلة';
+
+  @override
+  String get pickupAndDelivery => 'الاستلام والتسليم';
+
+  @override
+  String get scheduleAndCommercial => 'الجدول والتفاصيل التجارية';
+
+  @override
+  String get routeNotCalculated => 'احفظ المواقع ثم احسب المسار المعتمد.';
+
+  @override
+  String get assignmentOptional => 'التعيين (اختياري)';
+
+  @override
+  String get assignmentAfterDraft =>
+      'أكمل قائمة التخطيط ثم عيّن الموارد المتاحة من تفاصيل الرحلة.';
+
+  @override
+  String get review => 'المراجعة';
+
+  @override
+  String get saveDraftReview => 'راجع قائمة الجاهزية واحفظ هذه المسودة.';
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String get reassign => 'إعادة تعيين';
+
+  @override
+  String get unassign => 'إلغاء التعيين';
+
+  @override
+  String get archive => 'أرشفة';
+
+  @override
+  String get unarchive => 'إلغاء الأرشفة';
+
+  @override
+  String get duplicateAsDraft => 'نسخ كمسودة';
+
+  @override
+  String get cancelTrip => 'إلغاء الرحلة';
+
+  @override
+  String get cancellationReason => 'سبب الإلغاء';
+
+  @override
+  String get confirm => 'تأكيد';
+
+  @override
+  String get timeline => 'الخط الزمني';
+
+  @override
+  String deleteDraftWarning(String tripNumber) {
+    return 'حذف $tripNumber نهائياً؟ لا يمكن التراجع عن ذلك.';
+  }
+
+  @override
+  String confirmTripAction(String tripNumber) {
+    return 'تطبيق هذا الإجراء على $tripNumber؟';
+  }
+
+  @override
+  String get tripNotReadyForRoute =>
+      'أضف إحداثيات صحيحة للاستلام والتسليم قبل حساب المسار.';
+
+  @override
+  String get tripNotReadyForAssignment =>
+      'أكمل قائمة التخطيط واحسب المسار الحالي قبل التعيين.';
+
+  @override
+  String get tripDeleteNotAllowed =>
+      'يمكن حذف مسودة لم يبدأ إرسالها فقط حذفاً نهائياً.';
+
+  @override
+  String get tripCancelReasonRequired => 'أدخل سبب إلغاء لا يتجاوز 500 حرف.';
+
+  @override
+  String get tripArchiveNotAllowed =>
+      'يمكن أرشفة أو استعادة الرحلات المكتملة أو الملغاة فقط.';
+
+  @override
+  String get tripReassignNotAllowed =>
+      'لا يمكن إعادة تعيين هذه الرحلة بعد بدء الإرسال.';
+
+  @override
+  String get tripUnassignNotAllowed =>
+      'لا يمكن إلغاء تعيين هذه الرحلة بعد بدء الإرسال.';
+
+  @override
+  String get tripConcurrencyConflict =>
+      'عدّل مستخدم آخر هذه الرحلة. أعد تحميلها ثم حاول مجدداً.';
+
+  @override
+  String get eventTripCreated => 'تم إنشاء الرحلة';
+
+  @override
+  String get eventDraftUpdated => 'تم تحديث المسودة';
+
+  @override
+  String get eventStopsUpdated => 'تم تحديث المواقع';
+
+  @override
+  String get eventRouteCalculated => 'تم حساب المسار';
+
+  @override
+  String get eventAssigned => 'تم تعيين الموارد';
+
+  @override
+  String get eventReassigned => 'تمت إعادة تعيين الموارد';
+
+  @override
+  String get eventUnassigned => 'تم إلغاء تعيين الموارد';
+
+  @override
+  String get eventDispatchedToPickup => 'تم الإرسال إلى الاستلام';
+
+  @override
+  String get eventArrivedAtPickup => 'تم الوصول إلى الاستلام';
+
+  @override
+  String get eventTripStarted => 'بدأت الرحلة';
+
+  @override
+  String get eventMarkedInTransit => 'تم تحديدها قيد النقل';
+
+  @override
+  String get eventDelivered => 'تم التسليم';
+
+  @override
+  String get eventCompleted => 'اكتملت الرحلة';
+
+  @override
+  String get eventCancelled => 'ألغيت الرحلة';
+
+  @override
+  String get eventArchived => 'تمت الأرشفة';
+
+  @override
+  String get eventUnarchived => 'تم إلغاء الأرشفة';
+
+  @override
+  String get eventImportedBaseline => 'سجل الاستيراد الأساسي';
 }

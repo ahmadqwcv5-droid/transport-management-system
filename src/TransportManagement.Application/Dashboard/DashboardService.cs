@@ -31,6 +31,7 @@ public sealed class DashboardService(
             positions,
             simulatorTrucks,
             trips.OrderByDescending(x => x.UpdatedAt).Take(8)
-                .Select(x => new RecentTripResponse(x.Id, x.Origin, x.Destination, x.Status.ToString(), x.PlannedStartAt)).ToArray());
+                .Select(x => new RecentTripResponse(x.Id, x.TripNumber, x.Origin,
+                    x.Destination, x.Status.ToString(), x.PlannedStartAt)).ToArray());
     }
 }

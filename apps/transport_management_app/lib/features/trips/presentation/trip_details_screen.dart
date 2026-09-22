@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../dashboard/presentation/dashboard_controller.dart';
@@ -11,27 +12,45 @@ import '../../operations/presentation/operations_controller.dart';
 import '../../operations/presentation/operations_view.dart';
 import '../../../l10n/l10n_extensions.dart';
 
+final tripDetailsProvider = FutureProvider.autoDispose.family<Trip, String>(
+  (ref, id) => ref.watch(operationsRepositoryProvider).getTrip(id),
+);
+
 class TripDetailsScreen extends ConsumerWidget {
   const TripDetailsScreen({required this.tripId, super.key});
   final String tripId;
   @override
-  Widget build(BuildContext context, WidgetRef ref) => OperationsView(
-    builder: (context, ref, data) {
-      final trip = data.trips.where((item) => item.id == tripId).firstOrNull;
-      if (trip == null) {
-        return Center(
+  Widget build(BuildContext context, WidgetRef ref) => ref
+      .watch(tripDetailsProvider(tripId))
+      .when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(context.l10n.tripNotFound),
+              Text(
+                error is ApiException
+                    ? localizedApiError(context, error)
+                    : context.l10n.genericError,
+              ),
               TextButton(
-                onPressed: () => context.go('/trips'),
-                child: Text(context.l10n.backToTrips),
+                onPressed: () => ref.invalidate(tripDetailsProvider(tripId)),
+                child: Text(context.l10n.retry),
               ),
             ],
           ),
-        );
-      }
+        ),
+        data: (trip) => _TripDetailsContent(trip: trip),
+      );
+}
+
+class _TripDetailsContent extends ConsumerWidget {
+  const _TripDetailsContent({required this.trip});
+  final Trip trip;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => OperationsView(
+    builder: (context, ref, data) {
       final client = data.clients
           .where((item) => item.id == trip.clientId)
           .firstOrNull;
@@ -53,7 +72,7 @@ class TripDetailsScreen extends ConsumerWidget {
               ),
               Expanded(
                 child: Text(
-                  '${trip.origin} → ${trip.destination}',
+                  '${trip.tripNumber} · ${trip.origin == null || trip.destination == null ? context.l10n.incompleteDraft : '${trip.origin} → ${trip.destination}'}',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ),
@@ -81,8 +100,8 @@ class TripDetailsScreen extends ConsumerWidget {
                     context.l10n.driver,
                     driver?.fullName ?? context.l10n.notAssigned,
                   ),
-                  _Fact(context.l10n.planned, trip.plannedStartAt),
-                  _Fact(context.l10n.price, trip.price.toStringAsFixed(2)),
+                  _Fact(context.l10n.planned, trip.plannedStartAt ?? context.l10n.notAssigned),
+                  _Fact(context.l10n.price, trip.price?.toStringAsFixed(2) ?? context.l10n.notAssigned),
                   if (trip.actualStartAt != null)
                     _Fact(context.l10n.started, trip.actualStartAt!),
                   if (trip.arrivedPickupAt != null)
@@ -164,6 +183,30 @@ class TripDetailsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
           ],
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(context.l10n.timeline,
+                    style: Theme.of(context).textTheme.titleMedium),
+                FutureBuilder<List<TripEvent>>(
+                  future: ref.read(operationsRepositoryProvider).timeline(trip.id),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) return Text(context.l10n.loading);
+                    return Column(children: snapshot.data!.map((event) => ListTile(
+                      dense: true,
+                      leading: const Icon(Icons.history),
+                      title: Text(localizedTripEvent(context.l10n, event.eventType)),
+                      subtitle: Text(
+                        '${event.actorDisplayName} · ${DateFormat.yMd(Localizations.localeOf(context).toLanguageTag()).add_jm().format(DateTime.parse(event.occurredAt).toLocal())}',
+                      ),
+                    )).toList());
+                  },
+                ),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 16),
           if (canManageOperations(ref))
             Wrap(
               spacing: 10,
@@ -180,8 +223,15 @@ class TripDetailsScreen extends ConsumerWidget {
                 ))
                   FilledButton(
                     key: Key('trip-action-$action'),
-                    onPressed: () => action == 'assign'
-                        ? _assign(context, ref, data, trip)
+                    style: const {'delete', 'cancel'}.contains(action)
+                        ? FilledButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.error,
+                            foregroundColor: Theme.of(context).colorScheme.onError,
+                          )
+                        : null,
+                    onPressed: () => action == 'assign' || action == 'reassign'
+                        ? _assign(context, ref, data, trip,
+                            reassign: action == 'reassign')
                         : action == 'preview-repositioning'
                         ? _previewAndDispatch(
                             context,
@@ -208,6 +258,12 @@ class TripDetailsScreen extends ConsumerWidget {
     'deliver' => context.l10n.deliver,
     'complete' => context.l10n.complete,
     'cancel' => context.l10n.cancel,
+    'delete' => context.l10n.delete,
+    'reassign' => context.l10n.reassign,
+    'unassign' => context.l10n.unassign,
+    'archive' => context.l10n.archive,
+    'unarchive' => context.l10n.unarchive,
+    'duplicate' => context.l10n.duplicateAsDraft,
     _ => value,
   };
   static Future<void> _previewAndDispatch(
@@ -280,6 +336,7 @@ class TripDetailsScreen extends ConsumerWidget {
         dispatched,
         successMessage: context.l10n.dispatchStarted,
       );
+      if (dispatched) ref.invalidate(tripDetailsProvider(trip.id));
     }
   }
 
@@ -357,11 +414,48 @@ class TripDetailsScreen extends ConsumerWidget {
     Trip trip,
     String action,
   ) async {
+    String? reason;
+    if (action == 'cancel') {
+      final controller = TextEditingController();
+      reason = await showDialog<String>(context: context, builder: (dialogContext) =>
+        AlertDialog(title: Text(context.l10n.cancelTrip), content: TextField(
+          key: const Key('cancel-reason'), controller: controller, maxLength: 500,
+          decoration: InputDecoration(labelText: context.l10n.cancellationReason)),
+          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.l10n.cancel)), FilledButton(
+            key: const Key('confirm-cancel-trip'),
+            onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+            child: Text(context.l10n.confirm))]));
+      controller.dispose();
+      if (reason == null || reason.isEmpty) return;
+    } else if (const {'delete', 'unassign', 'archive', 'unarchive', 'duplicate'}.contains(action)) {
+      final confirmed = await showDialog<bool>(context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(_label(context, action)),
+          content: Text(action == 'delete'
+              ? context.l10n.deleteDraftWarning(trip.tripNumber)
+              : context.l10n.confirmTripAction(trip.tripNumber)),
+          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.l10n.cancel)), FilledButton(
+            key: Key('confirm-$action'), onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(context.l10n.confirm))]));
+      if (confirmed != true) return;
+    }
     final ok = await ref
         .read(operationsControllerProvider.notifier)
-        .mutate((repo) => repo.tripAction(trip.id, action));
+        .mutate((repo) => switch (action) {
+          'cancel' => repo.cancelTrip(trip.id, reason!),
+          'delete' => repo.deleteDraft(trip.id),
+          'unassign' => repo.unassignTrip(trip.id),
+          'archive' => repo.archiveTrip(trip.id, archive: true),
+          'unarchive' => repo.archiveTrip(trip.id, archive: false),
+          'duplicate' => repo.duplicateTrip(trip.id),
+          _ => repo.tripAction(trip.id, action),
+        });
     if (context.mounted) {
       showResult(context, ok, successMessage: context.l10n.tripStatusUpdated);
+      if (ok && action == 'delete') context.go('/trips');
+      if (ok && action != 'delete') ref.invalidate(tripDetailsProvider(trip.id));
     }
   }
 
@@ -370,6 +464,7 @@ class TripDetailsScreen extends ConsumerWidget {
     WidgetRef ref,
     OperationsData data,
     Trip trip,
+    {bool reassign = false}
   ) async {
     final assignment = await showDialog<List<String>>(
       context: context,
@@ -379,10 +474,13 @@ class TripDetailsScreen extends ConsumerWidget {
     final ok = await ref
         .read(operationsControllerProvider.notifier)
         .mutate(
-          (repo) => repo.assignTrip(trip.id, assignment[0], assignment[1]),
+          (repo) => reassign
+              ? repo.reassignTrip(trip.id, assignment[0], assignment[1])
+              : repo.assignTrip(trip.id, assignment[0], assignment[1]),
         );
     if (context.mounted) {
       showResult(context, ok, successMessage: context.l10n.resourcesAssigned);
+      if (ok) ref.invalidate(tripDetailsProvider(trip.id));
     }
   }
 }

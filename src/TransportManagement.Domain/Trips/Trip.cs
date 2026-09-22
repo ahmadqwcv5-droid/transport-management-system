@@ -6,43 +6,56 @@ public sealed class Trip : Entity, ITenantOwned
 {
     private readonly List<TripStop> _stops = [];
     private readonly List<TripRepositioningPlan> _repositioningPlans = [];
+    private readonly List<TripEvent> _events = [];
     private Trip() { }
 
     public Trip(
         Guid id,
         Guid companyId,
+        string tripNumber,
         Guid clientId,
-        string origin,
-        string destination,
         string cargoDescription,
-        DateTimeOffset plannedStartAt,
-        decimal price,
+        DateTimeOffset? plannedStartAt,
+        decimal? price,
         string? notes,
         DateTimeOffset now) : base(id, now)
     {
+        if (string.IsNullOrWhiteSpace(tripNumber))
+            throw new DomainRuleException("Trip number is required.");
         CompanyId = companyId;
+        TripNumber = tripNumber;
         ClientId = clientId;
-        ApplyDraft(origin, destination, cargoDescription, plannedStartAt, price, notes, now);
+        ApplyDraft(cargoDescription, plannedStartAt, price, notes, now);
         Status = TripStatus.Draft;
+        Version = 1;
     }
 
     public Guid CompanyId { get; private set; }
+    public string TripNumber { get; private set; } = string.Empty;
     public Guid ClientId { get; private set; }
     public Guid? TruckId { get; private set; }
     public Guid? DriverId { get; private set; }
-    public string Origin { get; private set; } = string.Empty;
-    public string Destination { get; private set; } = string.Empty;
+    public string? Origin { get; private set; }
+    public string? Destination { get; private set; }
     public string CargoDescription { get; private set; } = string.Empty;
-    public DateTimeOffset PlannedStartAt { get; private set; }
+    public DateTimeOffset? PlannedStartAt { get; private set; }
     public DateTimeOffset? ActualStartAt { get; private set; }
     public DateTimeOffset? ArrivedPickupAt { get; private set; }
     public DateTimeOffset? DeliveredAt { get; private set; }
     public DateTimeOffset? CompletedAt { get; private set; }
-    public decimal Price { get; private set; }
+    public decimal? Price { get; private set; }
     public string? Notes { get; private set; }
     public TripStatus Status { get; private set; }
+    public string? CancellationReason { get; private set; }
+    public DateTimeOffset? CancelledAt { get; private set; }
+    public Guid? CancelledByUserId { get; private set; }
+    public DateTimeOffset? ArchivedAt { get; private set; }
+    public Guid? ArchivedByUserId { get; private set; }
+    public bool IsArchived => ArchivedAt.HasValue;
+    public long Version { get; private set; }
     public IReadOnlyCollection<TripStop> Stops => _stops;
     public IReadOnlyCollection<TripRepositioningPlan> RepositioningPlans => _repositioningPlans;
+    public IReadOnlyCollection<TripEvent> Events => _events;
     public TripRoutePlan? RoutePlan { get; private set; }
     public bool IsRouteAware => RoutePlan is not null && _stops.Count >= 2;
 
@@ -57,17 +70,17 @@ public sealed class Trip : Entity, ITenantOwned
 
     public void UpdateDraft(
         Guid clientId,
-        string origin,
-        string destination,
         string cargoDescription,
-        DateTimeOffset plannedStartAt,
-        decimal price,
+        DateTimeOffset? plannedStartAt,
+        decimal? price,
         string? notes,
+        long expectedVersion,
         DateTimeOffset now)
     {
         EnsureStatus(TripStatus.Draft);
+        EnsureVersion(expectedVersion);
         ClientId = clientId;
-        ApplyDraft(origin, destination, cargoDescription, plannedStartAt, price, notes, now);
+        ApplyDraft(cargoDescription, plannedStartAt, price, notes, now);
     }
 
     public void Assign(Guid truckId, Guid driverId, DateTimeOffset now)
@@ -76,7 +89,51 @@ public sealed class Trip : Entity, ITenantOwned
         TruckId = truckId;
         DriverId = driverId;
         Status = TripStatus.Assigned;
-        Touch(now);
+        Changed(now);
+    }
+
+    public void Reassign(Guid truckId, Guid driverId, DateTimeOffset now)
+    {
+        EnsureStatus(TripStatus.Assigned);
+        foreach (var plan in _repositioningPlans) plan.Expire(now);
+        TruckId = truckId;
+        DriverId = driverId;
+        Changed(now);
+    }
+
+    public void Unassign(DateTimeOffset now)
+    {
+        EnsureStatus(TripStatus.Assigned);
+        foreach (var plan in _repositioningPlans) plan.Expire(now);
+        TruckId = null;
+        DriverId = null;
+        Status = TripStatus.Draft;
+        Changed(now);
+    }
+
+    public void ReplaceStops(IReadOnlyCollection<TripStop> stops, long expectedVersion, DateTimeOffset now)
+    {
+        EnsureStatus(TripStatus.Draft);
+        EnsureVersion(expectedVersion);
+        ValidateStops(stops, requireCoordinates: false);
+        var ordered = stops.OrderBy(x => x.Sequence).ToArray();
+        if (_stops.Count == ordered.Length
+            && _stops.OrderBy(x => x.Sequence).Select(x => (x.Sequence, x.Type))
+                .SequenceEqual(ordered.Select(x => (x.Sequence, x.Type))))
+        {
+            var existing = _stops.OrderBy(x => x.Sequence).ToArray();
+            for (var index = 0; index < existing.Length; index++)
+                existing[index].UpdateFrom(ordered[index], now);
+        }
+        else
+        {
+            _stops.Clear();
+            _stops.AddRange(ordered);
+        }
+        RoutePlan = null;
+        Origin = _stops.OrderBy(x => x.Sequence).FirstOrDefault()?.Name;
+        Destination = _stops.OrderBy(x => x.Sequence).LastOrDefault()?.Name;
+        Changed(now);
     }
 
     public void ReplaceRoute(
@@ -85,15 +142,9 @@ public sealed class Trip : Entity, ITenantOwned
         DateTimeOffset now)
     {
         EnsureStatus(TripStatus.Draft);
-        if (stops.Count < 2)
-            throw new DomainRuleException("A route requires pickup and delivery stops.", "INVALID_TRIP_STOPS");
+        ValidateStops(stops, requireCoordinates: true);
         var ordered = stops.OrderBy(x => x.Sequence).ToArray();
-        if (ordered[0].Sequence != 0 || ordered[0].Type != TripStopType.Pickup
-            || ordered[^1].Type != TripStopType.Delivery
-            || ordered.Select(x => x.Sequence).Distinct().Count() != ordered.Length)
-            throw new DomainRuleException("Stops must start with pickup, end with delivery, and have unique ordering.", "INVALID_TRIP_STOPS");
-        if (ordered.Any(x => x.CompanyId != CompanyId || x.TripId != Id || !x.HasCoordinates)
-            || routePlan.CompanyId != CompanyId || routePlan.TripId != Id)
+        if (routePlan.CompanyId != CompanyId || routePlan.TripId != Id)
             throw new DomainRuleException("Route data does not belong to this trip.", "INVALID_TRIP_ROUTE");
 
         var pickup = ordered[0];
@@ -103,12 +154,10 @@ public sealed class Trip : Entity, ITenantOwned
         if (latitudeDelta < 0.00001m && longitudeDelta < 0.00001m)
             throw new DomainRuleException("Pickup and delivery must be different locations.", "IDENTICAL_TRIP_STOPS");
 
-        _stops.Clear();
-        _stops.AddRange(ordered);
         RoutePlan = routePlan;
         Origin = pickup.Name;
         Destination = delivery.Name;
-        Touch(now);
+        Changed(now);
     }
 
     public void AddRepositioningPlan(TripRepositioningPlan plan, DateTimeOffset now)
@@ -118,7 +167,7 @@ public sealed class Trip : Entity, ITenantOwned
             throw new DomainRuleException("Repositioning plan does not belong to this assignment.", "INVALID_TRIP_ROUTE");
         foreach (var existing in _repositioningPlans) existing.Expire(now);
         _repositioningPlans.Add(plan);
-        Touch(now);
+        Changed(now);
     }
 
     public void DispatchToPickup(TripRepositioningPlan plan, DateTimeOffset now)
@@ -128,7 +177,7 @@ public sealed class Trip : Entity, ITenantOwned
             throw new DomainRuleException("Repositioning route is required.", "REPOSITIONING_ROUTE_REQUIRED");
         plan.Activate(now);
         Status = TripStatus.EnRouteToPickup;
-        Touch(now);
+        Changed(now);
     }
 
     public void MarkAtPickup(DateTimeOffset now)
@@ -140,7 +189,7 @@ public sealed class Trip : Entity, ITenantOwned
             CurrentRepositioningPlan?.Complete(now);
         ArrivedPickupAt = now;
         Status = TripStatus.AtPickup;
-        Touch(now);
+        Changed(now);
     }
 
     public void Start(DateTimeOffset now)
@@ -148,14 +197,14 @@ public sealed class Trip : Entity, ITenantOwned
         EnsureStatus(TripStatus.AtPickup);
         ActualStartAt = now;
         Status = TripStatus.Started;
-        Touch(now);
+        Changed(now);
     }
 
     public void MarkInTransit(DateTimeOffset now)
     {
         EnsureStatus(TripStatus.Started);
         Status = TripStatus.InTransit;
-        Touch(now);
+        Changed(now);
     }
 
     public void Deliver(DateTimeOffset now)
@@ -163,7 +212,7 @@ public sealed class Trip : Entity, ITenantOwned
         EnsureStatus(TripStatus.InTransit);
         DeliveredAt = now;
         Status = TripStatus.Delivered;
-        Touch(now);
+        Changed(now);
     }
 
     public void Complete(DateTimeOffset now)
@@ -171,38 +220,81 @@ public sealed class Trip : Entity, ITenantOwned
         EnsureStatus(TripStatus.Delivered);
         CompletedAt = now;
         Status = TripStatus.Completed;
-        Touch(now);
+        Changed(now);
     }
 
-    public void Cancel(DateTimeOffset now)
+    public void Cancel(string reason, Guid actorUserId, DateTimeOffset now)
     {
+        if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 500)
+            throw new DomainRuleException("A cancellation reason is required and must not exceed 500 characters.", "TRIP_CANCEL_REASON_REQUIRED");
         if (Status is TripStatus.Delivered or TripStatus.Completed or TripStatus.Cancelled)
             throw new DomainRuleException($"A {Status} trip cannot be cancelled.", "INVALID_TRIP_TRANSITION");
+        foreach (var plan in _repositioningPlans) plan.Expire(now);
         Status = TripStatus.Cancelled;
-        Touch(now);
+        CancellationReason = reason.Trim();
+        CancelledAt = now;
+        CancelledByUserId = actorUserId;
+        Changed(now);
+    }
+
+    public void Archive(Guid actorUserId, DateTimeOffset now)
+    {
+        if (Status is not (TripStatus.Completed or TripStatus.Cancelled) || IsArchived)
+            throw new DomainRuleException("Only an unarchived completed or cancelled trip may be archived.", "TRIP_ARCHIVE_NOT_ALLOWED");
+        ArchivedAt = now;
+        ArchivedByUserId = actorUserId;
+        Changed(now);
+    }
+
+    public void Unarchive(DateTimeOffset now)
+    {
+        if (!IsArchived || Status is not (TripStatus.Completed or TripStatus.Cancelled))
+            throw new DomainRuleException("This trip cannot be unarchived.", "TRIP_ARCHIVE_NOT_ALLOWED");
+        ArchivedAt = null;
+        ArchivedByUserId = null;
+        Changed(now);
     }
 
     private void ApplyDraft(
-        string origin,
-        string destination,
         string cargoDescription,
-        DateTimeOffset plannedStartAt,
-        decimal price,
+        DateTimeOffset? plannedStartAt,
+        decimal? price,
         string? notes,
         DateTimeOffset now)
     {
-        if (string.IsNullOrWhiteSpace(origin) || string.IsNullOrWhiteSpace(destination))
-            throw new DomainRuleException("Trip origin and destination are required.");
         if (string.IsNullOrWhiteSpace(cargoDescription))
             throw new DomainRuleException("Cargo description is required.");
         if (price < 0)
             throw new DomainRuleException("Trip price cannot be negative.");
-        Origin = origin.Trim();
-        Destination = destination.Trim();
         CargoDescription = cargoDescription.Trim();
         PlannedStartAt = plannedStartAt;
-        Price = decimal.Round(price, 2, MidpointRounding.AwayFromZero);
+        Price = price.HasValue ? decimal.Round(price.Value, 2, MidpointRounding.AwayFromZero) : null;
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        Changed(now);
+    }
+
+    private void ValidateStops(IReadOnlyCollection<TripStop> stops, bool requireCoordinates)
+    {
+        if (stops.Count != 2)
+            throw new DomainRuleException("Pickup and delivery stops are required.", "INVALID_TRIP_STOPS");
+        var ordered = stops.OrderBy(x => x.Sequence).ToArray();
+        if (ordered[0].Sequence != 0 || ordered[0].Type != TripStopType.Pickup
+            || ordered[^1].Type != TripStopType.Delivery
+            || ordered.Select(x => x.Sequence).Distinct().Count() != ordered.Length
+            || ordered.Any(x => x.CompanyId != CompanyId || x.TripId != Id)
+            || requireCoordinates && ordered.Any(x => !x.HasCoordinates))
+            throw new DomainRuleException("Stops are invalid for this trip.", "INVALID_TRIP_STOPS");
+    }
+
+    private void EnsureVersion(long expectedVersion)
+    {
+        if (expectedVersion != Version)
+            throw new DomainRuleException("The trip was changed by another user.", "TRIP_CONCURRENCY_CONFLICT");
+    }
+
+    private void Changed(DateTimeOffset now)
+    {
+        Version++;
         Touch(now);
     }
 

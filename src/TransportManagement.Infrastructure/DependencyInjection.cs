@@ -88,7 +88,7 @@ public static class DependencyInjection
             offlineThresholdSeconds,
             configuration.GetValue<int>("Tracking:HistoryHeartbeatSeconds", 300));
         var simulatorHeartbeatSeconds = Math.Clamp(
-            configuration.GetValue<int>("Tracking:SimulatorHeartbeatSeconds", 15),
+            configuration.GetValue<int>("Tracking:SimulatorHeartbeatSeconds", 60),
             1, Math.Max(1, Math.Min(
                 offlineThresholdSeconds / 2, maximumPositionAgeSeconds / 2)));
         services.AddSingleton(
