@@ -80,6 +80,48 @@ final class TrackedTruck {
   );
 }
 
+final class SimulatorTruck {
+  const SimulatorTruck({
+    required this.truckId,
+    required this.plateNumber,
+    required this.truckStatus,
+    required this.locationState,
+    required this.maximumPositionAgeSeconds,
+    this.latitude,
+    this.longitude,
+    this.heading,
+    this.recordedAt,
+    this.positionAgeSeconds,
+    this.isOnline,
+    this.currentTripId,
+    this.movementPhase,
+  });
+  final String truckId, plateNumber, truckStatus, locationState;
+  final double? latitude, longitude, heading;
+  final String? recordedAt, currentTripId, movementPhase;
+  final int? positionAgeSeconds;
+  final int maximumPositionAgeSeconds;
+  final bool? isOnline;
+
+  bool get hasLocation => latitude != null && longitude != null;
+
+  factory SimulatorTruck.fromJson(Json json) => SimulatorTruck(
+    truckId: json['truckId'] as String,
+    plateNumber: json['plateNumber'] as String,
+    truckStatus: json['truckStatus'] as String,
+    locationState: json['locationState'] as String,
+    latitude: (json['latitude'] as num?)?.toDouble(),
+    longitude: (json['longitude'] as num?)?.toDouble(),
+    heading: (json['heading'] as num?)?.toDouble(),
+    recordedAt: json['recordedAt'] as String?,
+    positionAgeSeconds: json['positionAgeSeconds'] as int?,
+    maximumPositionAgeSeconds: json['maximumPositionAgeSeconds'] as int,
+    isOnline: json['isOnline'] as bool?,
+    currentTripId: json['currentTripId'] as String?,
+    movementPhase: json['movementPhase'] as String?,
+  );
+}
+
 final class RecentTrip {
   const RecentTrip({
     required this.id,
@@ -102,10 +144,12 @@ final class DashboardData {
     required this.trips,
     required this.tracking,
     required this.positions,
+    required this.simulatorTrucks,
     required this.recentTrips,
   });
   final Json fleet, trips, tracking;
   final List<TrackedTruck> positions;
+  final List<SimulatorTruck> simulatorTrucks;
   final List<RecentTrip> recentTrips;
   factory DashboardData.fromJson(Json json) => DashboardData(
     fleet: json['fleet'] as Json,
@@ -114,6 +158,10 @@ final class DashboardData {
     positions: (json['positions'] as List<dynamic>)
         .cast<Json>()
         .map(TrackedTruck.fromJson)
+        .toList(),
+    simulatorTrucks: (json['simulatorTrucks'] as List<dynamic>? ?? const [])
+        .cast<Json>()
+        .map(SimulatorTruck.fromJson)
         .toList(),
     recentTrips: (json['recentTrips'] as List<dynamic>)
         .cast<Json>()

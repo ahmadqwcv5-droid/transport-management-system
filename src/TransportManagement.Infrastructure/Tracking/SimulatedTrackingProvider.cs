@@ -41,10 +41,11 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
         lock (company)
         {
             return targets.OrderBy(x => x.TruckId)
-                .Where(x => x.CanMove && x.Route.Count >= 2
-                    && !string.IsNullOrWhiteSpace(x.RouteRevision))
+                .Where(x => x.CanMove && x.Route.Count >= 2 &&
+                    !string.IsNullOrWhiteSpace(x.RouteRevision) ||
+                    x.RestorePosition is not null && x.HeartbeatEligible)
                 .Select(target => (Target: target, State: StateFor(company, target, now)))
-                .Where(item => item.State.CanEmit)
+                .Where(item => !item.Target.CanMove || item.State.CanEmit)
                 .Select(item => Sample(item.Target, item.State, company, now))
                 .ToArray();
         }
@@ -59,9 +60,10 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
         var company = _states.GetOrAdd(companyId, _ => new());
         lock (company)
         {
-            var states = targets.Where(x => x.Route.Count >= 2 && x.RouteRevision is not null)
+            var states = targets
                 .ToDictionary(x => x, x => StateFor(company, x, now));
-            foreach (var item in states) Anchor(item.Key, item.Value, company, now);
+            foreach (var item in states.Where(x => x.Key.CanMove))
+                Anchor(item.Key, item.Value, company, now);
 
             switch (command.Action.Trim().ToLowerInvariant())
             {
@@ -81,8 +83,9 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
                     company.SpeedMultiplier = 1;
                     foreach (var item in states)
                     {
-                        item.Value.AnchorDistanceMeters = CurrentDistance(
-                            item.Key, item.Value, company, now);
+                        if (item.Key.CanMove)
+                            item.Value.AnchorDistanceMeters = CurrentDistance(
+                                item.Key, item.Value, company, now);
                         item.Value.AnchorAt = now;
                         item.Value.Offline = false;
                         item.Value.RunId = Guid.NewGuid();
@@ -117,6 +120,13 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
 
     private TrackingSample Sample(TrackingTarget target, TruckSimulation state, CompanySimulation company, DateTimeOffset now)
     {
+        if (!target.CanMove || target.Route.Count < 2 || target.RouteRevision is null)
+        {
+            var restored = target.RestorePosition!;
+            return new(target.TruckId, restored.Latitude, restored.Longitude, 0,
+                target.RestoreHeading, !state.Offline, now,
+                "SimulatorHeartbeat", state.RunId);
+        }
         var length = RouteGeometry.DistanceMeters(target.Route);
         var distance = CurrentDistance(target, state, company, now);
         var position = RouteGeometry.Interpolate(target.Route, distance);
@@ -138,6 +148,8 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
                 TripId = target.TripId,
                 RouteRevision = target.RouteRevision,
                 AnchorAt = now,
+                Offline = !target.RestoreIsOnline,
+                RunId = target.RestoreTrackingRunId ?? Guid.NewGuid(),
                 CanEmit = TryRestore(target, out var restoredDistance),
                 AnchorDistanceMeters = restoredDistance
             };
@@ -146,12 +158,14 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
         else if (state.TripId != target.TripId
             || !string.Equals(state.RouteRevision, target.RouteRevision, StringComparison.Ordinal))
         {
+            var beginsMovingLeg = target.CanMove && target.Route.Count >= 2
+                && target.RouteRevision is not null;
             state.TripId = target.TripId;
             state.RouteRevision = target.RouteRevision;
             state.CanEmit = TryRestore(target, out var restoredDistance);
             state.AnchorDistanceMeters = restoredDistance;
             state.AnchorAt = now;
-            state.RunId = Guid.NewGuid();
+            if (beginsMovingLeg) state.RunId = Guid.NewGuid();
         }
         return state;
     }

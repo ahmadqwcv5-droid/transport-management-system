@@ -44,12 +44,16 @@ class DashboardController extends AsyncNotifier<DashboardData> {
     String action, {
     String? truckId,
     double? speedMultiplier,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       await _repository.simulator(
         action,
         truckId: truckId,
         speedMultiplier: speedMultiplier,
+        latitude: latitude,
+        longitude: longitude,
       );
       await refresh(silent: true);
       return true;

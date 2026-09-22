@@ -1315,6 +1315,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Expired'**
   String get expired;
+
+  /// No description provided for @confirmLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm location'**
+  String get confirmLocation;
+
+  /// No description provided for @setSimulatedLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Set simulated location'**
+  String get setSimulatedLocation;
+
+  /// No description provided for @moveSimulatedTruck.
+  ///
+  /// In en, this message translates to:
+  /// **'Move simulated truck'**
+  String get moveSimulatedTruck;
+
+  /// No description provided for @refreshLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh at same coordinate'**
+  String get refreshLocation;
+
+  /// No description provided for @noLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'No location'**
+  String get noLocation;
+
+  /// No description provided for @currentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get currentLocation;
+
+  /// No description provided for @staleLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Stale'**
+  String get staleLocation;
+
+  /// No description provided for @noActiveTrucks.
+  ///
+  /// In en, this message translates to:
+  /// **'No active trucks are available.'**
+  String get noActiveTrucks;
+
+  /// No description provided for @noLocationHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'This truck has not reported a position. Set a simulated location to place it on the map.'**
+  String get noLocationHelp;
+
+  /// No description provided for @currentLocationHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The simulated GPS position is current and maintained by bounded heartbeats.'**
+  String get currentLocationHelp;
+
+  /// No description provided for @staleLocationHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh this coordinate or choose a new simulated location before dispatch.'**
+  String get staleLocationHelp;
+
+  /// No description provided for @offlineLocationHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'This truck is explicitly offline. Set it online before refreshing or dispatching.'**
+  String get offlineLocationHelp;
+
+  /// No description provided for @locationAgeSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {seconds} seconds ago'**
+  String locationAgeSeconds(int seconds);
+
+  /// No description provided for @locationForTruck.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulated location for {plateNumber}'**
+  String locationForTruck(String plateNumber);
+
+  /// No description provided for @fixTruckLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix truck location'**
+  String get fixTruckLocation;
+
+  /// No description provided for @locationCorrectedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck location updated. Retry the route preview when ready.'**
+  String get locationCorrectedRetry;
+
+  /// No description provided for @pickupMarker.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup marker'**
+  String get pickupMarker;
+
+  /// No description provided for @deliveryMarker.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery marker'**
+  String get deliveryMarker;
 }
 
 class _AppLocalizationsDelegate

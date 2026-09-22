@@ -629,4 +629,67 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get expired => 'منتهي الصلاحية';
+
+  @override
+  String get confirmLocation => 'تأكيد الموقع';
+
+  @override
+  String get setSimulatedLocation => 'تعيين موقع محاكى';
+
+  @override
+  String get moveSimulatedTruck => 'نقل الشاحنة المحاكاة';
+
+  @override
+  String get refreshLocation => 'تحديث الموقع نفسه';
+
+  @override
+  String get noLocation => 'لا يوجد موقع';
+
+  @override
+  String get currentLocation => 'حالي';
+
+  @override
+  String get staleLocation => 'قديم';
+
+  @override
+  String get noActiveTrucks => 'لا توجد شاحنات نشطة متاحة.';
+
+  @override
+  String get noLocationHelp =>
+      'لم ترسل هذه الشاحنة موقعاً بعد. عيّن موقعاً محاكى لإظهارها على الخريطة.';
+
+  @override
+  String get currentLocationHelp =>
+      'موقع GPS المحاكى حديث وتحافظ عليه نبضات دورية محدودة.';
+
+  @override
+  String get staleLocationHelp =>
+      'حدّث الإحداثيات نفسها أو اختر موقعاً محاكى جديداً قبل الإرسال.';
+
+  @override
+  String get offlineLocationHelp =>
+      'هذه الشاحنة غير متصلة صراحةً. عيّنها كمتصلة قبل التحديث أو الإرسال.';
+
+  @override
+  String locationAgeSeconds(int seconds) {
+    return 'آخر تحديث منذ $seconds ثانية';
+  }
+
+  @override
+  String locationForTruck(String plateNumber) {
+    return 'الموقع المحاكى للشاحنة $plateNumber';
+  }
+
+  @override
+  String get fixTruckLocation => 'تصحيح موقع الشاحنة';
+
+  @override
+  String get locationCorrectedRetry =>
+      'تم تحديث موقع الشاحنة. أعد معاينة المسار عندما تكون جاهزاً.';
+
+  @override
+  String get pickupMarker => 'علامة الاستلام';
+
+  @override
+  String get deliveryMarker => 'علامة التسليم';
 }

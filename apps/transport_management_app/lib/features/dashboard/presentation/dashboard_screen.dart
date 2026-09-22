@@ -51,7 +51,7 @@ class DashboardScreen extends ConsumerWidget {
               if (ref.watch(authControllerProvider).value?.user.role ==
                       'Owner' &&
                   SimulatorControls.enabled)
-                SimulatorControls(positions: data.positions),
+                SimulatorControls(trucks: data.simulatorTrucks),
               const SizedBox(height: 16),
               FleetMap(positions: data.positions),
               const SizedBox(height: 16),

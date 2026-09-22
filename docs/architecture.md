@@ -192,6 +192,32 @@ online/source change, or a configurable heartbeat. This bounds history growth
 while paused without changing the provider or weakening tenant isolation.
 High-volume retention, partitioning, and archival remain deferred.
 
+## ADR-019: Simulator inventory and stationary device heartbeat
+
+**Status:** Accepted
+
+The Development simulator inventory is a tenant-filtered left join from active
+trucks to their latest optional position, rather than a projection of positions.
+The backend returns authoritative `NoLocation`, `Current`, `Stale`, or `Offline`
+state plus age and the dispatch freshness policy in one request. This avoids an
+N+1 query and prevents Flutter from copying the server's age rule.
+
+The simulator provider owns stationary GPS-like reports for persisted simulator
+positions. Its dedicated heartbeat interval is clamped below both the offline
+and dispatch-staleness thresholds; application persistence then appends at most
+one unchanged heartbeat per interval. A heartbeat preserves coordinate,
+heading, movement phase, trip/run/route context, and progress. Pause remains an
+online stationary state, while Stop/Offline suppresses online heartbeats.
+Unlocated trucks never receive fabricated coordinates. At the 15-second default
+the maximum sampled idle rate is 240 rows per truck per hour.
+
+Set and Refresh deliberately create `CurrentLocation` samples with no trip,
+route, or repositioning association, so assignment and location maintenance
+cannot create travel. Simulator registration still requires Development or
+Testing, provider selection, the explicit server gate, Owner authorization, and
+the Flutter compile-time gate. Future real-device ingestion should drive the
+same application boundary independently of dashboard polling.
+
 ## Sprint 3 authorization matrix
 
 | Capability | Owner | Operations | Accountant | Employee |

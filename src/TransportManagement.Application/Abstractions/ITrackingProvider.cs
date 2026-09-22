@@ -20,7 +20,11 @@ public sealed record TrackingTarget(
     MovementPhase? MovementPhase = null,
     Guid? RepositioningPlanId = null,
     GeoCoordinate? RestorePosition = null,
-    decimal RestoreProjectionToleranceMeters = 500);
+    decimal RestoreProjectionToleranceMeters = 500,
+    bool RestoreIsOnline = true,
+    decimal RestoreHeading = 0,
+    bool HeartbeatEligible = false,
+    Guid? RestoreTrackingRunId = null);
 
 public interface ITrackingProvider
 {

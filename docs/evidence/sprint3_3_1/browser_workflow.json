@@ -1,0 +1,25 @@
+{
+  "tenantEmail": "owner@sprint322.local",
+  "truckId": "efb41e62-06f8-496c-b0be-3f16d895193d",
+  "plateNumber": "S331-3743747",
+  "tripId": "7ed06b11-f3c6-4580-a18b-a58d54825cf6",
+  "locationWasSetThroughVisiblePicker": true,
+  "mapClickCallbackExercisedInRealFirefox": true,
+  "firstMapSelectedLatitude": "40.120000",
+  "firstMapSelectedLongitude": "31.650000",
+  "freshnessWindowSeconds": 30,
+  "stationaryObservationSeconds": 36,
+  "heartbeatRowsDuringObservation": 7,
+  "coordinatesBeforeHeartbeat": {
+    "latitude": 40.12,
+    "longitude": 31.65
+  },
+  "coordinatesAfterHeartbeat": {
+    "latitude": 40.12,
+    "longitude": 31.65
+  },
+  "offlinePreviewErrorCode": "TRUCK_OFFLINE",
+  "onlineCoordinateJump": false,
+  "manualPanPollingUpdatesCoveredByAutomatedCoordinatorTest": 10,
+  "pickupAndDeliverySelectedThroughRealPlannerMap": true
+}

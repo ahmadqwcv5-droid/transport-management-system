@@ -48,9 +48,10 @@ public static class DependencyInjection
         services.AddSingleton(new RouteProgressPolicy(
             Math.Max(10, configuration.GetValue<decimal>("Routing:OffRouteThresholdMeters", 150)),
             Math.Max(5, configuration.GetValue<decimal>("Routing:ArrivalThresholdMeters", 30))));
+        var maximumPositionAgeSeconds = Math.Max(30,
+            configuration.GetValue<int>("Dispatch:MaximumPositionAgeSeconds", 300));
         services.AddSingleton(new DispatchPolicy(
-            TimeSpan.FromSeconds(Math.Max(30,
-                configuration.GetValue<int>("Dispatch:MaximumPositionAgeSeconds", 300))),
+            TimeSpan.FromSeconds(maximumPositionAgeSeconds),
             Math.Max(5, configuration.GetValue<decimal>("Dispatch:PickupArrivalRadiusMeters", 50)),
             Math.Max(5, configuration.GetValue<decimal>("Dispatch:ProposalOriginMovementToleranceMeters", 100)),
             Math.Max(10, configuration.GetValue<decimal>("Dispatch:SimulatorRestoreProjectionToleranceMeters", 500))));
@@ -86,6 +87,10 @@ public static class DependencyInjection
         var historyHeartbeatSeconds = Math.Max(
             offlineThresholdSeconds,
             configuration.GetValue<int>("Tracking:HistoryHeartbeatSeconds", 300));
+        var simulatorHeartbeatSeconds = Math.Clamp(
+            configuration.GetValue<int>("Tracking:SimulatorHeartbeatSeconds", 15),
+            1, Math.Max(1, Math.Min(
+                offlineThresholdSeconds / 2, maximumPositionAgeSeconds / 2)));
         services.AddSingleton(
             new TrackingPolicy(
                 TimeSpan.FromSeconds(offlineThresholdSeconds),
@@ -97,7 +102,8 @@ public static class DependencyInjection
                 Math.Clamp(configuration.GetValue<int>(
                     "Tracking:MaxTripHistoryPoints", 500), 10, 2000),
                 Math.Max(10, configuration.GetValue<decimal>(
-                    "Dispatch:SimulatorRestoreProjectionToleranceMeters", 500))));
+                    "Dispatch:SimulatorRestoreProjectionToleranceMeters", 500)),
+                TimeSpan.FromSeconds(simulatorHeartbeatSeconds)));
         var simulatorEnabled = configuration.GetValue<bool>("Tracking:SimulatorEnabled")
             && (environment.IsDevelopment() || environment.IsEnvironment("Testing"))
             && configuration["Tracking:Provider"]?.Equals("Simulator", StringComparison.OrdinalIgnoreCase) == true;

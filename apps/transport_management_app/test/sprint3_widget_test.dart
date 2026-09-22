@@ -55,7 +55,16 @@ class FakeAuthController extends AuthController {
 }
 
 class FakeDashboardController extends DashboardController {
-  final commands = <({String action, String? truckId, double? speed})>[];
+  final commands =
+      <
+        ({
+          String action,
+          String? truckId,
+          double? speed,
+          double? latitude,
+          double? longitude,
+        })
+      >[];
 
   @override
   FutureOr<DashboardData> build() => const DashboardData(
@@ -63,6 +72,7 @@ class FakeDashboardController extends DashboardController {
     trips: {},
     tracking: {},
     positions: [],
+    simulatorTrucks: [],
     recentTrips: [],
   );
 
@@ -71,8 +81,16 @@ class FakeDashboardController extends DashboardController {
     String action, {
     String? truckId,
     double? speedMultiplier,
+    double? latitude,
+    double? longitude,
   }) async {
-    commands.add((action: action, truckId: truckId, speed: speedMultiplier));
+    commands.add((
+      action: action,
+      truckId: truckId,
+      speed: speedMultiplier,
+      latitude: latitude,
+      longitude: longitude,
+    ));
     return true;
   }
 }
@@ -87,6 +105,20 @@ const trackedTruck = TrackedTruck(
   recordedAt: '2026-09-17T00:00:00Z',
   isOnline: true,
   driverName: 'Driver',
+);
+
+const simulatorTruck = SimulatorTruck(
+  truckId: 't1',
+  plateNumber: '06 TMS 01',
+  truckStatus: 'Available',
+  locationState: 'Current',
+  maximumPositionAgeSeconds: 300,
+  latitude: 40,
+  longitude: 30,
+  heading: 0,
+  recordedAt: '2026-09-17T00:00:00Z',
+  positionAgeSeconds: 10,
+  isOnline: true,
 );
 
 void main() {
@@ -260,7 +292,7 @@ void main() {
     await tester.pumpWidget(
       localized(
         const SingleChildScrollView(
-          child: SimulatorControls(positions: [trackedTruck]),
+          child: SimulatorControls(trucks: [simulatorTruck]),
         ),
         const Locale('en'),
         fakeDashboard: fake,
@@ -287,13 +319,10 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const Key('sim-offline')));
     await tester.pump();
-    await tester.tap(find.byKey(const Key('sim-online')));
-    await tester.pump();
     expect(fake.commands.map((item) => item.action), [
       'step',
       'speed',
       'offline',
-      'online',
     ]);
     expect(fake.commands[1].speed, 1);
     expect(fake.commands[2].truckId, 't1');

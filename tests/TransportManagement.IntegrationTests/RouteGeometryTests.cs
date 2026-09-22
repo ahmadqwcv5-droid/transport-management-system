@@ -84,6 +84,40 @@ public sealed class RouteGeometryTests
     }
 
     [Fact]
+    public void StationaryHeartbeatPreservesCoordinateAndPauseOfflineOnlineSemantics()
+    {
+        var provider = new SimulatedTrackingProvider(new ConfigurationBuilder().Build());
+        var company = Guid.NewGuid();
+        var truck = Guid.NewGuid();
+        var now = DateTimeOffset.Parse("2026-09-21T16:00:00Z", CultureInfo.InvariantCulture);
+        var located = new TrackingTarget(
+            truck, null, null, null, [], false,
+            RestorePosition: new(39.9m, 32.8m),
+            RestoreIsOnline: true,
+            RestoreHeading: 123,
+            HeartbeatEligible: true);
+
+        provider.Control(company, [located], new("pause"), now);
+        var paused = provider.GetCurrent(company, [located], now.AddHours(1)).Single();
+        Assert.True(paused.IsOnline);
+        Assert.Equal(39.9m, paused.Latitude);
+        Assert.Equal(32.8m, paused.Longitude);
+        Assert.Equal(123m, paused.Heading);
+        Assert.Equal(0, paused.Speed);
+
+        provider.Control(company, [located], new("offline", truck), now.AddHours(1));
+        Assert.False(provider.GetCurrent(company, [located], now.AddHours(2)).Single().IsOnline);
+        provider.Control(company, [located], new("online", truck), now.AddHours(2));
+        var online = provider.GetCurrent(company, [located], now.AddHours(3)).Single();
+        Assert.True(online.IsOnline);
+        Assert.Equal(paused.Latitude, online.Latitude);
+        Assert.Equal(paused.Longitude, online.Longitude);
+
+        var unlocated = located with { RestorePosition = null };
+        Assert.Empty(provider.GetCurrent(company, [unlocated], now.AddHours(4)));
+    }
+
+    [Fact]
     public void SimulatorMultiplierAcceleratesProgressWithoutInflatingPhysicalSpeed()
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(

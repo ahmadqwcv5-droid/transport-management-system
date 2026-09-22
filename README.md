@@ -17,6 +17,11 @@ explicit `Assigned -> EnRouteToPickup -> AtPickup -> Started` workflow. Empty
 repositioning geometry, metrics, progress, and telemetry remain independent
 from the immutable commercial cargo route.
 
+Sprint 3.3.1 makes that workflow usable without API or database tooling. The
+Development simulator lists every active truck, offers a map/search/manual
+location picker for the first coordinate, distinguishes Set/Move/Refresh, and
+keeps stationary online simulator positions fresh with bounded heartbeats.
+
 ## Architecture
 
 The backend is a modular monolith using Clean Architecture with lightweight DDD and CQRS principles:
@@ -386,10 +391,30 @@ The simulator is available only when the API environment is Development (or
 Testing), `Tracking__Provider=Simulator`, and
 `Tracking__SimulatorEnabled=true`. Flutter additionally requires the explicit
 compile-time `ENABLE_SIMULATOR_CONTROLS=true` development flag; production builds
-should omit it. An Owner can Start, Pause, Resume, Stop, Reset, Step, change
-speed, and set an individual truck online/offline from the dashboard. Stop marks trucks offline;
+should omit it. An Owner can select every active truck, including one with no
+tracking history. **Set simulated location** creates its first explicit
+coordinate; **Move simulated truck** confirms a different coordinate;
+**Refresh location** records the same coordinate without route/trip association
+or movement; and **Online/Offline** explicitly controls device state. The
+shared picker accepts a MapLibre click, configured geocoding result, or validated
+manual latitude/longitude. Manual input remains available if map styling or
+geocoding is unavailable. Existing Start, Pause, Resume, Stop, Reset, Step, and
+speed controls remain available. Pause freezes movement but retains the online
+GPS heartbeat. Stop marks trucks offline;
 samples older than `Tracking__OfflineThresholdSeconds` are also presented as
 offline. Do not enable this provider in Production.
+
+Stationary simulator samples are generated centrally by the backend provider,
+not by a Flutter coordinate timer. `Tracking__SimulatorHeartbeatSeconds`
+defaults to 15 seconds and is clamped below both the offline threshold and
+`Dispatch__MaximumPositionAgeSeconds`. It therefore produces at most 240 idle
+rows per truck per hour at the default while sampled, rather than one row per
+dashboard poll. It preserves coordinate, heading, movement phase, tracking run,
+and route progress. Freshness validation remains enabled: genuine non-simulator
+or explicitly offline/stopped data can still produce `TRUCK_POSITION_STALE` or
+`TRUCK_OFFLINE`. Real GPS ingestion will eventually call this backend boundary
+independently; the current Development simulator is sampled by dashboard/API
+polling.
 
 Reading current positions no longer inserts a duplicate row merely because the
 dashboard polled. History is appended when coordinates, online state, source,
@@ -447,6 +472,7 @@ pull-to-refresh remains available.
 | `Tracking__PollingIntervalSeconds` | API/Compose | Documented polling default for clients |
 | `Tracking__OfflineThresholdSeconds` | API | Age after which the latest sample is reported offline |
 | `Tracking__HistoryHeartbeatSeconds` | API | Maximum unchanged interval before a heartbeat history row, default 300 |
+| `Tracking__SimulatorHeartbeatSeconds` | API | Bounded stationary simulator heartbeat, default 15; clamped below offline and dispatch freshness thresholds |
 | `Tracking__TrailGapThresholdSeconds` | API | Time gap that starts a new trail segment, default 300 |
 | `Tracking__TrailJumpThresholdMeters` | API | Geographic jump that starts a new trail segment, default 5000 |
 | `Tracking__MaxTripHistoryPoints` | API | Maximum points returned by trip history, clamped to 10–2000, default 500 |
@@ -492,6 +518,7 @@ Never commit `.env`, signing keys, database passwords, or production credentials
 - `GET /api/tracking/trucks/{id}/position`
 - `GET /api/tracking/trucks/{id}/history?limit=50`
 - `GET /api/tracking/trips/{id}/history?limit=500` — tenant-validated chronological trail segments
+- `GET /api/tracking/simulator/trucks` — Owner-only Development inventory with optional latest-position state
 - `POST /api/tracking/simulator/control` — Development simulator, Owner only
 - `GET /health`
 

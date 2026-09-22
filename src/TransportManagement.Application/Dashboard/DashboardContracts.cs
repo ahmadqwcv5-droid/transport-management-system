@@ -13,4 +13,5 @@ public sealed record DashboardResponse(
     TripSummaryResponse Trips,
     TrackingSummaryResponse Tracking,
     IReadOnlyList<TruckPositionResponse> Positions,
+    IReadOnlyList<SimulatorTruckResponse> SimulatorTrucks,
     IReadOnlyList<RecentTripResponse> RecentTrips);

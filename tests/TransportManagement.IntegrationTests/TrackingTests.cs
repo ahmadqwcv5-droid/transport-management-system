@@ -12,6 +12,137 @@ namespace TransportManagement.IntegrationTests;
 public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
     [Fact]
+    public async Task SimulatorInventoryIncludesUnlocatedTruckAndSeedIsTenantSafe()
+    {
+        using var companyA = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
+        using var companyB = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-b@example.test");
+        var plate = $"LOC-{Guid.NewGuid():N}"[..20];
+        var truckId = (await (await companyA.PostJsonAsync(
+            "/api/trucks", new { plateNumber = plate })).RequiredJsonAsync())
+            .GetProperty("id").GetGuid();
+
+        var inventory = await companyA.GetJsonAsync<JsonElement[]>("/api/tracking/simulator/trucks");
+        var unlocated = inventory!.Single(x => x.GetProperty("truckId").GetGuid() == truckId);
+        Assert.Equal("NoLocation", unlocated.GetProperty("locationState").GetString());
+        Assert.Equal(JsonValueKind.Null, unlocated.GetProperty("latitude").ValueKind);
+
+        var foreignSeed = await companyB.PostJsonAsync("/api/tracking/simulator/control", new
+        {
+            action = "set-position", truckId, latitude = 39.9m, longitude = 32.8m
+        });
+        Assert.Equal(HttpStatusCode.NotFound, foreignSeed.StatusCode);
+        var invalid = await companyA.PostJsonAsync("/api/tracking/simulator/control", new
+        {
+            action = "set-position", truckId, latitude = 91m, longitude = 32.8m
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        var invalidProblem = await invalid.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+        Assert.Equal("INVALID_POSITION", invalidProblem.GetProperty("errorCode").GetString());
+
+        await (await companyA.PostJsonAsync("/api/tracking/simulator/control", new
+        {
+            action = "set-position", truckId, latitude = 39.9m, longitude = 32.8m
+        })).RequiredJsonAsync();
+        var current = await companyA.GetJsonAsync<JsonElement>(
+            $"/api/tracking/trucks/{truckId}/position");
+        Assert.Equal(39.9m, current.GetProperty("latitude").GetDecimal());
+        Assert.Equal("CurrentLocation", current.GetProperty("movementPhase").GetString());
+        Assert.Equal(JsonValueKind.Null, current.GetProperty("currentTripId").ValueKind);
+        Assert.Equal(JsonValueKind.Null, current.GetProperty("repositioningPlanId").ValueKind);
+    }
+
+    [Fact]
+    public async Task SimulatorLocationMutationIsRejectedWhenProviderIsDisabled()
+    {
+        await using var disabledFactory = new ApiFactory(
+            useFailingRoutingProvider: false, simulatorEnabled: false);
+        await disabledFactory.InitializeAsync();
+        using var client = await OperationsTestClient.AuthenticatedClientAsync(
+            disabledFactory, "owner-a@example.test");
+        var truckId = (await (await client.PostJsonAsync("/api/trucks", new
+        {
+            plateNumber = $"DIS-{Guid.NewGuid():N}"[..20]
+        })).RequiredJsonAsync()).GetProperty("id").GetGuid();
+
+        var response = await client.PostJsonAsync("/api/tracking/simulator/control", new
+        {
+            action = "set-position", truckId, latitude = 39m, longitude = 32m
+        });
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+        Assert.Equal("SIMULATOR_DISABLED", problem.GetProperty("errorCode").GetString());
+    }
+
+    [Fact]
+    public async Task StationarySimulatorHeartbeatRestoresFreshnessWithBoundedWrites()
+    {
+        using var client = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");
+        var suffix = Guid.NewGuid().ToString("N")[..10];
+        var clientId = (await (await client.PostJsonAsync(
+            "/api/clients", new { name = $"Heartbeat {suffix}" })).RequiredJsonAsync())
+            .GetProperty("id").GetGuid();
+        var truckId = (await (await client.PostJsonAsync(
+            "/api/trucks", new { plateNumber = $"HB-{suffix}" })).RequiredJsonAsync())
+            .GetProperty("id").GetGuid();
+        var driverId = (await (await client.PostJsonAsync("/api/drivers", new
+        {
+            fullName = $"Heartbeat Driver {suffix}", licenseNumber = $"HB-L-{suffix}"
+        })).RequiredJsonAsync()).GetProperty("id").GetGuid();
+        var tripId = (await (await client.PostJsonAsync(
+            "/api/trips", RouteTestData.TripPayload(clientId))).RequiredJsonAsync())
+            .GetProperty("id").GetGuid();
+        await (await client.PostJsonAsync(
+            $"/api/trips/{tripId}/assign", new { truckId, driverId })).RequiredJsonAsync();
+
+        var oldPosition = new TruckPosition(
+            Guid.NewGuid(), ApiFactory.CompanyAId, truckId, 39.9m, 32.8m,
+            0, 123, true, DateTimeOffset.UtcNow.AddMinutes(-10),
+            "SimulatorSeed", null, null, Guid.NewGuid(), MovementPhase.CurrentLocation);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.TruckPositions.Add(oldPosition);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        for (var index = 0; index < 10; index++)
+            await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+
+        var history = await client.GetJsonAsync<JsonElement[]>(
+            $"/api/tracking/trucks/{truckId}/history?limit=200");
+        Assert.Equal(2, history!.Length);
+        var latest = history[0];
+        Assert.Equal(oldPosition.Latitude, latest.GetProperty("latitude").GetDecimal());
+        Assert.Equal(oldPosition.Longitude, latest.GetProperty("longitude").GetDecimal());
+        Assert.Equal(oldPosition.Heading, latest.GetProperty("heading").GetDecimal());
+        Assert.Equal("CurrentLocation", latest.GetProperty("movementPhase").GetString());
+
+        var preview = await client.PostEmptyAsync($"/api/trips/{tripId}/repositioning/preview");
+        Assert.True(preview.IsSuccessStatusCode,
+            await preview.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+
+        await (await client.PostJsonAsync("/api/tracking/simulator/control", new
+        {
+            action = "refresh-position", truckId
+        })).RequiredJsonAsync();
+        var refreshed = await client.GetJsonAsync<JsonElement>(
+            $"/api/tracking/trucks/{truckId}/position");
+        Assert.Equal(oldPosition.Latitude, refreshed.GetProperty("latitude").GetDecimal());
+        Assert.Equal(oldPosition.Longitude, refreshed.GetProperty("longitude").GetDecimal());
+        using var verificationScope = factory.Services.CreateScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var refreshedRow = await verificationDb.TruckPositions.IgnoreQueryFilters()
+            .Where(x => x.CompanyId == ApiFactory.CompanyAId && x.TruckId == truckId)
+            .OrderByDescending(x => x.RecordedAt)
+            .FirstAsync(TestContext.Current.CancellationToken);
+        Assert.Null(refreshedRow.TripId);
+        Assert.Null(refreshedRow.RoutePlanId);
+        Assert.Null(refreshedRow.RepositioningPlanId);
+        Assert.Equal(MovementPhase.CurrentLocation, refreshedRow.MovementPhase);
+    }
+
+    [Fact]
     public async Task AssigningDistantNextTripDoesNotTeleportCompletedTruckToPickup()
     {
         using var client = await OperationsTestClient.AuthenticatedClientAsync(factory, "owner-a@example.test");

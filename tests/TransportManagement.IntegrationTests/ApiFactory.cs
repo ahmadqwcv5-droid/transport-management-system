@@ -18,6 +18,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly string _databaseName = $"tms-tests-{Guid.NewGuid()}";
     private readonly bool _useFailingRoutingProvider;
+    private readonly bool _simulatorEnabled = true;
     public static readonly Guid CompanyAId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     public static readonly Guid CompanyBId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     public const string Password = "DemoPassword!123";
@@ -26,9 +27,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
     }
 
-    internal ApiFactory(bool useFailingRoutingProvider)
+    internal ApiFactory(bool useFailingRoutingProvider, bool simulatorEnabled = true)
     {
         _useFailingRoutingProvider = useFailingRoutingProvider;
+        _simulatorEnabled = simulatorEnabled;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -52,7 +54,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
             services.RemoveAll<AppDbContext>();
             services.RemoveAll<ITrackingProvider>();
-            services.AddSingleton<ITrackingProvider, SimulatedTrackingProvider>();
+            if (_simulatorEnabled)
+                services.AddSingleton<ITrackingProvider, SimulatedTrackingProvider>();
+            else
+                services.AddSingleton<ITrackingProvider, DisabledTrackingProvider>();
             if (_useFailingRoutingProvider)
             {
                 services.RemoveAll<IRoutingProvider>();
@@ -83,6 +88,16 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         await base.DisposeAsync();
     }
+}
+
+internal sealed class DisabledTrackingProvider : ITrackingProvider
+{
+    public bool IsSimulator => false;
+    public IReadOnlyList<TrackingSample> GetCurrent(
+        Guid companyId, IReadOnlyCollection<TrackingTarget> targets, DateTimeOffset now) => [];
+    public SimulatorState Control(
+        Guid companyId, IReadOnlyCollection<TrackingTarget> targets,
+        SimulatorCommand command, DateTimeOffset now) => new(false, false, 1, 0);
 }
 
 internal sealed class FailingRoutingProvider : IRoutingProvider

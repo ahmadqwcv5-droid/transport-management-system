@@ -7,6 +7,7 @@ import 'package:transport_management_app/features/clients/presentation/clients_s
 import 'package:transport_management_app/features/operations/domain/operations_models.dart';
 import 'package:transport_management_app/features/operations/presentation/operations_controller.dart';
 import 'package:transport_management_app/features/trips/presentation/trip_details_screen.dart';
+import 'package:transport_management_app/features/trips/presentation/trip_planner_screen.dart';
 import 'package:transport_management_app/shared/widgets/app_shell.dart';
 import 'package:transport_management_app/l10n/app_localizations.dart';
 
@@ -113,5 +114,106 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Cancel'), findsOneWidget);
     expect(find.text('dispatch-to-pickup'), findsNothing);
     expect(find.text('Mark in transit'), findsNothing);
+  });
+
+  testWidgets(
+    'trip planner shows and moves stop markers before route calculation',
+    (tester) async {
+      const data = OperationsData(
+        clients: [Client(id: 'client-1', name: 'Factory', isActive: true)],
+        trucks: [],
+        drivers: [],
+        trips: [],
+      );
+      await tester.pumpWidget(testApp(const TripPlannerScreen(), data));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('trip-pickup-name')),
+        'Pickup',
+      );
+      await tester.enterText(
+        find.byKey(const Key('trip-pickup-latitude')),
+        '39.9',
+      );
+      await tester.enterText(
+        find.byKey(const Key('trip-pickup-longitude')),
+        '32.8',
+      );
+      await tester.pump();
+      expect(find.byKey(const Key('planner-pickup-marker')), findsOneWidget);
+      expect(find.byKey(const Key('planner-delivery-marker')), findsNothing);
+
+      await tester.enterText(
+        find.byKey(const Key('trip-delivery-name')),
+        'Delivery',
+      );
+      await tester.enterText(
+        find.byKey(const Key('trip-delivery-latitude')),
+        '41.0',
+      );
+      await tester.enterText(
+        find.byKey(const Key('trip-delivery-longitude')),
+        '29.0',
+      );
+      await tester.pump();
+      expect(find.byKey(const Key('planner-pickup-marker')), findsOneWidget);
+      expect(find.byKey(const Key('planner-delivery-marker')), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const Key('trip-pickup-latitude')),
+        '40.1',
+      );
+      await tester.pump();
+      expect(find.byKey(const Key('planner-pickup-marker')), findsOneWidget);
+      expect(find.byKey(const Key('planner-delivery-marker')), findsOneWidget);
+      expect(find.byKey(const Key('calculate-route')), findsOneWidget);
+    },
+  );
+
+  testWidgets('draft edit initializes both stop markers before routing', (
+    tester,
+  ) async {
+    const draft = Trip(
+      id: 'draft-1',
+      clientId: 'client-1',
+      origin: 'Depot',
+      destination: 'Customer',
+      cargoDescription: 'Parts',
+      plannedStartAt: '2026-09-22T08:00:00Z',
+      price: 500,
+      status: 'Draft',
+      allowedActions: [],
+      stops: [
+        TripStop(
+          sequence: 0,
+          type: 'Pickup',
+          name: 'Depot',
+          latitude: 39.92,
+          longitude: 32.85,
+        ),
+        TripStop(
+          sequence: 1,
+          type: 'Delivery',
+          name: 'Customer',
+          latitude: 41.01,
+          longitude: 28.97,
+        ),
+      ],
+    );
+    const data = OperationsData(
+      clients: [Client(id: 'client-1', name: 'Factory', isActive: true)],
+      trucks: [],
+      drivers: [],
+      trips: [draft],
+    );
+
+    await tester.pumpWidget(
+      testApp(const TripPlannerScreen(tripId: 'draft-1'), data),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('planner-pickup-marker')), findsOneWidget);
+    expect(find.byKey(const Key('planner-delivery-marker')), findsOneWidget);
   });
 }

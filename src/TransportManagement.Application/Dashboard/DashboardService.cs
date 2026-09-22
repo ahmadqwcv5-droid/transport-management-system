@@ -15,6 +15,7 @@ public sealed class DashboardService(
         var trucks = await operationsStore.ListTrucksAsync(null, true, null, cancellationToken);
         var trips = await operationsStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var positions = await trackingService.CurrentAsync(cancellationToken);
+        var simulatorTrucks = await trackingService.SimulatorInventoryAsync(false, cancellationToken);
         var activeStatuses = new[] { TripStatus.Assigned, TripStatus.EnRouteToPickup,
             TripStatus.AtPickup, TripStatus.Started, TripStatus.InTransit, TripStatus.Delivered };
         var today = clock.UtcNow.UtcDateTime.Date;
@@ -28,6 +29,7 @@ public sealed class DashboardService(
                 trips.Count(x => x.Status == TripStatus.Completed && x.CompletedAt?.UtcDateTime.Date == today)),
             new(positions.Count(x => x.IsOnline), positions.Count(x => !x.IsOnline)),
             positions,
+            simulatorTrucks,
             trips.OrderByDescending(x => x.UpdatedAt).Take(8)
                 .Select(x => new RecentTripResponse(x.Id, x.Origin, x.Destination, x.Status.ToString(), x.PlannedStartAt)).ToArray());
     }

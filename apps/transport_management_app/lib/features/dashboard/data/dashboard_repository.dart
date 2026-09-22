@@ -21,6 +21,8 @@ final class DashboardRepository {
     String action, {
     String? truckId,
     double? speedMultiplier,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       await _client.dio.post<void>(
@@ -29,6 +31,8 @@ final class DashboardRepository {
           'action': action,
           'truckId': ?truckId,
           'speedMultiplier': ?speedMultiplier,
+          'latitude': ?latitude,
+          'longitude': ?longitude,
         },
       );
     } on DioException catch (error) {

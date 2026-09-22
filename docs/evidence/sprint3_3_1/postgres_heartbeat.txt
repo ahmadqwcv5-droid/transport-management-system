@@ -1,0 +1,39 @@
+Sprint 3.3.1 retained PostgreSQL evidence
+Captured: 2026-09-21
+Tenant: owner@sprint322.local (dedicated smoke tenant)
+Truck: S331-3743747 / efb41e62-06f8-496c-b0be-3f16d895193d
+
+Test configuration:
+  Dispatch MaximumPositionAgeSeconds = 30
+  Tracking SimulatorHeartbeatSeconds = 5
+
+Final-browser observation reported by browser_workflow.json:
+  stationary observation = 36 seconds
+  heartbeat rows appended = 7
+  coordinate before = 40.120000, 31.650000
+  coordinate after  = 40.120000, 31.650000
+  state after observation = Current
+
+Selected SQL facts:
+  first seed: 2026-09-21 18:02:44.295509+00
+              SimulatorSeed / CurrentLocation / online
+              40.120000, 31.650000
+              TripId NULL / RoutePlanId NULL / RepositioningPlanId NULL
+  first observation heartbeats:
+              18:02:45.035767 / 40.120000, 31.650000
+              18:02:51.753529 / 40.120000, 31.650000
+              18:02:57.724415 / 40.120000, 31.650000
+              18:03:03.686146 / 40.120000, 31.650000
+              18:03:08.965130 / 40.120000, 31.650000
+              18:03:15.571333 / 40.120000, 31.650000
+              18:03:21.735157 / 40.120000, 31.650000
+  explicit offline: 2026-09-21 18:03:50.774778+00 / online=false
+  online recovery:  2026-09-21 18:03:55.719292+00 / online=true
+  confirmed move:   2026-09-21 18:04:02.082564+00
+                    SimulatorSeed / CurrentLocation / online
+                    40.250000, 33.100000
+                    TripId NULL / RoutePlanId NULL / RepositioningPlanId NULL
+
+All stationary samples kept their coordinates and CurrentLocation phase. The
+36-second acceptance interval stayed below the theoretical 8-row upper bound
+for a 5-second interval, and far below one row per 2-second UI/API poll.

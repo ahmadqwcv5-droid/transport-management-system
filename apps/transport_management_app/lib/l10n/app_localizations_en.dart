@@ -635,4 +635,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get expired => 'Expired';
+
+  @override
+  String get confirmLocation => 'Confirm location';
+
+  @override
+  String get setSimulatedLocation => 'Set simulated location';
+
+  @override
+  String get moveSimulatedTruck => 'Move simulated truck';
+
+  @override
+  String get refreshLocation => 'Refresh at same coordinate';
+
+  @override
+  String get noLocation => 'No location';
+
+  @override
+  String get currentLocation => 'Current';
+
+  @override
+  String get staleLocation => 'Stale';
+
+  @override
+  String get noActiveTrucks => 'No active trucks are available.';
+
+  @override
+  String get noLocationHelp =>
+      'This truck has not reported a position. Set a simulated location to place it on the map.';
+
+  @override
+  String get currentLocationHelp =>
+      'The simulated GPS position is current and maintained by bounded heartbeats.';
+
+  @override
+  String get staleLocationHelp =>
+      'Refresh this coordinate or choose a new simulated location before dispatch.';
+
+  @override
+  String get offlineLocationHelp =>
+      'This truck is explicitly offline. Set it online before refreshing or dispatching.';
+
+  @override
+  String locationAgeSeconds(int seconds) {
+    return 'Updated $seconds seconds ago';
+  }
+
+  @override
+  String locationForTruck(String plateNumber) {
+    return 'Simulated location for $plateNumber';
+  }
+
+  @override
+  String get fixTruckLocation => 'Fix truck location';
+
+  @override
+  String get locationCorrectedRetry =>
+      'Truck location updated. Retry the route preview when ready.';
+
+  @override
+  String get pickupMarker => 'Pickup marker';
+
+  @override
+  String get deliveryMarker => 'Delivery marker';
 }

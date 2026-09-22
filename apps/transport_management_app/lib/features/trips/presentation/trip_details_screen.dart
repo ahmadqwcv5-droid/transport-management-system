@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/network/api_exception.dart';
+import '../../dashboard/presentation/dashboard_controller.dart';
+import '../../dashboard/presentation/simulator_controls.dart';
+import '../../locations/presentation/location_picker_dialog.dart';
 import '../../operations/domain/operations_models.dart';
 import '../../operations/presentation/operations_controller.dart';
 import '../../operations/presentation/operations_view.dart';
@@ -179,7 +183,13 @@ class TripDetailsScreen extends ConsumerWidget {
                     onPressed: () => action == 'assign'
                         ? _assign(context, ref, data, trip)
                         : action == 'preview-repositioning'
-                        ? _previewAndDispatch(context, ref, trip)
+                        ? _previewAndDispatch(
+                            context,
+                            ref,
+                            trip,
+                            truckId: truck?.id,
+                            plateNumber: truck?.plateNumber,
+                          )
                         : _act(context, ref, trip, action),
                     child: Text(_label(context, action)),
                   ),
@@ -203,26 +213,47 @@ class TripDetailsScreen extends ConsumerWidget {
   static Future<void> _previewAndDispatch(
     BuildContext context,
     WidgetRef ref,
-    Trip trip,
-  ) async {
+    Trip trip, {
+    String? truckId,
+    String? plateNumber,
+  }) async {
     RepositioningPreview? preview;
-    final ok = await ref
-        .read(operationsControllerProvider.notifier)
-        .mutate(
-          (repo) async => preview = await repo.previewRepositioning(trip.id),
+    try {
+      preview = await ref
+          .read(operationsRepositoryProvider)
+          .previewRepositioning(trip.id);
+      await ref.read(operationsControllerProvider.notifier).reload();
+    } on ApiException catch (error) {
+      if (!context.mounted) return;
+      if (SimulatorControls.enabled &&
+          truckId != null &&
+          plateNumber != null &&
+          const {
+            'TRUCK_POSITION_REQUIRED',
+            'TRUCK_POSITION_STALE',
+            'TRUCK_OFFLINE',
+          }.contains(error.code)) {
+        await _recoverLocation(context, ref, truckId, plateNumber, error);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(localizedApiError(context, error))),
         );
-    if (!context.mounted || !ok || preview == null) return;
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    final resolvedPreview = preview;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(context.l10n.dispatchToPickup),
         content: Text(
-          preview!.alreadyAtPickup
+          resolvedPreview.alreadyAtPickup
               ? context.l10n.alreadyAtPickup
               : '${context.l10n.approachDistance}: '
-                    '${(preview!.plan!.route.distanceMeters / 1000).toStringAsFixed(1)} km\n'
+                    '${(resolvedPreview.plan!.route.distanceMeters / 1000).toStringAsFixed(1)} km\n'
                     '${context.l10n.approachDuration}: '
-                    '${Duration(seconds: preview!.plan!.route.estimatedDurationSeconds).inMinutes} min',
+                    '${Duration(seconds: resolvedPreview.plan!.route.estimatedDurationSeconds).inMinutes} min',
         ),
         actions: [
           TextButton(
@@ -240,12 +271,82 @@ class TripDetailsScreen extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
     final dispatched = await ref
         .read(operationsControllerProvider.notifier)
-        .mutate((repo) => repo.dispatchToPickup(trip.id, preview!.plan?.id));
+        .mutate(
+          (repo) => repo.dispatchToPickup(trip.id, resolvedPreview.plan?.id),
+        );
     if (context.mounted) {
       showResult(
         context,
         dispatched,
         successMessage: context.l10n.dispatchStarted,
+      );
+    }
+  }
+
+  static Future<void> _recoverLocation(
+    BuildContext context,
+    WidgetRef ref,
+    String truckId,
+    String plateNumber,
+    ApiException error,
+  ) async {
+    final action = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const Key('truck-location-recovery'),
+        title: Text(context.l10n.fixTruckLocation),
+        content: Text(localizedApiError(context, error)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.l10n.cancel),
+          ),
+          if (error.code == 'TRUCK_POSITION_STALE')
+            OutlinedButton(
+              key: const Key('recover-refresh-location'),
+              onPressed: () => Navigator.pop(dialogContext, 'refresh'),
+              child: Text(context.l10n.refreshLocation),
+            ),
+          if (error.code == 'TRUCK_OFFLINE')
+            OutlinedButton(
+              key: const Key('recover-set-online'),
+              onPressed: () => Navigator.pop(dialogContext, 'online'),
+              child: Text(context.l10n.setOnline),
+            ),
+          FilledButton(
+            key: const Key('recover-set-location'),
+            onPressed: () => Navigator.pop(dialogContext, 'set'),
+            child: Text(context.l10n.setSimulatedLocation),
+          ),
+        ],
+      ),
+    );
+    if (action == null || !context.mounted) return;
+    final dashboard = ref.read(dashboardRepositoryProvider);
+    if (action == 'set') {
+      final selected = await showLocationPickerDialog(
+        context: context,
+        title: context.l10n.locationForTruck(plateNumber),
+        search: (query) =>
+            ref.read(operationsRepositoryProvider).searchLocations(query),
+      );
+      if (selected == null) return;
+      await dashboard.simulator(
+        'set-position',
+        truckId: truckId,
+        latitude: selected.latitude,
+        longitude: selected.longitude,
+      );
+    } else {
+      await dashboard.simulator(
+        action == 'refresh' ? 'refresh-position' : 'online',
+        truckId: truckId,
+      );
+    }
+    await ref.read(operationsControllerProvider.notifier).reload();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.locationCorrectedRetry)),
       );
     }
   }

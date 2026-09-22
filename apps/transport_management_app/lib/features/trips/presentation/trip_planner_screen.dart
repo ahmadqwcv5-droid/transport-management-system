@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import '../../../l10n/l10n_extensions.dart';
+import '../../locations/presentation/location_picker_dialog.dart';
 import '../../operations/domain/operations_models.dart';
 import '../../operations/presentation/operations_controller.dart';
 import '../../operations/presentation/operations_view.dart';
@@ -241,6 +242,8 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
                 final form = _form(data);
                 final map = _RoutePreview(
                   route: _route,
+                  pickup: _pickup.point,
+                  delivery: _delivery.point,
                   onMapTap: _selectMapPoint,
                   selecting: _activeMapStop != null,
                 );
@@ -354,6 +357,12 @@ class _StopFields {
   final address = TextEditingController();
   final latitude = TextEditingController();
   final longitude = TextEditingController();
+  GeoPoint? get point {
+    final lat = double.tryParse(latitude.text);
+    final lon = double.tryParse(longitude.text);
+    return validLocationCoordinate(lat, lon) ? GeoPoint(lat!, lon!) : null;
+  }
+
   void load(TripStop? stop) {
     if (stop == null) return;
     name.text = stop.name;
@@ -447,6 +456,7 @@ class _StopEditor extends StatelessWidget {
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: TextButton.icon(
+              key: Key('trip-$fieldKey-select-map'),
               onPressed: onSelectMap,
               icon: Icon(
                 selectingOnMap ? Icons.touch_app : Icons.add_location_alt,
@@ -523,10 +533,13 @@ class _StopEditor extends StatelessWidget {
 class _RoutePreview extends StatefulWidget {
   const _RoutePreview({
     required this.route,
+    required this.pickup,
+    required this.delivery,
     required this.onMapTap,
     required this.selecting,
   });
   final TripRoutePlan? route;
+  final GeoPoint? pickup, delivery;
   final ValueChanged<LatLng> onMapTap;
   final bool selecting;
   @override
@@ -535,38 +548,54 @@ class _RoutePreview extends StatefulWidget {
 
 class _RoutePreviewState extends State<_RoutePreview> {
   MapLibreMapController? _controller;
+  Line? _routeLine;
+  Circle? _pickupCircle;
+  Circle? _deliveryCircle;
   @override
   void didUpdateWidget(covariant _RoutePreview oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.route != widget.route) unawaited(_draw());
+    unawaited(
+      _draw(fitRoute: oldWidget.route != widget.route && widget.route != null),
+    );
   }
 
-  Future<void> _draw() async {
+  Future<void> _draw({bool fitRoute = false}) async {
     final controller = _controller;
     final route = widget.route;
-    if (controller == null || route == null || route.coordinates.length < 2) {
+    if (controller == null) return;
+    await _syncStop(
+      widget.pickup,
+      '#16A34A',
+      _pickupCircle,
+      (circle) => _pickupCircle = circle,
+    );
+    await _syncStop(
+      widget.delivery,
+      '#DC2626',
+      _deliveryCircle,
+      (circle) => _deliveryCircle = circle,
+    );
+    if (route == null || route.coordinates.length < 2) {
+      if (_routeLine != null) {
+        await controller.removeLine(_routeLine!);
+        _routeLine = null;
+      }
       return;
     }
-    await controller.clearLines();
-    await controller.clearCircles();
     final points = route.coordinates
         .map((item) => LatLng(item.latitude, item.longitude))
         .toList();
-    await controller.addLine(
-      LineOptions(geometry: points, lineColor: '#175CD3', lineWidth: 5),
+    final lineOptions = LineOptions(
+      geometry: points,
+      lineColor: '#175CD3',
+      lineWidth: 5,
     );
-    await controller.addCircles([
-      CircleOptions(
-        geometry: points.first,
-        circleColor: '#16A34A',
-        circleRadius: 8,
-      ),
-      CircleOptions(
-        geometry: points.last,
-        circleColor: '#DC2626',
-        circleRadius: 8,
-      ),
-    ]);
+    if (_routeLine == null) {
+      _routeLine = await controller.addLine(lineOptions);
+    } else {
+      await controller.updateLine(_routeLine!, lineOptions);
+    }
+    if (!fitRoute) return;
     final bounds = LatLngBounds(
       southwest: LatLng(
         points.map((p) => p.latitude).reduce((a, b) => a < b ? a : b),
@@ -586,6 +615,32 @@ class _RoutePreviewState extends State<_RoutePreview> {
         bottom: 40,
       ),
     );
+  }
+
+  Future<void> _syncStop(
+    GeoPoint? point,
+    String color,
+    Circle? current,
+    void Function(Circle? value) assign,
+  ) async {
+    final controller = _controller!;
+    if (point == null) {
+      if (current != null) await controller.removeCircle(current);
+      assign(null);
+      return;
+    }
+    final options = CircleOptions(
+      geometry: LatLng(point.latitude, point.longitude),
+      circleColor: color,
+      circleRadius: 9,
+      circleStrokeColor: '#FFFFFF',
+      circleStrokeWidth: 2,
+    );
+    if (current == null) {
+      assign(await controller.addCircle(options));
+    } else {
+      await controller.updateCircle(current, options);
+    }
   }
 
   @override
@@ -614,12 +669,15 @@ class _RoutePreviewState extends State<_RoutePreview> {
           ),
           Expanded(
             child: _TripPlannerScreenState._styleUrl.isEmpty
-                ? widget.route == null
-                      ? Center(child: Text(context.l10n.calculateRouteHint))
-                      : _RouteSchematic(route: widget.route!)
+                ? _RouteSchematic(
+                    route: widget.route,
+                    pickup: widget.pickup,
+                    delivery: widget.delivery,
+                  )
                 : Stack(
                     children: [
                       MapLibreMap(
+                        key: const Key('trip-planner-map'),
                         styleString: _TripPlannerScreenState._styleUrl,
                         initialCameraPosition: CameraPosition(
                           target: widget.route == null
@@ -631,7 +689,8 @@ class _RoutePreviewState extends State<_RoutePreview> {
                           zoom: widget.route == null ? 4 : 7,
                         ),
                         onMapCreated: (controller) => _controller = controller,
-                        onStyleLoadedCallback: _draw,
+                        onStyleLoadedCallback: () =>
+                            _draw(fitRoute: widget.route != null),
                         onMapClick: (_, point) => widget.onMapTap(point),
                         compassEnabled: false,
                         rotateGesturesEnabled: false,
@@ -661,8 +720,9 @@ class _RoutePreviewState extends State<_RoutePreview> {
 }
 
 class _RouteSchematic extends StatelessWidget {
-  const _RouteSchematic({required this.route});
-  final TripRoutePlan route;
+  const _RouteSchematic({this.route, this.pickup, this.delivery});
+  final TripRoutePlan? route;
+  final GeoPoint? pickup, delivery;
   @override
   Widget build(BuildContext context) => ColoredBox(
     color: Theme.of(context).colorScheme.surfaceContainer,
@@ -672,16 +732,32 @@ class _RouteSchematic extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.trip_origin, color: Colors.green),
-                Expanded(child: Divider(thickness: 4)),
-                Icon(Icons.location_on, color: Colors.red),
+                if (pickup != null)
+                  const Icon(
+                    Icons.trip_origin,
+                    key: Key('planner-pickup-marker'),
+                    color: Colors.green,
+                  ),
+                if (pickup != null && delivery != null)
+                  const Expanded(child: Divider(thickness: 4)),
+                if (delivery != null)
+                  const Icon(
+                    Icons.location_on,
+                    key: Key('planner-delivery-marker'),
+                    color: Colors.red,
+                  ),
               ],
             ),
             const SizedBox(height: 18),
-            Text(context.l10n.mapNotConfigured, textAlign: TextAlign.center),
+            Text(
+              pickup == null && delivery == null
+                  ? context.l10n.calculateRouteHint
+                  : context.l10n.mapNotConfigured,
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),

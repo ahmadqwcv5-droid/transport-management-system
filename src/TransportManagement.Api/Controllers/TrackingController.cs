@@ -33,4 +33,10 @@ public sealed class TrackingController(TrackingService service) : ControllerBase
     public Task<SimulatorStateResponse> Control(
         SimulatorControlRequest request, CancellationToken cancellationToken) =>
         service.ControlAsync(request, cancellationToken);
+
+    [HttpGet("simulator/trucks")]
+    [Authorize(Roles = "Owner")]
+    public Task<IReadOnlyList<SimulatorTruckResponse>> SimulatorTrucks(
+        CancellationToken cancellationToken) =>
+        service.SimulatorInventoryAsync(true, cancellationToken);
 }
