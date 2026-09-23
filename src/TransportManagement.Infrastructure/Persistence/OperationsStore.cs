@@ -10,7 +10,8 @@ using TransportManagement.Domain.Trips;
 
 namespace TransportManagement.Infrastructure.Persistence;
 
-internal sealed class OperationsStore(AppDbContext dbContext) : IOperationsStore
+internal sealed class OperationsStore(AppDbContext dbContext) :
+    IClientStore, IFleetStore, ITripStore, ITripQueryStore
 {
     private static readonly SemaphoreSlim CounterLock = new(1, 1);
     private static readonly TripStatus[] ReservedStatuses =

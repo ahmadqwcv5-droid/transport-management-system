@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/presentation/auth_controller.dart';
 import '../data/operations_repository.dart';
-import '../domain/operations_models.dart';
+import '../domain/operations_data.dart';
 
 final operationsRepositoryProvider = Provider<OperationsRepository>(
   (ref) => OperationsRepository(ref.watch(apiClientProvider)),

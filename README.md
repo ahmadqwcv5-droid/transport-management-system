@@ -22,12 +22,18 @@ Development simulator lists every active truck, offers a map/search/manual
 location picker for the first coordinate, distinguishes Set/Move/Refresh, and
 keeps stationary online simulator positions fresh with bounded heartbeats.
 
+Sprint 3.5 stabilizes the same behavior behind focused Application use cases
+and persistence ports, a controller-backed four-step planner, separated fleet
+map/model boundaries, executable architecture rules, and a deterministic CI
+quality gate. It introduces no API, lifecycle, or database-schema change.
+
 ## Architecture
 
 The backend is a modular monolith using Clean Architecture with lightweight DDD and CQRS principles:
 
 - **Domain** contains entities and business invariants with no infrastructure dependency.
-- **Application** contains use cases, DTOs, and narrow ports for external concerns.
+- **Application** contains cohesive use cases, DTOs, and focused persistence or
+  provider ports.
 - **Infrastructure** owns EF Core/PostgreSQL, JWT generation, password hashing, tenant context, and persistence implementations.
 - **API** contains only HTTP concerns and thin controllers.
 - **Flutter** is feature-first, with Riverpod as its single state-management solution.
@@ -231,6 +237,18 @@ cd apps/transport_management_app
 flutter analyze
 flutter test
 ```
+
+From the repository root, the complete deterministic local gate also verifies
+formatting and produces a release Web build:
+
+```bash
+./scripts/quality-gate.sh
+```
+
+GitHub Actions runs the equivalent backend/architecture/migration and Flutter
+jobs on pushes and pull requests to `main`, using disposable PostgreSQL and no
+runtime secrets or public routing/map provider. A green push gate is required;
+the authenticated Firefox workflow below remains a release gate.
 
 The backend tests cover authentication and refresh-token rotation plus operational CRUD, tenant-scoped plate/license uniqueness, cross-company ID tampering, valid and invalid trip transitions, cancellation, resource synchronization, and truck/driver double-booking prevention.
 
@@ -539,7 +557,7 @@ are serialized as readable strings. All operational endpoints require the named
 - `/trucks` — truck list, details, create/edit, status, and deactivate flow
 - `/drivers` — driver list, details, create/edit, status, and deactivate flow
 - `/trips` — server-paginated Active/Planned/Completed/Cancelled/Archived views with search and filters
-- `/trips/new` — resumable six-step Draft wizard
+- `/trips/new` — resumable four-step Draft planner
 - `/trips/:id/edit` — Draft wizard restored from the individual trip endpoint
 - `/trips/:id` — trip number, readiness, route/assignment/tracking sections, timeline, and server-allowed contextual actions
 - `/settings` — persisted English/Arabic language selection
@@ -553,6 +571,7 @@ src/
   TransportManagement.Infrastructure/  EF Core, PostgreSQL, auth, tenancy
   TransportManagement.Api/             REST host and controllers
 tests/
+  TransportManagement.ArchitectureTests/ executable dependency/tenancy rules
   TransportManagement.IntegrationTests/
 apps/
   transport_management_app/            Flutter Web + Android client
@@ -571,6 +590,10 @@ docs/
     sprint-3.3.1/
     sprint-3.4/
     sprint-3.4.1/
+    sprint-3.5/
+  evidence/sprint3_5/                   baseline/final validation evidence
+.github/workflows/quality-gate.yml      push/pull-request quality gate
+scripts/quality-gate.sh                 equivalent deterministic local gate
 compose.yaml
 Dockerfile
 ```
@@ -590,8 +613,8 @@ for direct links to every Sprint document.
 - Serilog produces structured console logs suitable for later shipping to an external platform.
 - Access tokens remain in Flutter memory. Refresh tokens use `flutter_secure_storage` (Android Keystore and the plugin's WebCrypto-backed web implementation). A production web threat-model review may move refresh tokens to same-site HTTP-only cookies.
 - EF Core is already the unit-of-work/query abstraction; no generic repository layer is added.
-- Trips use explicit domain transitions: `Draft → Assigned → Started → InTransit → Delivered → Completed`, with cancellation only before delivery.
-- `Assigned`, `Started`, `InTransit`, and `Delivered` reserve resources. Application checks return useful conflicts, while PostgreSQL partial unique indexes prevent concurrent double assignment.
+- Trips use the canonical transitions `Draft → Assigned → EnRouteToPickup → AtPickup → Started → InTransit → Delivered → Completed`, with cancellation only where the server permits it.
+- `Assigned`, `EnRouteToPickup`, `AtPickup`, `Started`, and `InTransit` reserve resources. Application checks return useful conflicts, while PostgreSQL partial unique indexes prevent concurrent double assignment.
 - Standard generated Flutter ARB localizations own visible English/Arabic text; directional layout APIs allow Material to mirror the shell, forms, and dialogs.
 - MapLibre is the vendor-neutral rendering layer. Style/tile hosting is externally configurable and is not a backend/domain concern.
 - Polling is intentionally used before SignalR: current fleet scale does not justify persistent real-time connections, and the provider/dashboard contracts preserve a future upgrade path.
@@ -676,6 +699,24 @@ flutter drive \
 Use a dedicated Development/Testing owner; never reset a retained user's
 password or database volume. Evidence is written to
 `docs/evidence/sprint3_4_1/`.
+
+## Sprint 3.5 stabilization and quality gates
+
+Trip HTTP actions now delegate to focused draft, routing, assignment, dispatch,
+lifecycle, and query services. Consumers depend on `IClientStore`,
+`IFleetStore`, `ITripStore`, or `ITripQueryStore`; Infrastructure still shares
+one scoped EF implementation and transaction boundary. The planner screen is a
+small composition shell around controller-owned orchestration and network-free
+steps, while fleet-map adapter and panel code is isolated from coordination.
+
+Architecture tests enforce project direction, thin controllers, tenant filters
+and indexes, approved filter bypasses, Flutter transport isolation, and Riverpod
+as the sole state-management package. See
+[`docs/architecture.md`](docs/architecture.md) for ownership and Definition of
+Done, and [`docs/evidence/sprint3_5/`](docs/evidence/sprint3_5/) for baseline and
+final validation evidence. The authenticated browser command in Sprint 3.4.1
+remains the primary planner regression command after this behavior-preserving
+refactor.
 
 ## Authorization matrix
 

@@ -246,32 +246,39 @@ Future<String> _createTrip(
   String clientId,
   String cargo,
   List<double> coordinates,
-) => _createId(api, '/api/trips', {
-  'clientId': clientId,
-  'cargoDescription': cargo,
-  'plannedStartAt': DateTime.now()
-      .toUtc()
-      .add(const Duration(days: 1))
-      .toIso8601String(),
-  'price': 1000,
-  'routeProfile': 'Driving',
-  'stops': [
-    {
-      'sequence': 0,
-      'type': 'Pickup',
-      'name': '$cargo pickup',
-      'latitude': coordinates[0],
-      'longitude': coordinates[1],
-    },
-    {
-      'sequence': 1,
-      'type': 'Delivery',
-      'name': '$cargo delivery',
-      'latitude': coordinates[2],
-      'longitude': coordinates[3],
-    },
-  ],
-});
+) async {
+  final tripId = await _createId(api, '/api/trips', {
+    'clientId': clientId,
+    'cargoDescription': cargo,
+    'plannedStartAt': DateTime.now()
+        .toUtc()
+        .add(const Duration(days: 1))
+        .toIso8601String(),
+    'price': 1000,
+    'routeProfile': 'Driving',
+    'stops': [
+      {
+        'sequence': 0,
+        'type': 'Pickup',
+        'name': '$cargo pickup',
+        'latitude': coordinates[0],
+        'longitude': coordinates[1],
+      },
+      {
+        'sequence': 1,
+        'type': 'Delivery',
+        'name': '$cargo delivery',
+        'latitude': coordinates[2],
+        'longitude': coordinates[3],
+      },
+    ],
+  });
+  await api.post<void>(
+    '/api/trips/$tripId/calculate-route',
+    data: {'routeProfile': 'Driving'},
+  );
+  return tripId;
+}
 
 Future<void> _assign(Dio api, String tripId, String truckId, String driverId) =>
     api.post<void>(

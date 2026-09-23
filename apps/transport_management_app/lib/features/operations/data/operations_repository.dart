@@ -2,7 +2,10 @@ import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
-import '../domain/operations_models.dart';
+import '../../clients/domain/client_models.dart' hide Json;
+import '../../fleet/domain/fleet_models.dart' hide Json;
+import '../domain/operations_data.dart';
+import '../../trips/domain/trip_models.dart';
 
 final class OperationsRepository {
   OperationsRepository(this._client);
@@ -32,31 +35,47 @@ final class OperationsRepository {
     );
   }
 
-  Future<TripPage> queryTrips({int page = 1, int pageSize = 20,
-    String? search, String? operationalGroup, String? status,
-    String? clientId, String? truckId, String? driverId,
-    String? plannedFrom, String? plannedTo}) async {
+  Future<TripPage> queryTrips({
+    int page = 1,
+    int pageSize = 20,
+    String? search,
+    String? operationalGroup,
+    String? status,
+    String? clientId,
+    String? truckId,
+    String? driverId,
+    String? plannedFrom,
+    String? plannedTo,
+  }) async {
     try {
-      final response = await _client.dio.get<Json>('/api/trips', queryParameters: {
-        'page': page, 'pageSize': pageSize,
-        'search': search?.trim().isEmpty == true ? null : search?.trim(),
-        'operationalGroup': operationalGroup,
-        'status': status,
-        'clientId': clientId,
-        'truckId': truckId,
-        'driverId': driverId,
-        'plannedFrom': plannedFrom,
-        'plannedTo': plannedTo,
-      });
+      final response = await _client.dio.get<Json>(
+        '/api/trips',
+        queryParameters: {
+          'page': page,
+          'pageSize': pageSize,
+          'search': search?.trim().isEmpty == true ? null : search?.trim(),
+          'operationalGroup': operationalGroup,
+          'status': status,
+          'clientId': clientId,
+          'truckId': truckId,
+          'driverId': driverId,
+          'plannedFrom': plannedFrom,
+          'plannedTo': plannedTo,
+        },
+      );
       return TripPage.fromJson(response.data!);
-    } on DioException catch (error) { throw ApiException.fromDio(error); }
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
   }
 
   Future<Trip> getTrip(String id) async {
     try {
       final response = await _client.dio.get<Json>('/api/trips/$id');
       return Trip.fromJson(response.data!);
-    } on DioException catch (error) { throw ApiException.fromDio(error); }
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
   }
 
   Future<void> _send(String method, String path, [Json? data]) async {
@@ -94,8 +113,11 @@ final class OperationsRepository {
         options: Options(method: id == null ? 'POST' : 'PUT'),
       );
       return Trip.fromJson(response.data!);
-    } on DioException catch (error) { throw ApiException.fromDio(error); }
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
   }
+
   Future<void> deactivate(String kind, String id) =>
       _send('POST', '/api/$kind/$id/deactivate');
   Future<void> setFleetStatus(String kind, String id, String status) =>
@@ -120,11 +142,18 @@ final class OperationsRepository {
       throw ApiException.fromDio(error);
     }
   }
+
   Future<void> reassignTrip(String id, String truckId, String driverId) =>
-      _send('POST', '/api/trips/$id/reassign', {'truckId': truckId, 'driverId': driverId});
-  Future<void> unassignTrip(String id) => _send('POST', '/api/trips/$id/unassign');
-  Future<void> deleteDraft(String id) => _send('DELETE', '/api/trips/$id/draft');
-  Future<void> duplicateTrip(String id) => _send('POST', '/api/trips/$id/duplicate');
+      _send('POST', '/api/trips/$id/reassign', {
+        'truckId': truckId,
+        'driverId': driverId,
+      });
+  Future<void> unassignTrip(String id) =>
+      _send('POST', '/api/trips/$id/unassign');
+  Future<void> deleteDraft(String id) =>
+      _send('DELETE', '/api/trips/$id/draft');
+  Future<void> duplicateTrip(String id) =>
+      _send('POST', '/api/trips/$id/duplicate');
   Future<void> cancelTrip(String id, String reason) =>
       _send('POST', '/api/trips/$id/cancel', {'reason': reason});
   Future<void> archiveTrip(String id, {required bool archive}) =>
@@ -147,6 +176,7 @@ final class OperationsRepository {
       throw ApiException.fromDio(error);
     }
   }
+
   Future<AssignmentOptions> assignmentOptions(String id) async {
     try {
       final response = await _client.dio.get<Json>(
@@ -157,20 +187,31 @@ final class OperationsRepository {
       throw ApiException.fromDio(error);
     }
   }
+
   Future<Trip> calculateTripRoute(String id) async {
     try {
-      final response = await _client.dio.post<Json>('/api/trips/$id/calculate-route',
-        data: {'routeProfile': 'Driving'});
+      final response = await _client.dio.post<Json>(
+        '/api/trips/$id/calculate-route',
+        data: {'routeProfile': 'Driving'},
+      );
       return Trip.fromJson(response.data!);
-    } on DioException catch (error) { throw ApiException.fromDio(error); }
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
   }
+
   Future<List<TripEvent>> timeline(String id) async {
     try {
       final response = await _client.dio.get<Json>('/api/trips/$id/timeline');
-      return (response.data!['items'] as List<dynamic>).cast<Json>()
-          .map(TripEvent.fromJson).toList();
-    } on DioException catch (error) { throw ApiException.fromDio(error); }
+      return (response.data!['items'] as List<dynamic>)
+          .cast<Json>()
+          .map(TripEvent.fromJson)
+          .toList();
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
   }
+
   Future<void> tripAction(String id, String action) => _send(
     'POST',
     '/api/trips/$id/${action == 'MarkInTransit' ? 'mark-in-transit' : action.toLowerCase()}',

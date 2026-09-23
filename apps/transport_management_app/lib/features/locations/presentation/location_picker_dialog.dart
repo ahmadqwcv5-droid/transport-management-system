@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import '../../../l10n/l10n_extensions.dart';
-import '../../operations/domain/operations_models.dart';
+import '../../trips/domain/trip_models.dart';
 
 final class LocationSelection {
   const LocationSelection({

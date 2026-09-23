@@ -1,0 +1,15 @@
+{
+  "tenantEmail": "owner@sprint322.local",
+  "assignedTripId": "4fcb44de-47af-4d63-9be4-cc6feff0a024",
+  "draftTripId": "4bc9f9a6-1618-4b18-8747-818fa294eca4",
+  "routeIdBeforeUnchangedSave": "f3ee4b07-464e-45cb-8f0c-bdb60c9ed669",
+  "routeIdAfterUnchangedSave": "f3ee4b07-464e-45cb-8f0c-bdb60c9ed669",
+  "assignmentRaceDraftCount": 1,
+  "assignmentRaceRecovered": true,
+  "arabicRtlVerified": true,
+  "englishLtrVerified": true,
+  "availableFixtureIds": [
+    "fbfaae01-76e6-4b8d-9098-a73bb16ebb7b",
+    "f8cd9386-7486-4f4a-bf15-7c95cf834971"
+  ]
+}

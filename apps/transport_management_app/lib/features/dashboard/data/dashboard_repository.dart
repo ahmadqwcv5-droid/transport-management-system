@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import '../domain/dashboard_models.dart';
-import '../../operations/domain/operations_models.dart' as ops;
+import '../../trips/domain/trip_models.dart' as ops;
 
 final class DashboardRepository {
   DashboardRepository(this._client);

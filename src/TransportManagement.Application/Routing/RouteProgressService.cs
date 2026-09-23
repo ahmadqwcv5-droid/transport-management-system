@@ -7,7 +7,7 @@ namespace TransportManagement.Application.Routing;
 public sealed record RouteProgressPolicy(decimal OffRouteThresholdMeters, decimal ArrivalThresholdMeters);
 
 public sealed class RouteProgressService(
-    IOperationsStore operationsStore,
+    ITripQueryStore operationsStore,
     ITrackingStore trackingStore,
     IClock clock,
     RouteProgressPolicy policy)

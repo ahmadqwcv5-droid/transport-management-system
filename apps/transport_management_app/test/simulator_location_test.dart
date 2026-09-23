@@ -7,7 +7,7 @@ import 'package:transport_management_app/features/dashboard/domain/dashboard_mod
 import 'package:transport_management_app/features/dashboard/presentation/dashboard_controller.dart';
 import 'package:transport_management_app/features/dashboard/presentation/simulator_controls.dart';
 import 'package:transport_management_app/features/locations/presentation/location_picker_dialog.dart';
-import 'package:transport_management_app/features/operations/domain/operations_models.dart';
+import 'package:transport_management_app/features/trips/domain/trip_models.dart';
 import 'package:transport_management_app/l10n/app_localizations.dart';
 
 class _FakeDashboardController extends DashboardController {

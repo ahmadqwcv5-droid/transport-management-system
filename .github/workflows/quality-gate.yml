@@ -1,0 +1,126 @@
+name: Quality gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend, architecture, and migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: transport_management_ci
+          POSTGRES_USER: transport_ci
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U transport_ci -d transport_management_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      ConnectionStrings__Database: Host=localhost;Port=5432;Database=transport_management_ci;Username=transport_ci;Password=ci-only-password
+      Jwt__Issuer: TransportManagementCI
+      Jwt__Audience: TransportManagementCI
+      Jwt__SigningKey: ci-only-signing-key-at-least-32-bytes-long
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore
+        run: dotnet restore TransportManagement.slnx
+      - name: Build with repository warning policy
+        run: dotnet build TransportManagement.slnx --configuration Release --no-restore
+      - name: Architecture tests
+        run: >-
+          dotnet test tests/TransportManagement.ArchitectureTests
+          --configuration Release
+          --no-build --no-restore -- --report-xunit-trx
+          --report-xunit-trx-filename architecture.trx
+          --results-directory ${{ github.workspace }}/artifacts/test-results
+      - name: Integration tests
+        run: >-
+          dotnet test tests/TransportManagement.IntegrationTests
+          --configuration Release
+          --no-build --no-restore -- --report-xunit-trx
+          --report-xunit-trx-filename integration.trx
+          --results-directory ${{ github.workspace }}/artifacts/test-results
+      - name: Restore EF tool
+        run: dotnet tool restore
+      - name: Apply migrations to disposable PostgreSQL
+        run: >-
+          dotnet tool run dotnet-ef database update
+          --project src/TransportManagement.Infrastructure
+          --startup-project src/TransportManagement.Api
+          --configuration Release --no-build
+      - name: Confirm no EF model drift
+        run: >-
+          dotnet tool run dotnet-ef migrations has-pending-model-changes
+          --project src/TransportManagement.Infrastructure
+          --startup-project src/TransportManagement.Api
+          --configuration Release --no-build
+      - name: Upload backend failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: artifacts/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  flutter:
+    name: Flutter analysis, tests, and Web build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/transport_management_app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.4
+          channel: stable
+          cache: true
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Generate localization
+        run: flutter gen-l10n
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test integration_test test_driver
+      - name: Analyze
+        run: flutter analyze
+      - name: Unit and widget tests
+        run: |
+          mkdir -p artifacts
+          flutter test --machine | tee artifacts/flutter-tests.json
+      - name: Build Web release
+        run: >-
+          flutter build web --release
+          --dart-define=API_BASE_URL=http://localhost:5080
+          --dart-define=MAP_STYLE_URL=https://example.invalid/style.json
+          --dart-define=ENABLE_SIMULATOR_CONTROLS=false
+      - name: Upload Flutter failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-test-results
+          path: apps/transport_management_app/artifacts
+          if-no-files-found: ignore
+          retention-days: 7

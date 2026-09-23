@@ -43,7 +43,11 @@ public static class DependencyInjection
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IIdentityStore, IdentityStore>();
         services.AddScoped<ICompanyReader, CompanyReader>();
-        services.AddScoped<IOperationsStore, OperationsStore>();
+        services.AddScoped<OperationsStore>();
+        services.AddScoped<IClientStore>(provider => provider.GetRequiredService<OperationsStore>());
+        services.AddScoped<IFleetStore>(provider => provider.GetRequiredService<OperationsStore>());
+        services.AddScoped<ITripStore>(provider => provider.GetRequiredService<OperationsStore>());
+        services.AddScoped<ITripQueryStore>(provider => provider.GetRequiredService<OperationsStore>());
         services.AddScoped<ITrackingStore, TrackingStore>();
         services.AddSingleton(new RouteProgressPolicy(
             Math.Max(10, configuration.GetValue<decimal>("Routing:OffRouteThresholdMeters", 150)),

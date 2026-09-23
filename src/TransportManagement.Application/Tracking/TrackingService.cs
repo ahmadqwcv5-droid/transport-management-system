@@ -11,17 +11,18 @@ namespace TransportManagement.Application.Tracking;
 public sealed class TrackingService(
     ITrackingProvider provider,
     ITrackingStore trackingStore,
-    IOperationsStore operationsStore,
+    IFleetStore fleetStore,
+    ITripQueryStore tripStore,
     ICurrentUser currentUser,
     IClock clock,
     TrackingPolicy policy,
     DispatchPolicy dispatchPolicy,
-    TripService tripService)
+    TripDispatchService tripDispatchService)
 {
     public async Task<IReadOnlyList<TruckPositionResponse>> CurrentAsync(CancellationToken cancellationToken)
     {
-        var trucks = await operationsStore.ListTrucksAsync(null, true, null, cancellationToken);
-        var trips = await operationsStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
+        var trucks = await fleetStore.ListTrucksAsync(null, true, null, cancellationToken);
+        var trips = await tripStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var latest = await trackingStore.LatestPositionsAsync(cancellationToken);
         var latestByTruck = latest.ToDictionary(position => position.TruckId);
         var targets = BuildTargets(trucks.Select(x => x.Id), trips, latestByTruck);
@@ -48,33 +49,33 @@ public sealed class TrackingService(
                 await trackingStore.SaveChangesAsync(cancellationToken);
                 foreach (var position in changed.Where(x =>
                     x.MovementPhase == MovementPhase.Repositioning && x.TripId.HasValue))
-                    await tripService.EvaluateArrivalAsync(
+                    await tripDispatchService.EvaluateArrivalAsync(
                         position.TripId!.Value, position, cancellationToken);
                 latest = await trackingStore.LatestPositionsAsync(cancellationToken);
             }
         }
-        var drivers = await operationsStore.ListDriversAsync(null, null, null, cancellationToken);
+        var drivers = await fleetStore.ListDriversAsync(null, null, null, cancellationToken);
         return latest.Join(trucks, p => p.TruckId, t => t.Id, (p, t) => Map(p, t.PlateNumber, t.Status.ToString(), trips, drivers)).ToArray();
     }
 
     public async Task<TruckPositionResponse> CurrentForTruckAsync(Guid truckId, CancellationToken cancellationToken)
     {
-        var truck = await operationsStore.GetTruckAsync(truckId, cancellationToken)
+        var truck = await fleetStore.GetTruckAsync(truckId, cancellationToken)
             ?? throw new NotFoundException("Truck was not found in the current company.", "TRUCK_NOT_FOUND");
         await CurrentAsync(cancellationToken);
         var position = await trackingStore.LatestPositionAsync(truckId, cancellationToken)
             ?? throw new NotFoundException("No tracking position is available.", "POSITION_NOT_FOUND");
-        var trips = await operationsStore.ListTripsAsync(null, null, truckId, null, null, null, cancellationToken);
-        var drivers = await operationsStore.ListDriversAsync(null, null, null, cancellationToken);
+        var trips = await tripStore.ListTripsAsync(null, null, truckId, null, null, null, cancellationToken);
+        var drivers = await fleetStore.ListDriversAsync(null, null, null, cancellationToken);
         return Map(position, truck.PlateNumber, truck.Status.ToString(), trips, drivers);
     }
 
     public async Task<IReadOnlyList<TruckPositionResponse>> HistoryAsync(Guid truckId, int limit, CancellationToken cancellationToken)
     {
-        var truck = await operationsStore.GetTruckAsync(truckId, cancellationToken)
+        var truck = await fleetStore.GetTruckAsync(truckId, cancellationToken)
             ?? throw new NotFoundException("Truck was not found in the current company.", "TRUCK_NOT_FOUND");
-        var trips = await operationsStore.ListTripsAsync(null, null, truckId, null, null, null, cancellationToken);
-        var drivers = await operationsStore.ListDriversAsync(null, null, null, cancellationToken);
+        var trips = await tripStore.ListTripsAsync(null, null, truckId, null, null, null, cancellationToken);
+        var drivers = await fleetStore.ListDriversAsync(null, null, null, cancellationToken);
         return (await trackingStore.HistoryAsync(truckId, Math.Clamp(limit, 1, 200), cancellationToken))
             .Select(p => Map(p, truck.PlateNumber, truck.Status.ToString(), trips, drivers)).ToArray();
     }
@@ -82,7 +83,7 @@ public sealed class TrackingService(
     public async Task<TripTrackingHistoryResponse> TripHistoryAsync(
         Guid tripId, int limit, CancellationToken cancellationToken)
     {
-        var trip = await operationsStore.GetTripAsync(tripId, cancellationToken)
+        var trip = await tripStore.GetTripAsync(tripId, cancellationToken)
             ?? throw new NotFoundException("Trip was not found in the current company.", "TRIP_NOT_FOUND");
         if (trip.TruckId is not Guid truckId)
             throw new ConflictException("The trip has no assigned truck.", "TRIP_TRUCK_REQUIRED");
@@ -113,7 +114,7 @@ public sealed class TrackingService(
     {
         if (!provider.IsSimulator)
             throw new ConflictException("The tracking simulator is disabled.", "SIMULATOR_DISABLED");
-        var trucks = await operationsStore.ListTrucksAsync(null, true, null, cancellationToken);
+        var trucks = await fleetStore.ListTrucksAsync(null, true, null, cancellationToken);
         if (request.TruckId.HasValue && trucks.All(x => x.Id != request.TruckId.Value))
             throw new NotFoundException("Truck was not found in the current company.", "TRUCK_NOT_FOUND");
         if (string.Equals(request.Action, "seed-position", StringComparison.OrdinalIgnoreCase)
@@ -129,7 +130,7 @@ public sealed class TrackingService(
             trackingStore.AddPositions([seeded]);
             await trackingStore.SaveChangesAsync(cancellationToken);
             var seededLatest = await trackingStore.LatestPositionsAsync(cancellationToken);
-            var seededTrips = await operationsStore.ListTripsAsync(
+            var seededTrips = await tripStore.ListTripsAsync(
                 null, null, null, null, null, null, cancellationToken);
             var seededState = provider.Control(currentUser.CompanyId,
                 BuildTargets(trucks.Select(x => x.Id), seededTrips,
@@ -155,7 +156,7 @@ public sealed class TrackingService(
             await trackingStore.SaveChangesAsync(cancellationToken);
             return new(true, false, 1, 0);
         }
-        var trips = await operationsStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
+        var trips = await tripStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var latest = await trackingStore.LatestPositionsAsync(cancellationToken);
         var state = provider.Control(currentUser.CompanyId, BuildTargets(
                 trucks.Select(x => x.Id), trips, latest.ToDictionary(x => x.TruckId)),
@@ -173,8 +174,8 @@ public sealed class TrackingService(
             return [];
         }
         if (sampleProvider) await CurrentAsync(cancellationToken);
-        var trucks = await operationsStore.ListTrucksAsync(null, true, null, cancellationToken);
-        var trips = await operationsStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
+        var trucks = await fleetStore.ListTrucksAsync(null, true, null, cancellationToken);
+        var trips = await tripStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var latest = (await trackingStore.LatestPositionsAsync(cancellationToken))
             .ToDictionary(x => x.TruckId);
         return trucks.OrderBy(x => x.PlateNumber).Select(truck =>

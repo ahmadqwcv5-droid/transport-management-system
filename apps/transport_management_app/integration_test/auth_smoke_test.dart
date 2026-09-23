@@ -27,7 +27,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Sign in'), findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(2));
 
     await tester.enterText(find.byType(TextFormField).at(0), email);
@@ -35,13 +34,26 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
     await tester.pumpAndSettle(const Duration(milliseconds: 100));
 
-    expect(find.text('Dashboard'), findsWidgets);
-    expect(find.byTooltip('Sign out'), findsOneWidget);
+    await _waitFor(tester, find.byKey(const Key('fleet-dashboard')));
+    expect(find.byKey(const Key('logout-button')), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Sign out'));
+    await tester.tap(find.byKey(const Key('logout-button')));
     await tester.pumpAndSettle(const Duration(milliseconds: 100));
 
-    expect(find.text('Sign in'), findsOneWidget);
+    await _waitFor(tester, find.byType(TextFormField));
     expect(find.byType(TextFormField), findsNWidgets(2));
+    expect(find.byKey(const Key('fleet-dashboard')), findsNothing);
   });
+}
+
+Future<void> _waitFor(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 20),
+}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (finder.evaluate().isEmpty && DateTime.now().isBefore(deadline)) {
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+  expect(finder, findsWidgets);
 }

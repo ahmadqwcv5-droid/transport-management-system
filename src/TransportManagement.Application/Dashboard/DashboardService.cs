@@ -6,14 +6,15 @@ using TransportManagement.Domain.Trips;
 namespace TransportManagement.Application.Dashboard;
 
 public sealed class DashboardService(
-    IOperationsStore operationsStore,
+    IFleetStore fleetStore,
+    ITripQueryStore tripStore,
     TrackingService trackingService,
     IClock clock)
 {
     public async Task<DashboardResponse> GetAsync(CancellationToken cancellationToken)
     {
-        var trucks = await operationsStore.ListTrucksAsync(null, true, null, cancellationToken);
-        var trips = await operationsStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
+        var trucks = await fleetStore.ListTrucksAsync(null, true, null, cancellationToken);
+        var trips = await tripStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var positions = await trackingService.CurrentAsync(cancellationToken);
         var simulatorTrucks = await trackingService.SimulatorInventoryAsync(false, cancellationToken);
         var activeStatuses = new[] { TripStatus.Assigned, TripStatus.EnRouteToPickup,

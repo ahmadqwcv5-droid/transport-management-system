@@ -5,7 +5,7 @@ using TransportManagement.Domain.Fleet;
 
 namespace TransportManagement.Application.Fleet;
 
-public sealed class DriverService(IOperationsStore store, ICurrentUser currentUser, IClock clock)
+public sealed class DriverService(IFleetStore store, ICurrentUser currentUser, IClock clock)
 {
     public async Task<DriverResponse> CreateAsync(DriverRequest request, CancellationToken cancellationToken)
     {

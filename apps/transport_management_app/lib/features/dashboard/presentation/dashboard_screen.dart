@@ -65,7 +65,9 @@ class DashboardScreen extends ConsumerWidget {
                 ...data.recentTrips.map(
                   (trip) => ListTile(
                     leading: const Icon(Icons.route),
-                    title: Text('${trip.tripNumber} · ${trip.origin ?? context.l10n.incompleteDraft}${trip.destination == null ? '' : ' → ${trip.destination}'}'),
+                    title: Text(
+                      '${trip.tripNumber} · ${trip.origin ?? context.l10n.incompleteDraft}${trip.destination == null ? '' : ' → ${trip.destination}'}',
+                    ),
                     trailing: Chip(
                       label: Text(localizedStatus(context.l10n, trip.status)),
                     ),

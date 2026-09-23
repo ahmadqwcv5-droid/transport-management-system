@@ -142,9 +142,13 @@ final class AssignmentOptions {
     currentDriverId: json['currentDriverId'] as String?,
     canAssign: json['canAssign'] as bool,
     trucks: (json['trucks'] as List<dynamic>)
-        .cast<Json>().map(AssignmentResourceOption.fromJson).toList(),
+        .cast<Json>()
+        .map(AssignmentResourceOption.fromJson)
+        .toList(),
     drivers: (json['drivers'] as List<dynamic>)
-        .cast<Json>().map(AssignmentResourceOption.fromJson).toList(),
+        .cast<Json>()
+        .map(AssignmentResourceOption.fromJson)
+        .toList(),
   );
 }
 
@@ -248,88 +252,6 @@ final class RouteProgress {
   );
 }
 
-final class Client {
-  const Client({
-    required this.id,
-    required this.name,
-    required this.isActive,
-    this.contactPerson,
-    this.phone,
-    this.email,
-    this.address,
-    this.notes,
-  });
-  final String id;
-  final String name;
-  final bool isActive;
-  final String? contactPerson, phone, email, address, notes;
-  factory Client.fromJson(Json json) => Client(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    isActive: json['isActive'] as bool,
-    contactPerson: json['contactPerson'] as String?,
-    phone: json['phone'] as String?,
-    email: json['email'] as String?,
-    address: json['address'] as String?,
-    notes: json['notes'] as String?,
-  );
-}
-
-final class Truck {
-  const Truck({
-    required this.id,
-    required this.plateNumber,
-    required this.status,
-    required this.isActive,
-    this.make,
-    this.model,
-    this.year,
-    this.notes,
-  });
-  final String id;
-  final String plateNumber, status;
-  final bool isActive;
-  final String? make, model, notes;
-  final int? year;
-  factory Truck.fromJson(Json json) => Truck(
-    id: json['id'] as String,
-    plateNumber: json['plateNumber'] as String,
-    status: json['status'] as String,
-    isActive: json['isActive'] as bool,
-    make: json['make'] as String?,
-    model: json['model'] as String?,
-    year: json['year'] as int?,
-    notes: json['notes'] as String?,
-  );
-}
-
-final class Driver {
-  const Driver({
-    required this.id,
-    required this.fullName,
-    required this.licenseNumber,
-    required this.status,
-    required this.isActive,
-    this.phone,
-    this.licenseExpiryDate,
-    this.notes,
-  });
-  final String id;
-  final String fullName, licenseNumber, status;
-  final bool isActive;
-  final String? phone, licenseExpiryDate, notes;
-  factory Driver.fromJson(Json json) => Driver(
-    id: json['id'] as String,
-    fullName: json['fullName'] as String,
-    licenseNumber: json['licenseNumber'] as String,
-    status: json['status'] as String,
-    isActive: json['isActive'] as bool,
-    phone: json['phone'] as String?,
-    licenseExpiryDate: json['licenseExpiryDate'] as String?,
-    notes: json['notes'] as String?,
-  );
-}
-
 final class Trip {
   const Trip({
     required this.id,
@@ -340,7 +262,9 @@ final class Trip {
     required this.allowedActions,
     this.version = 1,
     this.readiness = const TripReadiness(
-      canCalculateRoute: false, canAssign: false, canDispatch: false,
+      canCalculateRoute: false,
+      canAssign: false,
+      canDispatch: false,
       missingRequirements: [],
     ),
     this.origin,
@@ -363,11 +287,7 @@ final class Trip {
     this.cancellationReason,
     this.cancelledAt,
   });
-  final String id,
-      tripNumber,
-      clientId,
-      cargoDescription,
-      status;
+  final String id, tripNumber, clientId, cargoDescription, status;
   final String? origin,
       destination,
       plannedStartAt,
@@ -442,8 +362,9 @@ final class TripReadiness {
     canCalculateRoute: json['canCalculateRoute'] as bool? ?? false,
     canAssign: json['canAssign'] as bool? ?? false,
     canDispatch: json['canDispatch'] as bool? ?? false,
-    missingRequirements: (json['missingRequirements'] as List<dynamic>? ?? const [])
-        .cast<String>(),
+    missingRequirements:
+        (json['missingRequirements'] as List<dynamic>? ?? const [])
+            .cast<String>(),
   );
 }
 
@@ -458,7 +379,10 @@ final class TripPage {
   final List<Trip> items;
   final int totalCount, page, pageSize, totalPages;
   factory TripPage.fromJson(Json json) => TripPage(
-    items: (json['items'] as List<dynamic>).cast<Json>().map(Trip.fromJson).toList(),
+    items: (json['items'] as List<dynamic>)
+        .cast<Json>()
+        .map(Trip.fromJson)
+        .toList(),
     totalCount: json['totalCount'] as int,
     page: json['page'] as int,
     pageSize: json['pageSize'] as int,
@@ -467,8 +391,13 @@ final class TripPage {
 }
 
 final class TripEvent {
-  const TripEvent({required this.eventType, required this.occurredAt,
-    required this.actorDisplayName, required this.source, this.metadata});
+  const TripEvent({
+    required this.eventType,
+    required this.occurredAt,
+    required this.actorDisplayName,
+    required this.source,
+    this.metadata,
+  });
   final String eventType, occurredAt, actorDisplayName, source;
   final String? metadata;
   factory TripEvent.fromJson(Json json) => TripEvent(
@@ -478,17 +407,4 @@ final class TripEvent {
     source: json['source'] as String,
     metadata: json['metadata'] as String?,
   );
-}
-
-final class OperationsData {
-  const OperationsData({
-    required this.clients,
-    required this.trucks,
-    required this.drivers,
-    required this.trips,
-  });
-  final List<Client> clients;
-  final List<Truck> trucks;
-  final List<Driver> drivers;
-  final List<Trip> trips;
 }

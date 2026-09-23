@@ -1,4 +1,4 @@
-import '../../operations/domain/operations_models.dart' as ops;
+import '../../trips/domain/trip_models.dart' as ops;
 
 typedef Json = Map<String, dynamic>;
 

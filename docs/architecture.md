@@ -62,7 +62,7 @@ ingestion remains deferred, but it can implement the existing port.
 
 ## ADR-007: Explicit trip state machine and resource lifecycle
 
-**Status:** Accepted
+**Status:** Superseded by ADR-020
 
 Trip transitions are domain methods rather than arbitrary status setters:
 `Draft → Assigned → Started → InTransit → Delivered → Completed`. Cancellation
@@ -99,10 +99,11 @@ safe HTTP 409 Problem Details responses.
 
 ## ADR-009: Sprint 2 module and authorization boundaries
 
-**Status:** Accepted
+**Status:** Superseded by ADR-024
 
 Clients, fleet, and trips are separate Domain/Application/API/Flutter feature
-areas but share one operational persistence port inside the modular monolith.
+areas. Sprint 2 initially shared one operational persistence port inside the
+modular monolith; ADR-024 replaces that port with focused capability contracts.
 Every entity implements `ITenantOwned`; all foreign resources are resolved under
 the global tenant filter. Owner and Operations can read and mutate operational
 data, Accountant is read-only, and Employee has no operational access. Named
@@ -192,9 +193,13 @@ online/source change, or a configurable heartbeat. This bounds history growth
 while paused without changing the provider or weakening tenant isolation.
 High-volume retention, partitioning, and archival remain deferred.
 
-## ADR-019: Simulator inventory and stationary device heartbeat
+## ADR-023: Simulator inventory and stationary device heartbeat
 
 **Status:** Accepted
+
+This record was originally published with the already-used ADR-019 number. It
+is renumbered to ADR-023 so both decisions remain discoverable without changing
+their substance.
 
 The Development simulator inventory is a tenant-filtered left join from active
 trucks to their latest optional position, rather than a projection of positions.
@@ -314,7 +319,7 @@ route revision changes create a fresh run. Operational ETA uses remaining route
 distance and physical speed; it intentionally does not represent accelerated
 demo completion time.
 
-## ADR-020: Explicit dispatch-to-pickup and independent movement legs
+## ADR-020: Canonical trip lifecycle and independent movement legs
 
 **Status:** Accepted
 
@@ -346,6 +351,9 @@ restores only within a configured tolerance; an unsafe projection never invents
 a new coordinate. This mechanism belongs to the Development simulator. Provider
 telemetry remains vendor-neutral, while arrival evaluation stays in Application
 so future GPS ingestion can invoke the same rule.
+
+ADR-020 is the canonical current lifecycle. ADR-007 records the superseded
+pre-dispatch model and must not be used to derive current behavior.
 
 Assigned, EnRouteToPickup, AtPickup, Started, and InTransit all reserve the
 truck and driver, preventing a second trip from controlling them. EnRouteToPickup
@@ -450,3 +458,75 @@ annotations are restored only after MapLibre reports its style loaded, and
 assignment options for a resumed Draft load after the first widget frame; both
 rules prevent browser-only lifecycle races found by the Sprint 3.4.1 Firefox
 acceptance workflow.
+
+## ADR-024: Focused use cases, ports, and presentation ownership
+
+**Status:** Accepted
+
+Sprint 3.5 stabilizes boundaries without changing API routes, JSON contracts,
+database schema, domain transitions, or user-visible behavior. API controllers
+delegate one action to an Application use-case service. Trip ownership is split
+between draft, routing, assignment, dispatch, lifecycle, and query services;
+shared response mapping, readiness, event writing, and assignment resolution
+remain focused Application collaborators.
+
+The former `IOperationsStore` is replaced by `IClientStore`, `IFleetStore`,
+`ITripStore`, and `ITripQueryStore`. Infrastructure may implement several ports
+with one scoped EF adapter, but each Application consumer receives only the
+capabilities it owns. Ports return materialized Domain objects or transport
+results and never expose `DbContext` or `IQueryable`.
+
+Flutter feature models belong to client, fleet, trip, or shared operational
+data modules. The trip-planner screen is a composition shell: its controller
+owns persistence/API orchestration and presents immutable state to network-free
+step widgets. Fleet-map rendering adapters and panels are separate from polling
+and annotation coordination. Riverpod remains the only application state
+management solution.
+
+## Current module ownership and dependency rules
+
+| Owner | Owns | May depend on |
+|---|---|---|
+| Domain | Entities, value semantics, lifecycle invariants | .NET base libraries only |
+| Application | Use cases, DTOs, policies, focused ports | Domain |
+| Infrastructure | EF/PostgreSQL, authentication, provider adapters | Application and Domain |
+| API | HTTP binding, authorization attributes, response translation | Application and Infrastructure composition |
+| Flutter feature | Presentation controller/state, feature repository and models | Shared authenticated transport and generated localization |
+
+Controllers must not reference EF or `AppDbContext`; Domain must not reference
+Application, Infrastructure, API, EF, or ASP.NET; Application contracts must not
+reference Infrastructure. Flutter widgets must not import Dio or the shared API
+client directly. Tenant-owned persisted entities require a company query filter
+and tenant-leading index, with documented identity/bootstrap exceptions.
+`IgnoreQueryFilters` is restricted to authentication/bootstrap identity paths.
+These rules are executable in `TransportManagement.ArchitectureTests`.
+
+The scoped `AppDbContext` and one `SaveChangesAsync` call within the owning use
+case are the transaction boundary. No generic repository or additional unit of
+work wraps EF. Cross-service orchestration must stay inside Application and must
+not split one atomic command across HTTP requests.
+
+## Quality, observability, and security guardrails
+
+- Every change must preserve tenant derivation from authenticated server
+  context. Client-supplied company identifiers never establish scope.
+- Stable Problem Details error codes and trace IDs remain the public diagnostic
+  contract. Serilog structured console events are the operational baseline;
+  credentials, JWTs, refresh tokens, and raw provider secrets must not be logged.
+- Important trip mutations remain append-only audit events with UTC time,
+  authenticated actor where available, stable code, and bounded metadata.
+- New external provider calls require explicit timeouts, safe failure mapping,
+  and deterministic substitutes in mandatory tests. Mandatory CI must not rely
+  on public routing, geocoding, map, or tile availability.
+- A change is done only when formatting, warnings-as-errors build, architecture
+  tests, integration/unit/widget tests, EF drift check, analyzer, and release Web
+  build pass. Schema changes additionally require a reviewed migration and
+  upgrade/rollback notes. Relevant authenticated browser evidence is required
+  before release.
+
+GitHub's push/pull-request quality gate runs deterministic backend and Flutter
+checks against disposable data. The authenticated Firefox workflow remains a
+manual release gate because it uses browser, local credentials, retained runtime
+state, and optional visual providers. Run `scripts/quality-gate.sh` from the
+repository root for the equivalent local static/unit gate; follow the README's
+browser procedure for release validation.

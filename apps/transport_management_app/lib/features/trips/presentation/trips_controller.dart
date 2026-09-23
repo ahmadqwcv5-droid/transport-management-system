@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../operations/domain/operations_models.dart';
+import '../../trips/domain/trip_models.dart';
 import '../../operations/presentation/operations_controller.dart';
 
 final tripsControllerProvider =
@@ -22,14 +22,16 @@ class TripsController extends AsyncNotifier<TripPage> {
     return _load();
   }
 
-  Future<TripPage> _load() => ref.read(operationsRepositoryProvider).queryTrips(
-    page: page,
-    search: search,
-    operationalGroup: group,
-    clientId: clientId,
-    truckId: truckId,
-    driverId: driverId,
-  );
+  Future<TripPage> _load() => ref
+      .read(operationsRepositoryProvider)
+      .queryTrips(
+        page: page,
+        search: search,
+        operationalGroup: group,
+        clientId: clientId,
+        truckId: truckId,
+        driverId: driverId,
+      );
 
   Future<void> refresh() async {
     final generation = ++_generation;

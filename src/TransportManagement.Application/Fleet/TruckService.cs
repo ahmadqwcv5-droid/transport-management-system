@@ -5,7 +5,7 @@ using TransportManagement.Domain.Fleet;
 
 namespace TransportManagement.Application.Fleet;
 
-public sealed class TruckService(IOperationsStore store, ICurrentUser currentUser, IClock clock)
+public sealed class TruckService(IFleetStore store, ICurrentUser currentUser, IClock clock)
 {
     public async Task<TruckResponse> CreateAsync(TruckRequest request, CancellationToken cancellationToken)
     {

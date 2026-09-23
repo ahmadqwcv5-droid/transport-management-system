@@ -7,7 +7,7 @@ import '../../../core/network/api_exception.dart';
 import '../../dashboard/presentation/dashboard_controller.dart';
 import '../../dashboard/presentation/simulator_controls.dart';
 import '../../locations/presentation/location_picker_dialog.dart';
-import '../../operations/domain/operations_models.dart';
+import '../../trips/domain/trip_models.dart';
 import '../../operations/presentation/operations_controller.dart';
 import '../../operations/presentation/operations_view.dart';
 import '../../../l10n/l10n_extensions.dart';

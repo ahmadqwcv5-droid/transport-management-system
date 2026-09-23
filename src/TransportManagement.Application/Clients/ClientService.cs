@@ -4,7 +4,7 @@ using TransportManagement.Domain.Clients;
 
 namespace TransportManagement.Application.Clients;
 
-public sealed class ClientService(IOperationsStore store, ICurrentUser currentUser, IClock clock)
+public sealed class ClientService(IClientStore store, ICurrentUser currentUser, IClock clock)
 {
     public async Task<ClientResponse> CreateAsync(ClientRequest request, CancellationToken cancellationToken)
     {

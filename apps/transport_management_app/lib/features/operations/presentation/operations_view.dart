@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../l10n/l10n_extensions.dart';
-import '../domain/operations_models.dart';
+import '../domain/operations_data.dart';
 import 'operations_controller.dart';
 
 class OperationsView extends ConsumerWidget {
