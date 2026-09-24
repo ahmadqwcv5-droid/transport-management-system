@@ -82,13 +82,71 @@ internal sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.ToTable("clients");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.LegalName).HasMaxLength(200);
         builder.Property(x => x.ContactPerson).HasMaxLength(200);
         builder.Property(x => x.Phone).HasMaxLength(50);
         builder.Property(x => x.Email).HasMaxLength(320);
         builder.Property(x => x.Address).HasMaxLength(500);
         builder.Property(x => x.Notes).HasMaxLength(2000);
+        builder.Property(x => x.LifecycleStatus).HasConversion<string>().HasMaxLength(20);
+        builder.Ignore(x => x.IsActive);
         builder.HasIndex(x => x.CompanyId);
         builder.HasIndex(x => new { x.CompanyId, x.Name });
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class ClientContactConfiguration : IEntityTypeConfiguration<ClientContact>
+{
+    public void Configure(EntityTypeBuilder<ClientContact> builder)
+    {
+        builder.ToTable("client_contacts");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.JobTitle).HasMaxLength(150);
+        builder.Property(x => x.Phone).HasMaxLength(50);
+        builder.Property(x => x.WhatsApp).HasMaxLength(50);
+        builder.Property(x => x.Email).HasMaxLength(320);
+        builder.Property(x => x.Notes).HasMaxLength(1000);
+        builder.HasIndex(x => new { x.CompanyId, x.ClientId });
+        builder.HasIndex(x => new { x.CompanyId, x.ClientId, x.IsPrimary })
+            .IsUnique().HasFilter("\"IsPrimary\" = TRUE");
+        builder.HasOne<Client>().WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class ClientSiteConfiguration : IEntityTypeConfiguration<ClientSite>
+{
+    public void Configure(EntityTypeBuilder<ClientSite> builder)
+    {
+        builder.ToTable("client_sites");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Type).HasConversion<string>().HasMaxLength(30);
+        builder.Property(x => x.Address).HasMaxLength(500);
+        builder.Property(x => x.Latitude).HasPrecision(9, 6);
+        builder.Property(x => x.Longitude).HasPrecision(9, 6);
+        builder.Property(x => x.ContactName).HasMaxLength(200);
+        builder.Property(x => x.ContactPhone).HasMaxLength(50);
+        builder.Property(x => x.Instructions).HasMaxLength(1000);
+        builder.HasIndex(x => new { x.CompanyId, x.ClientId, x.IsActive });
+        builder.HasOne<Client>().WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class ClientEventConfiguration : IEntityTypeConfiguration<ClientEvent>
+{
+    public void Configure(EntityTypeBuilder<ClientEvent> builder)
+    {
+        builder.ToTable("client_events");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.EventCode).HasMaxLength(80).IsRequired();
+        builder.Property(x => x.Metadata).HasColumnType("jsonb");
+        builder.HasIndex(x => new { x.CompanyId, x.ClientId, x.CreatedAt });
+        builder.HasOne<Client>().WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.ActorUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
     }
 }
@@ -100,12 +158,40 @@ internal sealed class TruckConfiguration : IEntityTypeConfiguration<Truck>
         builder.ToTable("trucks");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.PlateNumber).HasMaxLength(30).IsRequired();
+        builder.Property(x => x.FleetCode).HasMaxLength(50);
+        builder.Property(x => x.Vin).HasMaxLength(50);
         builder.Property(x => x.Make).HasMaxLength(100);
         builder.Property(x => x.Model).HasMaxLength(100);
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(30);
+        builder.Property(x => x.Type).HasConversion<string>().HasMaxLength(30);
+        builder.Property(x => x.FuelType).HasConversion<string>().HasMaxLength(30);
+        builder.Property(x => x.PayloadUnit).HasConversion<string>().HasMaxLength(20);
+        builder.Property(x => x.PayloadCapacity).HasPrecision(12, 2);
+        builder.Property(x => x.OdometerKilometers).HasPrecision(14, 1);
         builder.Property(x => x.Notes).HasMaxLength(2000);
+        builder.Ignore(x => x.IsActive);
         builder.HasIndex(x => x.CompanyId);
         builder.HasIndex(x => new { x.CompanyId, x.PlateNumber }).IsUnique();
+        builder.HasIndex(x => new { x.CompanyId, x.Vin }).IsUnique()
+            .HasFilter("\"Vin\" IS NOT NULL");
+        builder.HasIndex(x => new { x.CompanyId, x.FleetCode }).IsUnique()
+            .HasFilter("\"FleetCode\" IS NOT NULL");
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Driver>().WithMany().HasForeignKey(x => x.DefaultDriverId).OnDelete(DeleteBehavior.SetNull);
+    }
+}
+
+internal sealed class TruckEventConfiguration : IEntityTypeConfiguration<TruckEvent>
+{
+    public void Configure(EntityTypeBuilder<TruckEvent> builder)
+    {
+        builder.ToTable("truck_events");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.EventCode).HasMaxLength(80).IsRequired();
+        builder.Property(x => x.Metadata).HasColumnType("jsonb");
+        builder.HasIndex(x => new { x.CompanyId, x.TruckId, x.CreatedAt });
+        builder.HasOne<Truck>().WithMany().HasForeignKey(x => x.TruckId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.ActorUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
     }
 }

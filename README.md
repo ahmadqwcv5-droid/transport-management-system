@@ -735,6 +735,34 @@ Employee cannot.
 
 ## Sprint boundary
 
+## Sprint 4 customer and fleet operations
+
+Sprint 4 adds client lifecycle, legal/profile fields, multiple contacts,
+map-backed saved sites, bounded trip/activity history, extended truck profiles,
+default-driver suggestions, independent base/operational truck state, odometer
+corrections, and dedicated client/truck details. Mutations refresh related
+lists, details, planner choices, trips, dashboard, and tracking without a page
+reload.
+
+With the Compose API healthy and `geckodriver --port 4444` running, execute the
+Sprint 4 browser workflow from `apps/transport_management_app`:
+
+```bash
+flutter drive \
+  --driver=test_driver/integration_test_sprint4.dart \
+  --target=integration_test/sprint4_smoke_test.dart \
+  -d web-server --browser-name=firefox --driver-port=4444 \
+  --headless --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=E2E_EMAIL=YOUR_DEDICATED_SMOKE_OWNER \
+  --dart-define=E2E_PASSWORD=YOUR_DEVELOPMENT_PASSWORD \
+  --dart-define=MAP_STYLE_URL=https://demotiles.maplibre.org/style.json
+```
+
+Use a disposable Development/Testing tenant. The workflow writes screenshots
+and JSON results to `docs/evidence/sprint4/`; it never resets the retained demo
+owner or PostgreSQL volume.
+
 Known Sprint 3.2 limitations: the simulator is process-local and
 development-only; polling is used instead of push; the current MapLibre Flutter
 API exposes style readiness but no complete tile-rendered/error signal, so a

@@ -21,7 +21,7 @@ public sealed class TrackingService(
 {
     public async Task<IReadOnlyList<TruckPositionResponse>> CurrentAsync(CancellationToken cancellationToken)
     {
-        var trucks = await fleetStore.ListTrucksAsync(null, true, null, cancellationToken);
+        var trucks = await fleetStore.ListTrucksAsync(null, true, null, null, cancellationToken);
         var trips = await tripStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var latest = await trackingStore.LatestPositionsAsync(cancellationToken);
         var latestByTruck = latest.ToDictionary(position => position.TruckId);
@@ -114,7 +114,7 @@ public sealed class TrackingService(
     {
         if (!provider.IsSimulator)
             throw new ConflictException("The tracking simulator is disabled.", "SIMULATOR_DISABLED");
-        var trucks = await fleetStore.ListTrucksAsync(null, true, null, cancellationToken);
+        var trucks = await fleetStore.ListTrucksAsync(null, true, null, null, cancellationToken);
         if (request.TruckId.HasValue && trucks.All(x => x.Id != request.TruckId.Value))
             throw new NotFoundException("Truck was not found in the current company.", "TRUCK_NOT_FOUND");
         if (string.Equals(request.Action, "seed-position", StringComparison.OrdinalIgnoreCase)
@@ -174,7 +174,7 @@ public sealed class TrackingService(
             return [];
         }
         if (sampleProvider) await CurrentAsync(cancellationToken);
-        var trucks = await fleetStore.ListTrucksAsync(null, true, null, cancellationToken);
+        var trucks = await fleetStore.ListTrucksAsync(null, true, null, null, cancellationToken);
         var trips = await tripStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var latest = (await trackingStore.LatestPositionsAsync(cancellationToken))
             .ToDictionary(x => x.TruckId);

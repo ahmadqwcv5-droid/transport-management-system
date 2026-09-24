@@ -48,7 +48,7 @@ extension TripPlannerSteps on TripPlannerController {
                             DropdownMenuItem(value: x.id, child: Text(x.name)),
                       )
                       .toList(),
-                  onChanged: (value) => _mutate(() => _clientId = value),
+                  onChanged: _selectClient,
                   validator: (value) =>
                       value == null ? context.l10n.required : null,
                 ),
@@ -111,10 +111,12 @@ extension TripPlannerSteps on TripPlannerController {
                   title: context.l10n.pickup,
                   fieldKey: 'pickup',
                   fields: _pickup,
+                  savedSites: _clientSites,
                   onSearch: () => _search(_pickup),
                   onSelectMap: () => _mutate(() => _activeMapStop = _pickup),
                   selectingOnMap: identical(_activeMapStop, _pickup),
                   onChanged: _onStopsChanged,
+                  onSaveSite: () => _saveAsSite(_pickup),
                 ),
                 const SizedBox(height: 14),
                 _StopEditor(
@@ -122,10 +124,12 @@ extension TripPlannerSteps on TripPlannerController {
                   title: context.l10n.delivery,
                   fieldKey: 'delivery',
                   fields: _delivery,
+                  savedSites: _clientSites,
                   onSearch: () => _search(_delivery),
                   onSelectMap: () => _mutate(() => _activeMapStop = _delivery),
                   selectingOnMap: identical(_activeMapStop, _delivery),
                   onChanged: _onStopsChanged,
+                  onSaveSite: () => _saveAsSite(_delivery),
                 ),
                 const SizedBox(height: 16),
                 if (_routeStale)
@@ -215,7 +219,7 @@ extension TripPlannerSteps on TripPlannerController {
             label: context.l10n.truck,
             value: _truckId,
             options: options.trucks,
-            onChanged: (value) => _mutate(() => _truckId = value),
+            onChanged: _selectTruck,
           ),
           const SizedBox(height: 12),
           _assignmentDropdown(
@@ -223,7 +227,7 @@ extension TripPlannerSteps on TripPlannerController {
             label: context.l10n.driver,
             value: _driverId,
             options: options.drivers,
-            onChanged: (value) => _mutate(() => _driverId = value),
+            onChanged: _selectDriver,
           ),
         ],
         if (!options.canAssign)
@@ -277,7 +281,7 @@ extension TripPlannerSteps on TripPlannerController {
                   (item) => DropdownMenuItem<String>(
                     value: item.id,
                     child: Text(
-                      item.displayName,
+                      assignmentOptionLabel(item),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

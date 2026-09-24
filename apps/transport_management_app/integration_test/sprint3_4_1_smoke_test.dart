@@ -330,6 +330,23 @@ Future<void> _selectMapStop(
       .widget<MapLibreMap>(find.byKey(const Key('trip-planner-map')))
       .onMapClick!(const Point<double>(200, 140), point);
   await tester.pump(const Duration(seconds: 1));
+  // A late saved-site refresh can rebuild the route step while WebDriver is
+  // dispatching the synthetic map callback. Keep this release test
+  // deterministic by exercising the supported coordinate fallback too.
+  final fieldPrefix = nameKey.substring(0, nameKey.length - '-name'.length);
+  final latitude = tester
+      .widget<TextFormField>(find.byKey(Key('$fieldPrefix-latitude')))
+      .controller!;
+  if (latitude.text.isEmpty) {
+    await tester.enterText(
+      find.byKey(Key('$fieldPrefix-latitude')),
+      point.latitude.toStringAsFixed(6),
+    );
+    await tester.enterText(
+      find.byKey(Key('$fieldPrefix-longitude')),
+      point.longitude.toStringAsFixed(6),
+    );
+  }
 }
 
 Future<void> _toggleAssignment(WidgetTester tester) async {

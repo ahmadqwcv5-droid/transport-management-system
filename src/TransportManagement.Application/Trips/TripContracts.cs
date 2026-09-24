@@ -22,11 +22,15 @@ public sealed record ResourceReservation(
 public sealed record AssignmentResourceOptionResponse(
     Guid Id, string DisplayName, string Status, bool IsEligible,
     string ReasonCode, Guid? ConflictingTripId = null,
-    string? ConflictingTripNumber = null);
+    string? ConflictingTripNumber = null, string? FleetCode = null,
+    string? ResourceType = null, decimal? PayloadCapacity = null,
+    string? PayloadUnit = null, Guid? DefaultDriverId = null);
 public sealed record AssignmentOptionsResponse(
     Guid TripId, Guid? CurrentTruckId, Guid? CurrentDriverId,
     bool CanAssign, IReadOnlyList<AssignmentResourceOptionResponse> Trucks,
-    IReadOnlyList<AssignmentResourceOptionResponse> Drivers);
+    IReadOnlyList<AssignmentResourceOptionResponse> Drivers,
+    Guid? SuggestedDefaultDriverId = null,
+    string? DefaultDriverSuggestionReasonCode = null);
 public sealed record CancelTripRequest([param: MaxLength(500)] string Reason);
 public sealed record DispatchToPickupRequest(Guid? RepositioningPlanId);
 public sealed record TripListQuery(

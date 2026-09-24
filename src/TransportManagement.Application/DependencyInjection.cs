@@ -20,6 +20,7 @@ public static class DependencyInjection
         .AddScoped<DriverService>()
         .AddScoped<TripEntityResolver>()
         .AddScoped<TripEventWriter>()
+        .AddScoped<ResourceEventWriter>()
         .AddScoped<TripDraftService>()
         .AddScoped<TripRoutingService>()
         .AddScoped<TripAssignmentService>()

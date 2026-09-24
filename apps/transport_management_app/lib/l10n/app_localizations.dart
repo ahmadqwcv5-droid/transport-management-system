@@ -1028,18 +1028,6 @@ abstract class AppLocalizations {
   /// **'No matching locations were found. You can enter coordinates manually.'**
   String get noLocationResults;
 
-  /// No description provided for @latitude.
-  ///
-  /// In en, this message translates to:
-  /// **'Latitude'**
-  String get latitude;
-
-  /// No description provided for @longitude.
-  ///
-  /// In en, this message translates to:
-  /// **'Longitude'**
-  String get longitude;
-
   /// No description provided for @invalidCoordinate.
   ///
   /// In en, this message translates to:
@@ -1999,6 +1987,582 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reserved by trip {tripNumber}'**
   String resourceAssignedToTrip(String tripNumber);
+
+  /// No description provided for @details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get details;
+
+  /// No description provided for @legalName.
+  ///
+  /// In en, this message translates to:
+  /// **'Legal name'**
+  String get legalName;
+
+  /// No description provided for @lifecycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifecycle'**
+  String get lifecycle;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @suspended.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspended'**
+  String get suspended;
+
+  /// No description provided for @reserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserved'**
+  String get reserved;
+
+  /// No description provided for @archived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get archived;
+
+  /// No description provided for @contacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get contacts;
+
+  /// No description provided for @sites.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved sites'**
+  String get sites;
+
+  /// No description provided for @addContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact'**
+  String get addContact;
+
+  /// No description provided for @jobTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Job title'**
+  String get jobTitle;
+
+  /// No description provided for @whatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get whatsApp;
+
+  /// No description provided for @primaryContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary contact'**
+  String get primaryContact;
+
+  /// No description provided for @addSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Add site'**
+  String get addSite;
+
+  /// No description provided for @siteType.
+  ///
+  /// In en, this message translates to:
+  /// **'Site type'**
+  String get siteType;
+
+  /// No description provided for @latitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Latitude'**
+  String get latitude;
+
+  /// No description provided for @longitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Longitude'**
+  String get longitude;
+
+  /// No description provided for @instructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions'**
+  String get instructions;
+
+  /// No description provided for @restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restore;
+
+  /// No description provided for @suspend.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspend'**
+  String get suspend;
+
+  /// No description provided for @reactivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactivate'**
+  String get reactivate;
+
+  /// No description provided for @plannedTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned trips'**
+  String get plannedTrips;
+
+  /// No description provided for @completedTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed trips'**
+  String get completedTrips;
+
+  /// No description provided for @cancelledTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled trips'**
+  String get cancelledTrips;
+
+  /// No description provided for @activity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get activity;
+
+  /// No description provided for @noActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity yet'**
+  String get noActivity;
+
+  /// No description provided for @fleetCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet code'**
+  String get fleetCode;
+
+  /// No description provided for @searchTrucks.
+  ///
+  /// In en, this message translates to:
+  /// **'Search trucks'**
+  String get searchTrucks;
+
+  /// No description provided for @vin.
+  ///
+  /// In en, this message translates to:
+  /// **'VIN / chassis number'**
+  String get vin;
+
+  /// No description provided for @truckType.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck type'**
+  String get truckType;
+
+  /// No description provided for @payloadCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Payload capacity'**
+  String get payloadCapacity;
+
+  /// No description provided for @payloadUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Payload unit'**
+  String get payloadUnit;
+
+  /// No description provided for @fuelType.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel type'**
+  String get fuelType;
+
+  /// No description provided for @odometer.
+  ///
+  /// In en, this message translates to:
+  /// **'Odometer (km)'**
+  String get odometer;
+
+  /// No description provided for @correctOdometer.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct odometer'**
+  String get correctOdometer;
+
+  /// No description provided for @correctionReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Correction reason'**
+  String get correctionReason;
+
+  /// No description provided for @defaultDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'Default driver'**
+  String get defaultDriver;
+
+  /// No description provided for @baseStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Base status'**
+  String get baseStatus;
+
+  /// No description provided for @operationalState.
+  ///
+  /// In en, this message translates to:
+  /// **'Operational state'**
+  String get operationalState;
+
+  /// No description provided for @currentTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Current trip'**
+  String get currentTrip;
+
+  /// No description provided for @latestPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest position'**
+  String get latestPosition;
+
+  /// No description provided for @noPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'No position has been reported'**
+  String get noPosition;
+
+  /// No description provided for @clientArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Client archived.'**
+  String get clientArchived;
+
+  /// No description provided for @clientRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Client restored.'**
+  String get clientRestored;
+
+  /// No description provided for @truckArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck archived.'**
+  String get truckArchived;
+
+  /// No description provided for @truckRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck restored.'**
+  String get truckRestored;
+
+  /// No description provided for @factory.
+  ///
+  /// In en, this message translates to:
+  /// **'Factory'**
+  String get factory;
+
+  /// No description provided for @warehouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Warehouse'**
+  String get warehouse;
+
+  /// No description provided for @office.
+  ///
+  /// In en, this message translates to:
+  /// **'Office'**
+  String get office;
+
+  /// No description provided for @other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get other;
+
+  /// No description provided for @kilograms.
+  ///
+  /// In en, this message translates to:
+  /// **'Kilograms'**
+  String get kilograms;
+
+  /// No description provided for @tonnes.
+  ///
+  /// In en, this message translates to:
+  /// **'Tonnes'**
+  String get tonnes;
+
+  /// No description provided for @diesel.
+  ///
+  /// In en, this message translates to:
+  /// **'Diesel'**
+  String get diesel;
+
+  /// No description provided for @petrol.
+  ///
+  /// In en, this message translates to:
+  /// **'Petrol'**
+  String get petrol;
+
+  /// No description provided for @electric.
+  ///
+  /// In en, this message translates to:
+  /// **'Electric'**
+  String get electric;
+
+  /// No description provided for @hybrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Hybrid'**
+  String get hybrid;
+
+  /// No description provided for @boxTruck.
+  ///
+  /// In en, this message translates to:
+  /// **'Box truck'**
+  String get boxTruck;
+
+  /// No description provided for @flatbed.
+  ///
+  /// In en, this message translates to:
+  /// **'Flatbed'**
+  String get flatbed;
+
+  /// No description provided for @refrigerated.
+  ///
+  /// In en, this message translates to:
+  /// **'Refrigerated'**
+  String get refrigerated;
+
+  /// No description provided for @tanker.
+  ///
+  /// In en, this message translates to:
+  /// **'Tanker'**
+  String get tanker;
+
+  /// No description provided for @tractorTrailer.
+  ///
+  /// In en, this message translates to:
+  /// **'Tractor trailer'**
+  String get tractorTrailer;
+
+  /// No description provided for @dumpTruck.
+  ///
+  /// In en, this message translates to:
+  /// **'Dump truck'**
+  String get dumpTruck;
+
+  /// No description provided for @savedSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved client site'**
+  String get savedSite;
+
+  /// No description provided for @siteSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Client site saved.'**
+  String get siteSaved;
+
+  /// No description provided for @defaultDriverSuggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Default driver suggested'**
+  String get defaultDriverSuggested;
+
+  /// No description provided for @eventClientCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Client created'**
+  String get eventClientCreated;
+
+  /// No description provided for @eventClientProfileUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Client profile updated'**
+  String get eventClientProfileUpdated;
+
+  /// No description provided for @eventClientSuspended.
+  ///
+  /// In en, this message translates to:
+  /// **'Client suspended'**
+  String get eventClientSuspended;
+
+  /// No description provided for @eventClientReactivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Client reactivated'**
+  String get eventClientReactivated;
+
+  /// No description provided for @eventClientArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Client archived'**
+  String get eventClientArchived;
+
+  /// No description provided for @eventClientContactAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact added'**
+  String get eventClientContactAdded;
+
+  /// No description provided for @eventClientContactUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact updated'**
+  String get eventClientContactUpdated;
+
+  /// No description provided for @eventClientContactRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact removed'**
+  String get eventClientContactRemoved;
+
+  /// No description provided for @eventClientPrimaryContactChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary contact changed'**
+  String get eventClientPrimaryContactChanged;
+
+  /// No description provided for @eventClientSiteAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Site added'**
+  String get eventClientSiteAdded;
+
+  /// No description provided for @eventClientSiteUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Site updated'**
+  String get eventClientSiteUpdated;
+
+  /// No description provided for @eventClientSiteArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Site archived'**
+  String get eventClientSiteArchived;
+
+  /// No description provided for @eventClientSiteRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Site restored'**
+  String get eventClientSiteRestored;
+
+  /// No description provided for @eventTruckCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck created'**
+  String get eventTruckCreated;
+
+  /// No description provided for @eventTruckProfileUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck profile updated'**
+  String get eventTruckProfileUpdated;
+
+  /// No description provided for @eventTruckDefaultDriverChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Default driver changed'**
+  String get eventTruckDefaultDriverChanged;
+
+  /// No description provided for @eventTruckOdometerUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Odometer updated'**
+  String get eventTruckOdometerUpdated;
+
+  /// No description provided for @eventTruckOdometerCorrected.
+  ///
+  /// In en, this message translates to:
+  /// **'Odometer corrected'**
+  String get eventTruckOdometerCorrected;
+
+  /// No description provided for @eventTruckBaseStatusChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Base status changed'**
+  String get eventTruckBaseStatusChanged;
+
+  /// No description provided for @eventTruckArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck archived'**
+  String get eventTruckArchived;
+
+  /// No description provided for @eventTruckRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck restored'**
+  String get eventTruckRestored;
+
+  /// No description provided for @clientArchiveRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive the client before deleting it.'**
+  String get clientArchiveRequired;
+
+  /// No description provided for @deleteClientWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete this unused client? This cannot be undone.'**
+  String get deleteClientWarning;
+
+  /// No description provided for @clientHasHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'This client has trip history and cannot be deleted.'**
+  String get clientHasHistory;
+
+  /// No description provided for @truckArchiveRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive the truck before deleting it.'**
+  String get truckArchiveRequired;
+
+  /// No description provided for @deleteTruckWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete this unused truck? This cannot be undone.'**
+  String get deleteTruckWarning;
+
+  /// No description provided for @truckHasHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'This truck has trip or tracking history and cannot be deleted.'**
+  String get truckHasHistory;
+
+  /// No description provided for @truckReserved.
+  ///
+  /// In en, this message translates to:
+  /// **'This truck is reserved by an active trip.'**
+  String get truckReserved;
+
+  /// No description provided for @odometerCorrectionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the correction flow and provide a reason to reduce the odometer.'**
+  String get odometerCorrectionRequired;
+
+  /// No description provided for @defaultDriverInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'The default driver must be active.'**
+  String get defaultDriverInactive;
+
+  /// No description provided for @duplicateTruckIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'That plate, VIN, or fleet code is already in use.'**
+  String get duplicateTruckIdentity;
 }
 
 class _AppLocalizationsDelegate

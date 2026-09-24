@@ -35,6 +35,43 @@ final class OperationsRepository {
     );
   }
 
+  Future<List<Client>> loadClients({String? search, String? lifecycle}) async {
+    try {
+      final response = await _client.dio.get<List<dynamic>>(
+        '/api/clients',
+        queryParameters: {
+          'search': search?.trim().isEmpty == true ? null : search?.trim(),
+          'lifecycle': lifecycle,
+        },
+      );
+      return response.data!.cast<Json>().map(Client.fromJson).toList();
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<List<Truck>> loadTrucks({
+    String? search,
+    String? status,
+    String? type,
+    String? operationalState,
+  }) async {
+    try {
+      final response = await _client.dio.get<List<dynamic>>(
+        '/api/trucks',
+        queryParameters: {
+          'search': search?.trim().isEmpty == true ? null : search?.trim(),
+          'status': status,
+          'type': type,
+          'operationalState': operationalState,
+        },
+      );
+      return response.data!.cast<Json>().map(Truck.fromJson).toList();
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
   Future<TripPage> queryTrips({
     int page = 1,
     int pageSize = 20,
@@ -95,6 +132,47 @@ final class OperationsRepository {
     id == null ? '/api/clients' : '/api/clients/$id',
     data,
   );
+  Future<ClientDetails> clientDetails(String id) async {
+    try {
+      final response = await _client.dio.get<Json>('/api/clients/$id/details');
+      return ClientDetails.fromJson(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<TruckDetails> truckDetails(String id) async {
+    try {
+      final response = await _client.dio.get<Json>('/api/trucks/$id/details');
+      return TruckDetails.fromJson(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<void> setClientLifecycle(String id, String status) =>
+      _send('PUT', '/api/clients/$id/lifecycle', {'status': status});
+  Future<void> deleteResource(String kind, String id) =>
+      _send('DELETE', '/api/$kind/$id');
+  Future<void> saveClientContact(String clientId, Json data, [String? id]) =>
+      _send(
+        id == null ? 'POST' : 'PUT',
+        '/api/clients/$clientId/contacts${id == null ? '' : '/$id'}',
+        data,
+      );
+  Future<void> deleteClientContact(String clientId, String id) =>
+      _send('DELETE', '/api/clients/$clientId/contacts/$id');
+  Future<void> saveClientSite(String clientId, Json data, [String? id]) =>
+      _send(
+        id == null ? 'POST' : 'PUT',
+        '/api/clients/$clientId/sites${id == null ? '' : '/$id'}',
+        data,
+      );
+  Future<void> setClientSiteActive(String clientId, String id, bool active) =>
+      _send(
+        'POST',
+        '/api/clients/$clientId/sites/$id/${active ? 'restore' : 'archive'}',
+      );
   Future<void> saveTruck(Json data, [String? id]) => _send(
     id == null ? 'POST' : 'PUT',
     id == null ? '/api/trucks' : '/api/trucks/$id',
@@ -122,6 +200,11 @@ final class OperationsRepository {
       _send('POST', '/api/$kind/$id/deactivate');
   Future<void> setFleetStatus(String kind, String id, String status) =>
       _send('PUT', '/api/$kind/$id/status', {'status': status});
+  Future<void> correctTruckOdometer(String id, num kilometers, String reason) =>
+      _send('PUT', '/api/trucks/$id/odometer-correction', {
+        'kilometers': kilometers,
+        'reason': reason,
+      });
   Future<void> assignTrip(String id, String truckId, String driverId) => _send(
     'POST',
     '/api/trips/$id/assign',

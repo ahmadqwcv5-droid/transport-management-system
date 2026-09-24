@@ -11,7 +11,8 @@ public sealed class TripDraftService(
     ICurrentUser currentUser,
     IClock clock,
     TripEntityResolver resolver,
-    TripEventWriter events)
+    TripEventWriter events,
+    ResourceEventWriter resourceEvents)
 {
     public async Task<TripResponse> CreateAsync(TripRequest request, CancellationToken cancellationToken)
     {
@@ -26,6 +27,8 @@ public sealed class TripDraftService(
             trip.ReplaceStops(CreateStops(trip.Id, request.Stops), trip.Version, now);
         tripStore.AddTrip(trip);
         events.Append(trip, "TripCreated", new { trip.TripNumber });
+        resourceEvents.Client(trip.ClientId, "ClientTripCreated",
+            new { tripId = trip.Id, trip.TripNumber });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -96,6 +99,8 @@ public sealed class TripDraftService(
         tripStore.AddTrip(copy);
         events.Append(copy, "TripCreated", new
             { duplicatedFromTripId = source.Id, source.TripNumber });
+        resourceEvents.Client(copy.ClientId, "ClientTripCreated",
+            new { tripId = copy.Id, copy.TripNumber });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(copy);
     }

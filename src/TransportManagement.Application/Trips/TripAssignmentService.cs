@@ -10,7 +10,8 @@ public sealed class TripAssignmentService(
     IFleetStore fleetStore,
     IClock clock,
     TripEntityResolver resolver,
-    TripEventWriter events)
+    TripEventWriter events,
+    ResourceEventWriter resourceEvents)
 {
     public async Task<AssignmentOptionsResponse> OptionsAsync(
         Guid id, CancellationToken cancellationToken)
@@ -19,17 +20,30 @@ public sealed class TripAssignmentService(
         var readiness = TripResponseMapper.Readiness(trip);
         var canChoose = trip.Status == TripStatus.Draft
             ? readiness.CanAssign : trip.Status == TripStatus.Assigned;
-        var trucks = await fleetStore.ListTrucksAsync(null, null, null, cancellationToken);
+        var trucks = await fleetStore.ListTrucksAsync(null, null, null, null, cancellationToken);
         var drivers = await fleetStore.ListDriversAsync(null, null, null, cancellationToken);
         var truckReservations = (await fleetStore.TruckReservationsAsync(trip.Id, cancellationToken))
             .GroupBy(x => x.ResourceId).ToDictionary(x => x.Key, x => x.First());
         var driverReservations = (await fleetStore.DriverReservationsAsync(trip.Id, cancellationToken))
             .GroupBy(x => x.ResourceId).ToDictionary(x => x.Key, x => x.First());
+        var selectedTruck = trip.TruckId.HasValue
+            ? trucks.FirstOrDefault(x => x.Id == trip.TruckId.Value) : null;
+        var suggestedDriver = selectedTruck?.DefaultDriverId is Guid defaultId
+            ? drivers.FirstOrDefault(x => x.Id == defaultId) : null;
+        var defaultReservation = suggestedDriver is null ? null
+            : driverReservations.GetValueOrDefault(suggestedDriver.Id);
+        var suggestionReason = suggestedDriver is null ? null
+            : !suggestedDriver.IsActive ? "DEFAULT_DRIVER_INACTIVE"
+            : defaultReservation is not null ? "DRIVER_ALREADY_ASSIGNED"
+            : suggestedDriver.Status != DriverStatus.Available ? "DRIVER_NOT_AVAILABLE"
+            : "AVAILABLE";
         return new(trip.Id, trip.TruckId, trip.DriverId, canChoose,
             trucks.Select(truck => TruckOption(truck, canChoose,
                 truckReservations.GetValueOrDefault(truck.Id))).ToArray(),
             drivers.Select(driver => DriverOption(driver, canChoose,
-                driverReservations.GetValueOrDefault(driver.Id))).ToArray());
+                driverReservations.GetValueOrDefault(driver.Id))).ToArray(),
+            suggestionReason == "AVAILABLE" ? suggestedDriver?.Id : null,
+            suggestionReason);
     }
 
     public async Task<TripResponse> AssignAsync(
@@ -42,6 +56,8 @@ public sealed class TripAssignmentService(
         var (truck, driver) = await AvailableResourcesAsync(trip, request, cancellationToken);
         trip.Assign(truck.Id, driver.Id, clock.UtcNow);
         events.Append(trip, "Assigned", new { truckId = truck.Id, driverId = driver.Id });
+        resourceEvents.Truck(truck.Id, "TruckAssignedToTrip",
+            new { tripId = trip.Id, trip.TripNumber, driverId = driver.Id });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -58,6 +74,11 @@ public sealed class TripAssignmentService(
         trip.Reassign(truck.Id, driver.Id, clock.UtcNow);
         events.Append(trip, "Reassigned", new
             { oldTruckId, oldDriverId, newTruckId = truck.Id, newDriverId = driver.Id });
+        if (oldTruckId is Guid previousTruckId)
+            resourceEvents.Truck(previousTruckId, "TruckUnassignedFromTrip",
+                new { tripId = trip.Id, trip.TripNumber });
+        resourceEvents.Truck(truck.Id, "TruckAssignedToTrip",
+            new { tripId = trip.Id, trip.TripNumber, driverId = driver.Id });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -71,6 +92,9 @@ public sealed class TripAssignmentService(
         var oldDriverId = trip.DriverId;
         trip.Unassign(clock.UtcNow);
         events.Append(trip, "Unassigned", new { oldTruckId, oldDriverId });
+        if (oldTruckId is Guid truckId)
+            resourceEvents.Truck(truckId, "TruckUnassignedFromTrip",
+                new { tripId = trip.Id, trip.TripNumber });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -99,9 +123,11 @@ public sealed class TripAssignmentService(
             : reservation is not null ? "TRUCK_ALREADY_ASSIGNED"
             : truck.Status == TruckStatus.Maintenance ? "TRUCK_MAINTENANCE"
             : truck.Status == TruckStatus.OutOfService ? "TRUCK_OUT_OF_SERVICE"
-            : truck.Status == TruckStatus.OnTrip ? "TRUCK_ALREADY_ASSIGNED" : "AVAILABLE";
+            : truck.Status == TruckStatus.Archived ? "RESOURCE_INACTIVE" : "AVAILABLE";
         return new(truck.Id, truck.PlateNumber, truck.Status.ToString(),
-            reason == "AVAILABLE", reason, reservation?.TripId, reservation?.TripNumber);
+            reason == "AVAILABLE", reason, reservation?.TripId, reservation?.TripNumber,
+            truck.FleetCode, truck.Type?.ToString(), truck.PayloadCapacity,
+            truck.PayloadUnit.ToString(), truck.DefaultDriverId);
     }
 
     private static AssignmentResourceOptionResponse DriverOption(

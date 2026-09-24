@@ -1,0 +1,16 @@
+{
+  "clientId": "84c82aaf-8ac8-4d2a-b133-9543e6603a17",
+  "truckId": "68cc50c8-708a-4729-9535-4ece192cfa61",
+  "driverId": "eaa59cd2-85a9-4355-b0fa-9bc6f0980a23",
+  "contactsCreated": 2,
+  "sitesCreated": 2,
+  "factoryMapCoordinate": {
+    "latitude": 39.9208,
+    "longitude": 32.8541
+  },
+  "immediateRefreshVerified": true,
+  "defaultDriverVerified": true,
+  "arabicRtlVerified": true,
+  "englishLtrVerified": true,
+  "logoutRedirectVerified": true
+}

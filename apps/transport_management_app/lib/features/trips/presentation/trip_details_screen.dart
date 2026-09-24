@@ -10,6 +10,7 @@ import '../../locations/presentation/location_picker_dialog.dart';
 import '../../trips/domain/trip_models.dart';
 import '../../operations/presentation/operations_controller.dart';
 import '../../operations/presentation/operations_view.dart';
+import '../../operations/presentation/mutation_refresh_coordinator.dart';
 import '../../../l10n/l10n_extensions.dart';
 
 final tripDetailsProvider = FutureProvider.autoDispose.family<Trip, String>(
@@ -310,7 +311,9 @@ class _TripDetailsContent extends ConsumerWidget {
       preview = await ref
           .read(operationsRepositoryProvider)
           .previewRepositioning(trip.id);
-      await ref.read(operationsControllerProvider.notifier).reload();
+      await ref
+          .read(mutationRefreshCoordinatorProvider)
+          .refresh(clientId: trip.clientId, truckId: trip.truckId);
     } on ApiException catch (error) {
       if (!context.mounted) return;
       if (SimulatorControls.enabled &&
@@ -358,9 +361,13 @@ class _TripDetailsContent extends ConsumerWidget {
     );
     if (confirmed != true || !context.mounted) return;
     final dispatched = await ref
-        .read(operationsControllerProvider.notifier)
+        .read(mutationRefreshCoordinatorProvider)
         .mutate(
-          (repo) => repo.dispatchToPickup(trip.id, resolvedPreview.plan?.id),
+          () => ref
+              .read(operationsRepositoryProvider)
+              .dispatchToPickup(trip.id, resolvedPreview.plan?.id),
+          clientId: trip.clientId,
+          truckId: trip.truckId,
         );
     if (context.mounted) {
       showResult(
@@ -432,7 +439,9 @@ class _TripDetailsContent extends ConsumerWidget {
         truckId: truckId,
       );
     }
-    await ref.read(operationsControllerProvider.notifier).reload();
+    await ref
+        .read(mutationRefreshCoordinatorProvider)
+        .refresh(truckId: truckId);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.locationCorrectedRetry)),
@@ -509,17 +518,34 @@ class _TripDetailsContent extends ConsumerWidget {
       if (confirmed != true) return;
     }
     final ok = await ref
-        .read(operationsControllerProvider.notifier)
+        .read(mutationRefreshCoordinatorProvider)
         .mutate(
-          (repo) => switch (action) {
-            'cancel' => repo.cancelTrip(trip.id, reason!),
-            'delete' => repo.deleteDraft(trip.id),
-            'unassign' => repo.unassignTrip(trip.id),
-            'archive' => repo.archiveTrip(trip.id, archive: true),
-            'unarchive' => repo.archiveTrip(trip.id, archive: false),
-            'duplicate' => repo.duplicateTrip(trip.id),
-            _ => repo.tripAction(trip.id, action),
+          () => switch (action) {
+            'cancel' =>
+              ref
+                  .read(operationsRepositoryProvider)
+                  .cancelTrip(trip.id, reason!),
+            'delete' =>
+              ref.read(operationsRepositoryProvider).deleteDraft(trip.id),
+            'unassign' =>
+              ref.read(operationsRepositoryProvider).unassignTrip(trip.id),
+            'archive' =>
+              ref
+                  .read(operationsRepositoryProvider)
+                  .archiveTrip(trip.id, archive: true),
+            'unarchive' =>
+              ref
+                  .read(operationsRepositoryProvider)
+                  .archiveTrip(trip.id, archive: false),
+            'duplicate' =>
+              ref.read(operationsRepositoryProvider).duplicateTrip(trip.id),
+            _ =>
+              ref
+                  .read(operationsRepositoryProvider)
+                  .tripAction(trip.id, action),
           },
+          clientId: trip.clientId,
+          truckId: trip.truckId,
         );
     if (context.mounted) {
       showResult(context, ok, successMessage: context.l10n.tripStatusUpdated);
@@ -561,11 +587,17 @@ class _TripDetailsContent extends ConsumerWidget {
     );
     if (assignment == null || !context.mounted) return;
     final ok = await ref
-        .read(operationsControllerProvider.notifier)
+        .read(mutationRefreshCoordinatorProvider)
         .mutate(
-          (repo) => reassign
-              ? repo.reassignTrip(trip.id, assignment[0], assignment[1])
-              : repo.assignTrip(trip.id, assignment[0], assignment[1]),
+          () => reassign
+              ? ref
+                    .read(operationsRepositoryProvider)
+                    .reassignTrip(trip.id, assignment[0], assignment[1])
+              : ref
+                    .read(operationsRepositoryProvider)
+                    .assignTrip(trip.id, assignment[0], assignment[1]),
+          clientId: trip.clientId,
+          truckId: assignment[0],
         );
     if (context.mounted) {
       showResult(context, ok, successMessage: context.l10n.resourcesAssigned);

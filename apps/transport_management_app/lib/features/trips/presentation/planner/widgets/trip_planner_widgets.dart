@@ -21,6 +21,15 @@ String localizedAssignmentReason(
   _ => localizedStatus(l10n, option.status),
 };
 
+String assignmentOptionLabel(AssignmentResourceOption option) => [
+  option.displayName,
+  option.fleetCode,
+  option.resourceType,
+  option.payloadCapacity == null
+      ? null
+      : '${option.payloadCapacity} ${option.payloadUnit ?? ''}',
+].whereType<String>().join(' · ');
+
 class _Notice extends StatelessWidget {
   const _Notice({
     required this.icon,

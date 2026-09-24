@@ -13,12 +13,17 @@ public sealed class TrucksController(TruckService service) : ControllerBase
     [HttpGet]
     public async Task<IReadOnlyList<TruckResponse>> List(
         [FromQuery] TruckStatus? status, [FromQuery] bool? isActive,
-        [FromQuery] string? search, CancellationToken cancellationToken) =>
-        await service.ListAsync(status, isActive, search, cancellationToken);
+        [FromQuery] string? search, [FromQuery] TruckType? type,
+        [FromQuery] string? operationalState, CancellationToken cancellationToken) =>
+        await service.ListAsync(status, isActive, search, type, operationalState, cancellationToken);
 
     [HttpGet("{id:guid}")]
     public async Task<TruckResponse> Get(Guid id, CancellationToken cancellationToken) =>
         await service.GetAsync(id, cancellationToken);
+
+    [HttpGet("{id:guid}/details")]
+    public Task<TruckDetailsResponse> Details(Guid id, CancellationToken cancellationToken) =>
+        service.DetailsAsync(id, cancellationToken);
 
     [HttpPost]
     [Authorize(Policy = "operations.manage")]
@@ -43,6 +48,19 @@ public sealed class TrucksController(TruckService service) : ControllerBase
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         await service.DeactivateAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPut("{id:guid}/odometer-correction")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TruckResponse> CorrectOdometer(Guid id, OdometerCorrectionRequest request,
+        CancellationToken cancellationToken) => service.CorrectOdometerAsync(id, request, cancellationToken);
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "operations.manage")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await service.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 }

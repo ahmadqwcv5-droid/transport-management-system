@@ -5,5 +5,6 @@ public enum TruckStatus
     Available,
     OnTrip,
     Maintenance,
-    OutOfService
+    OutOfService,
+    Archived
 }

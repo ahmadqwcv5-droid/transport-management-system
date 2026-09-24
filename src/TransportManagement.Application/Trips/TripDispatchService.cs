@@ -14,7 +14,8 @@ public sealed class TripDispatchService(
     IClock clock,
     DispatchPolicy dispatchPolicy,
     TripEntityResolver resolver,
-    TripEventWriter events)
+    TripEventWriter events,
+    ResourceEventWriter resourceEvents)
 {
     public async Task<TripResponse> DispatchToPickupAsync(
         Guid id, DispatchToPickupRequest request, CancellationToken cancellationToken)
@@ -49,10 +50,12 @@ public sealed class TripDispatchService(
             }
             trip.DispatchToPickup(plan, now);
         }
-        truck.ChangeStatus(TruckStatus.OnTrip, now);
         driver.ChangeStatus(DriverStatus.OnTrip, now);
         events.Append(trip, trip.Status == TripStatus.AtPickup
             ? "ArrivedAtPickup" : "DispatchedToPickup");
+        resourceEvents.Truck(truck.Id, trip.Status == TripStatus.AtPickup
+            ? "TruckArrivedAtPickup" : "TruckDispatchedToPickup",
+            new { tripId = trip.Id, trip.TripNumber });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -67,9 +70,10 @@ public sealed class TripDispatchService(
         EnsureAtPickup(trip, position);
         var now = clock.UtcNow;
         trip.MarkAtPickup(now);
-        if (truck.Status != TruckStatus.OnTrip) truck.ChangeStatus(TruckStatus.OnTrip, now);
         if (driver.Status != DriverStatus.OnTrip) driver.ChangeStatus(DriverStatus.OnTrip, now);
         events.Append(trip, "ArrivedAtPickup");
+        resourceEvents.Truck(truck.Id, "TruckArrivedAtPickup",
+            new { tripId = trip.Id, trip.TripNumber });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -87,6 +91,8 @@ public sealed class TripDispatchService(
         if (distance > dispatchPolicy.PickupArrivalRadiusMeters) return false;
         trip.MarkAtPickup(clock.UtcNow);
         events.Append(trip, "ArrivedAtPickup", source: "System");
+        resourceEvents.Truck(position.TruckId, "TruckArrivedAtPickup",
+            new { tripId = trip.Id, trip.TripNumber }, "System");
         await tripStore.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -124,9 +130,10 @@ public sealed class TripDispatchService(
         EnsureAtPickup(trip, position);
         var now = clock.UtcNow;
         trip.Start(now);
-        if (truck.Status != TruckStatus.OnTrip) truck.ChangeStatus(TruckStatus.OnTrip, now);
         if (driver.Status != DriverStatus.OnTrip) driver.ChangeStatus(DriverStatus.OnTrip, now);
         events.Append(trip, "TripStarted");
+        resourceEvents.Truck(truck.Id, "TruckTripStarted",
+            new { tripId = trip.Id, trip.TripNumber });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }

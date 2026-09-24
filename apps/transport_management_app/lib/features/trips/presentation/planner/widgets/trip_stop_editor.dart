@@ -26,6 +26,13 @@ class _StopFields {
     longitude.text = result.longitude.toStringAsFixed(6);
   }
 
+  void loadSite(ClientSite site) {
+    name.text = site.name;
+    address.text = site.address ?? site.name;
+    latitude.text = site.latitude.toStringAsFixed(6);
+    longitude.text = site.longitude.toStringAsFixed(6);
+  }
+
   TripStop? toStop(int sequence, String type) {
     final lat = double.tryParse(latitude.text);
     final lon = double.tryParse(longitude.text);
@@ -53,16 +60,19 @@ class _StopEditor extends StatelessWidget {
     required this.title,
     required this.fieldKey,
     required this.fields,
+    required this.savedSites,
     required this.onSearch,
     required this.onSelectMap,
     required this.selectingOnMap,
     required this.onChanged,
+    required this.onSaveSite,
     super.key,
   });
   final String title;
   final String fieldKey;
   final _StopFields fields;
-  final VoidCallback onSearch, onChanged;
+  final List<ClientSite> savedSites;
+  final VoidCallback onSearch, onChanged, onSaveSite;
   final VoidCallback onSelectMap;
   final bool selectingOnMap;
   @override
@@ -77,6 +87,31 @@ class _StopEditor extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: Theme.of(context).textTheme.titleMedium),
+          if (savedSites.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              key: Key('trip-$fieldKey-saved-site'),
+              decoration: InputDecoration(labelText: context.l10n.savedSite),
+              items: savedSites
+                  .map(
+                    (site) => DropdownMenuItem(
+                      value: site.id,
+                      child: Text(
+                        '${site.name} · ${localizedStatus(context.l10n, site.type)}',
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (id) {
+                final site = savedSites
+                    .where((item) => item.id == id)
+                    .firstOrNull;
+                if (site == null) return;
+                fields.loadSite(site);
+                onChanged();
+              },
+            ),
+          ],
           const SizedBox(height: 10),
           Row(
             children: [
@@ -149,6 +184,16 @@ class _StopEditor extends StatelessWidget {
               ),
             ],
           ),
+          if (fields.point != null)
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton.icon(
+                key: Key('trip-$fieldKey-save-site'),
+                onPressed: onSaveSite,
+                icon: const Icon(Icons.bookmark_add_outlined),
+                label: Text(context.l10n.savedSite),
+              ),
+            ),
         ],
       ),
     ),

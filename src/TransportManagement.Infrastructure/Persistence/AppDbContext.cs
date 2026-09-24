@@ -18,7 +18,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurren
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Client> Clients => Set<Client>();
+    public DbSet<ClientContact> ClientContacts => Set<ClientContact>();
+    public DbSet<ClientSite> ClientSites => Set<ClientSite>();
+    public DbSet<ClientEvent> ClientEvents => Set<ClientEvent>();
     public DbSet<Truck> Trucks => Set<Truck>();
+    public DbSet<TruckEvent> TruckEvents => Set<TruckEvent>();
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<Trip> Trips => Set<Trip>();
     public DbSet<TripStop> TripStops => Set<TripStop>();

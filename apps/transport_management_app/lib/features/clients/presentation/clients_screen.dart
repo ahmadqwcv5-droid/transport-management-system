@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../domain/client_models.dart';
 import '../../operations/presentation/operations_controller.dart';
+import '../../operations/presentation/mutation_refresh_coordinator.dart';
 import '../../operations/presentation/operations_view.dart';
 import '../../../l10n/l10n_extensions.dart';
 
@@ -14,18 +16,27 @@ class ClientsScreen extends ConsumerStatefulWidget {
 
 class _ClientsScreenState extends ConsumerState<ClientsScreen> {
   String query = '';
+  String? lifecycle;
   @override
   Widget build(BuildContext context) => OperationsView(
     builder: (context, ref, data) {
-      final items = data.clients
-          .where(
-            (item) => item.name.toLowerCase().contains(query.toLowerCase()),
-          )
-          .toList();
+      final items = data.clients;
       return Column(
         children: [
           _Header(
-            onSearch: (value) => setState(() => query = value),
+            lifecycle: lifecycle,
+            onSearch: (value) {
+              setState(() => query = value);
+              ref
+                  .read(operationsControllerProvider.notifier)
+                  .filterClients(value, lifecycle);
+            },
+            onLifecycle: (value) {
+              setState(() => lifecycle = value);
+              ref
+                  .read(operationsControllerProvider.notifier)
+                  .filterClients(query, value);
+            },
             onAdd: canManageOperations(ref) ? () => _edit(context) : null,
           ),
           Expanded(
@@ -54,19 +65,31 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
   Future<void> _edit(BuildContext context, [Client? client]) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => _ClientForm(client: client),
+      builder: (_) => ClientFormDialog(client: client),
     );
     if (result == null || !context.mounted) return;
     final ok = await ref
-        .read(operationsControllerProvider.notifier)
-        .mutate((repo) => repo.saveClient(result, client?.id));
+        .read(mutationRefreshCoordinatorProvider)
+        .mutate(
+          () => ref
+              .read(operationsRepositoryProvider)
+              .saveClient(result, client?.id),
+          clientId: client?.id,
+        );
     if (context.mounted) showResult(context, ok);
   }
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.onSearch, this.onAdd});
+  const _Header({
+    required this.onSearch,
+    required this.onLifecycle,
+    required this.lifecycle,
+    this.onAdd,
+  });
   final ValueChanged<String> onSearch;
+  final ValueChanged<String?> onLifecycle;
+  final String? lifecycle;
   final VoidCallback? onAdd;
   @override
   Widget build(BuildContext context) => Padding(
@@ -82,6 +105,31 @@ class _Header extends StatelessWidget {
             ),
             onChanged: onSearch,
           ),
+        ),
+        const SizedBox(width: 12),
+        DropdownButton<String?>(
+          key: const Key('clients-lifecycle-filter'),
+          value: lifecycle,
+          hint: Text(context.l10n.lifecycle),
+          items: [
+            DropdownMenuItem<String?>(
+              value: null,
+              child: Text(context.l10n.all),
+            ),
+            DropdownMenuItem<String?>(
+              value: 'Active',
+              child: Text(context.l10n.active),
+            ),
+            DropdownMenuItem<String?>(
+              value: 'Suspended',
+              child: Text(context.l10n.suspended),
+            ),
+            DropdownMenuItem<String?>(
+              value: 'Archived',
+              child: Text(context.l10n.archived),
+            ),
+          ],
+          onChanged: onLifecycle,
         ),
         if (onAdd != null) ...[
           const SizedBox(width: 12),
@@ -104,12 +152,15 @@ class _ClientTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => Card(
     child: ListTile(
+      onTap: () => context.go('/clients/${client.id}'),
       title: Text(client.name),
       subtitle: Text(
         [
           client.contactPerson,
           client.email,
-          client.isActive ? context.l10n.active : context.l10n.inactive,
+          localizedStatus(context.l10n, client.lifecycleStatus),
+          '${client.activeSiteCount} ${context.l10n.sites}',
+          '${client.activeTripCount} ${context.l10n.activeTrips}',
         ].whereType<String>().join(' • '),
       ),
       trailing: onEdit == null
@@ -120,8 +171,13 @@ class _ClientTile extends ConsumerWidget {
                   onEdit!();
                 } else {
                   final ok = await ref
-                      .read(operationsControllerProvider.notifier)
-                      .mutate((repo) => repo.deactivate('clients', client.id));
+                      .read(mutationRefreshCoordinatorProvider)
+                      .mutate(
+                        () => ref
+                            .read(operationsRepositoryProvider)
+                            .setClientLifecycle(client.id, 'Archived'),
+                        clientId: client.id,
+                      );
                   if (context.mounted) {
                     showResult(
                       context,
@@ -144,19 +200,20 @@ class _ClientTile extends ConsumerWidget {
   );
 }
 
-class _ClientForm extends StatefulWidget {
-  const _ClientForm({this.client});
+class ClientFormDialog extends StatefulWidget {
+  const ClientFormDialog({this.client, super.key});
   final Client? client;
   @override
-  State<_ClientForm> createState() => _ClientFormState();
+  State<ClientFormDialog> createState() => _ClientFormState();
 }
 
-class _ClientFormState extends State<_ClientForm> {
+class _ClientFormState extends State<ClientFormDialog> {
   final key = GlobalKey<FormState>();
   late final name = TextEditingController(text: widget.client?.name);
   late final contact = TextEditingController(
     text: widget.client?.contactPerson,
   );
+  late final legalName = TextEditingController(text: widget.client?.legalName);
   late final phone = TextEditingController(text: widget.client?.phone);
   late final email = TextEditingController(text: widget.client?.email);
   late final address = TextEditingController(text: widget.client?.address);
@@ -180,6 +237,12 @@ class _ClientFormState extends State<_ClientForm> {
                 controller: name,
                 decoration: InputDecoration(labelText: context.l10n.name),
                 validator: (value) => requiredText(context, value),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                key: const Key('client-legal-name'),
+                controller: legalName,
+                decoration: InputDecoration(labelText: context.l10n.legalName),
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -220,6 +283,7 @@ class _ClientFormState extends State<_ClientForm> {
             Navigator.pop(context, {
               'name': name.text.trim(),
               'contactPerson': blankToNull(contact.text),
+              'legalName': blankToNull(legalName.text),
               'phone': blankToNull(phone.text),
               'email': blankToNull(email.text),
               'address': blankToNull(address.text),

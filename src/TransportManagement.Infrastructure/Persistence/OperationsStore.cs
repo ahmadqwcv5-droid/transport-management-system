@@ -21,38 +21,108 @@ internal sealed class OperationsStore(AppDbContext dbContext) :
     public Task<Client?> GetClientAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Clients.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-    public async Task<IReadOnlyList<Client>> ListClientsAsync(bool? isActive, string? search, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Client>> ListClientsAsync(bool? isActive, string? search,
+        ClientLifecycleStatus? lifecycle, CancellationToken cancellationToken)
     {
         var query = dbContext.Clients.AsNoTracking();
-        if (isActive.HasValue) query = query.Where(x => x.IsActive == isActive.Value);
+        query = lifecycle.HasValue ? query.Where(x => x.LifecycleStatus == lifecycle.Value) : isActive switch
+        {
+            true => query.Where(x => x.LifecycleStatus == ClientLifecycleStatus.Active),
+            false => query.Where(x => x.LifecycleStatus != ClientLifecycleStatus.Active),
+            _ => query.Where(x => x.LifecycleStatus != ClientLifecycleStatus.Archived)
+        };
         if (!string.IsNullOrWhiteSpace(search))
         {
             var pattern = $"%{search.Trim()}%";
             query = query.Where(x => EF.Functions.ILike(x.Name, pattern));
         }
-        return await query.OrderBy(x => x.Name).ToListAsync(cancellationToken);
+        return await query.OrderBy(x => x.Name).Take(100).ToListAsync(cancellationToken);
     }
 
     public void AddClient(Client client) => dbContext.Clients.Add(client);
+    public void RemoveClient(Client client) => dbContext.Clients.Remove(client);
 
-    public Task<Truck?> GetTruckAsync(Guid id, CancellationToken cancellationToken) =>
-        dbContext.Trucks.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+    public async Task<IReadOnlyList<ClientContact>> ListClientContactsAsync(
+        Guid clientId, CancellationToken cancellationToken) =>
+        await dbContext.ClientContacts.Where(x => x.ClientId == clientId)
+            .OrderByDescending(x => x.IsPrimary).ThenBy(x => x.Name)
+            .ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<Truck>> ListTrucksAsync(TruckStatus? status, bool? isActive, string? search, CancellationToken cancellationToken)
+    public Task<ClientContact?> GetClientContactAsync(Guid clientId, Guid contactId,
+        CancellationToken cancellationToken) => dbContext.ClientContacts
+        .SingleOrDefaultAsync(x => x.ClientId == clientId && x.Id == contactId, cancellationToken);
+    public void AddClientContact(ClientContact contact) => dbContext.ClientContacts.Add(contact);
+    public void RemoveClientContact(ClientContact contact) => dbContext.ClientContacts.Remove(contact);
+
+    public async Task<IReadOnlyList<ClientSite>> ListClientSitesAsync(Guid clientId,
+        bool? isActive, string? search, CancellationToken cancellationToken)
     {
-        var query = dbContext.Trucks.AsNoTracking();
-        if (status.HasValue) query = query.Where(x => x.Status == status.Value);
+        var query = dbContext.ClientSites.AsNoTracking().Where(x => x.ClientId == clientId);
         if (isActive.HasValue) query = query.Where(x => x.IsActive == isActive.Value);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var pattern = $"%{search.Trim()}%";
-            query = query.Where(x => EF.Functions.ILike(x.PlateNumber, pattern));
+            query = query.Where(x => EF.Functions.ILike(x.Name, pattern)
+                || (x.Address != null && EF.Functions.ILike(x.Address, pattern)));
         }
-        return await query.OrderBy(x => x.PlateNumber).ToListAsync(cancellationToken);
+        return await query.OrderBy(x => x.Name).Take(100).ToListAsync(cancellationToken);
+    }
+
+    public Task<ClientSite?> GetClientSiteAsync(Guid clientId, Guid siteId,
+        CancellationToken cancellationToken) => dbContext.ClientSites
+        .SingleOrDefaultAsync(x => x.ClientId == clientId && x.Id == siteId, cancellationToken);
+    public void AddClientSite(ClientSite site) => dbContext.ClientSites.Add(site);
+
+    public async Task<IReadOnlyList<ClientEvent>> ListClientEventsAsync(Guid clientId,
+        int limit, CancellationToken cancellationToken) => await dbContext.ClientEvents
+        .AsNoTracking().Where(x => x.ClientId == clientId)
+        .OrderByDescending(x => x.CreatedAt).Take(Math.Clamp(limit, 1, 100))
+        .ToListAsync(cancellationToken);
+    public void AddClientEvent(ClientEvent clientEvent) => dbContext.ClientEvents.Add(clientEvent);
+
+    public async Task<IReadOnlyList<Trip>> ListClientTripsAsync(Guid clientId, int limit,
+        CancellationToken cancellationToken) => await dbContext.Trips.AsNoTracking()
+        .Where(x => x.ClientId == clientId).OrderByDescending(x => x.PlannedStartAt)
+        .Take(Math.Clamp(limit, 1, 100)).ToListAsync(cancellationToken);
+    public Task<bool> ClientHasTripsAsync(Guid clientId, CancellationToken cancellationToken) =>
+        dbContext.Trips.AnyAsync(x => x.ClientId == clientId, cancellationToken);
+
+    public Task<Truck?> GetTruckAsync(Guid id, CancellationToken cancellationToken) =>
+        dbContext.Trucks.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    public async Task<IReadOnlyList<Truck>> ListTrucksAsync(TruckStatus? status, bool? isActive,
+        string? search, TruckType? type, CancellationToken cancellationToken)
+    {
+        var query = dbContext.Trucks.AsNoTracking();
+        if (status.HasValue) query = query.Where(x => x.Status == status.Value);
+        if (type.HasValue) query = query.Where(x => x.Type == type.Value);
+        query = isActive switch
+        {
+            true => query.Where(x => x.Status != TruckStatus.Archived),
+            false => query.Where(x => x.Status == TruckStatus.Archived),
+            _ when !status.HasValue => query.Where(x => x.Status != TruckStatus.Archived),
+            _ => query
+        };
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var pattern = $"%{search.Trim()}%";
+            query = query.Where(x => EF.Functions.ILike(x.PlateNumber, pattern)
+                || (x.FleetCode != null && EF.Functions.ILike(x.FleetCode, pattern))
+                || (x.Vin != null && EF.Functions.ILike(x.Vin, pattern))
+                || (x.Make != null && EF.Functions.ILike(x.Make, pattern))
+                || (x.Model != null && EF.Functions.ILike(x.Model, pattern)));
+        }
+        return await query.OrderBy(x => x.PlateNumber).Take(100).ToListAsync(cancellationToken);
     }
 
     public Task<bool> PlateExistsAsync(string plateNumber, Guid? excludingId, CancellationToken cancellationToken) =>
         dbContext.Trucks.AnyAsync(x => x.PlateNumber == plateNumber && (!excludingId.HasValue || x.Id != excludingId), cancellationToken);
+
+    public Task<bool> VinExistsAsync(string vin, Guid? excludingId, CancellationToken cancellationToken) =>
+        dbContext.Trucks.AnyAsync(x => x.Vin == vin && (!excludingId.HasValue || x.Id != excludingId), cancellationToken);
+
+    public Task<bool> FleetCodeExistsAsync(string fleetCode, Guid? excludingId, CancellationToken cancellationToken) =>
+        dbContext.Trucks.AnyAsync(x => x.FleetCode == fleetCode && (!excludingId.HasValue || x.Id != excludingId), cancellationToken);
 
     public Task<bool> TruckReservedAsync(Guid truckId, Guid? excludingTripId, CancellationToken cancellationToken) =>
         dbContext.Trips.AnyAsync(x => x.TruckId == truckId && ReservedStatuses.Contains(x.Status)
@@ -68,6 +138,30 @@ internal sealed class OperationsStore(AppDbContext dbContext) :
             .ToListAsync(cancellationToken);
 
     public void AddTruck(Truck truck) => dbContext.Trucks.Add(truck);
+    public void RemoveTruck(Truck truck) => dbContext.Trucks.Remove(truck);
+    public async Task<IReadOnlyList<TruckEvent>> ListTruckEventsAsync(Guid truckId,
+        int limit, CancellationToken cancellationToken) => await dbContext.TruckEvents
+        .AsNoTracking().Where(x => x.TruckId == truckId)
+        .OrderByDescending(x => x.CreatedAt).Take(Math.Clamp(limit, 1, 100))
+        .ToListAsync(cancellationToken);
+    public void AddTruckEvent(TruckEvent truckEvent) => dbContext.TruckEvents.Add(truckEvent);
+    public async Task<IReadOnlyList<Trip>> ListTruckTripsAsync(Guid truckId, int limit,
+        CancellationToken cancellationToken) => await dbContext.Trips.AsNoTracking()
+        .Where(x => x.TruckId == truckId).OrderByDescending(x => x.PlannedStartAt)
+        .Take(Math.Clamp(limit, 1, 100)).ToListAsync(cancellationToken);
+    public Task<TransportManagement.Domain.Tracking.TruckPosition?> LatestTruckPositionAsync(
+        Guid truckId, CancellationToken cancellationToken) => dbContext.TruckPositions
+        .AsNoTracking().Where(x => x.TruckId == truckId)
+        .OrderByDescending(x => x.RecordedAt).FirstOrDefaultAsync(cancellationToken);
+    public async Task<bool> TruckHasHistoryAsync(Guid truckId, CancellationToken cancellationToken)
+    {
+        if (await dbContext.Trips.AnyAsync(x => x.TruckId == truckId, cancellationToken)) return true;
+        return await dbContext.TruckPositions.AnyAsync(x => x.TruckId == truckId, cancellationToken);
+    }
+    public Task<Trip?> CurrentTruckTripAsync(Guid truckId, CancellationToken cancellationToken) =>
+        dbContext.Trips.AsNoTracking().Where(x => x.TruckId == truckId
+            && ReservedStatuses.Contains(x.Status)).OrderByDescending(x => x.UpdatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
 
     public Task<Driver?> GetDriverAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Drivers.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);

@@ -483,12 +483,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'No matching locations were found. You can enter coordinates manually.';
 
   @override
-  String get latitude => 'Latitude';
-
-  @override
-  String get longitude => 'Longitude';
-
-  @override
   String get invalidCoordinate => 'Enter a valid coordinate.';
 
   @override
@@ -1008,4 +1002,298 @@ class AppLocalizationsEn extends AppLocalizations {
   String resourceAssignedToTrip(String tripNumber) {
     return 'Reserved by trip $tripNumber';
   }
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get legalName => 'Legal name';
+
+  @override
+  String get lifecycle => 'Lifecycle';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get suspended => 'Suspended';
+
+  @override
+  String get reserved => 'Reserved';
+
+  @override
+  String get archived => 'Archived';
+
+  @override
+  String get contacts => 'Contacts';
+
+  @override
+  String get sites => 'Saved sites';
+
+  @override
+  String get addContact => 'Add contact';
+
+  @override
+  String get jobTitle => 'Job title';
+
+  @override
+  String get whatsApp => 'WhatsApp';
+
+  @override
+  String get primaryContact => 'Primary contact';
+
+  @override
+  String get addSite => 'Add site';
+
+  @override
+  String get siteType => 'Site type';
+
+  @override
+  String get latitude => 'Latitude';
+
+  @override
+  String get longitude => 'Longitude';
+
+  @override
+  String get instructions => 'Instructions';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String get suspend => 'Suspend';
+
+  @override
+  String get reactivate => 'Reactivate';
+
+  @override
+  String get plannedTrips => 'Planned trips';
+
+  @override
+  String get completedTrips => 'Completed trips';
+
+  @override
+  String get cancelledTrips => 'Cancelled trips';
+
+  @override
+  String get activity => 'Activity';
+
+  @override
+  String get noActivity => 'No activity yet';
+
+  @override
+  String get fleetCode => 'Fleet code';
+
+  @override
+  String get searchTrucks => 'Search trucks';
+
+  @override
+  String get vin => 'VIN / chassis number';
+
+  @override
+  String get truckType => 'Truck type';
+
+  @override
+  String get payloadCapacity => 'Payload capacity';
+
+  @override
+  String get payloadUnit => 'Payload unit';
+
+  @override
+  String get fuelType => 'Fuel type';
+
+  @override
+  String get odometer => 'Odometer (km)';
+
+  @override
+  String get correctOdometer => 'Correct odometer';
+
+  @override
+  String get correctionReason => 'Correction reason';
+
+  @override
+  String get defaultDriver => 'Default driver';
+
+  @override
+  String get baseStatus => 'Base status';
+
+  @override
+  String get operationalState => 'Operational state';
+
+  @override
+  String get currentTrip => 'Current trip';
+
+  @override
+  String get latestPosition => 'Latest position';
+
+  @override
+  String get noPosition => 'No position has been reported';
+
+  @override
+  String get clientArchived => 'Client archived.';
+
+  @override
+  String get clientRestored => 'Client restored.';
+
+  @override
+  String get truckArchived => 'Truck archived.';
+
+  @override
+  String get truckRestored => 'Truck restored.';
+
+  @override
+  String get factory => 'Factory';
+
+  @override
+  String get warehouse => 'Warehouse';
+
+  @override
+  String get office => 'Office';
+
+  @override
+  String get other => 'Other';
+
+  @override
+  String get kilograms => 'Kilograms';
+
+  @override
+  String get tonnes => 'Tonnes';
+
+  @override
+  String get diesel => 'Diesel';
+
+  @override
+  String get petrol => 'Petrol';
+
+  @override
+  String get electric => 'Electric';
+
+  @override
+  String get hybrid => 'Hybrid';
+
+  @override
+  String get boxTruck => 'Box truck';
+
+  @override
+  String get flatbed => 'Flatbed';
+
+  @override
+  String get refrigerated => 'Refrigerated';
+
+  @override
+  String get tanker => 'Tanker';
+
+  @override
+  String get tractorTrailer => 'Tractor trailer';
+
+  @override
+  String get dumpTruck => 'Dump truck';
+
+  @override
+  String get savedSite => 'Saved client site';
+
+  @override
+  String get siteSaved => 'Client site saved.';
+
+  @override
+  String get defaultDriverSuggested => 'Default driver suggested';
+
+  @override
+  String get eventClientCreated => 'Client created';
+
+  @override
+  String get eventClientProfileUpdated => 'Client profile updated';
+
+  @override
+  String get eventClientSuspended => 'Client suspended';
+
+  @override
+  String get eventClientReactivated => 'Client reactivated';
+
+  @override
+  String get eventClientArchived => 'Client archived';
+
+  @override
+  String get eventClientContactAdded => 'Contact added';
+
+  @override
+  String get eventClientContactUpdated => 'Contact updated';
+
+  @override
+  String get eventClientContactRemoved => 'Contact removed';
+
+  @override
+  String get eventClientPrimaryContactChanged => 'Primary contact changed';
+
+  @override
+  String get eventClientSiteAdded => 'Site added';
+
+  @override
+  String get eventClientSiteUpdated => 'Site updated';
+
+  @override
+  String get eventClientSiteArchived => 'Site archived';
+
+  @override
+  String get eventClientSiteRestored => 'Site restored';
+
+  @override
+  String get eventTruckCreated => 'Truck created';
+
+  @override
+  String get eventTruckProfileUpdated => 'Truck profile updated';
+
+  @override
+  String get eventTruckDefaultDriverChanged => 'Default driver changed';
+
+  @override
+  String get eventTruckOdometerUpdated => 'Odometer updated';
+
+  @override
+  String get eventTruckOdometerCorrected => 'Odometer corrected';
+
+  @override
+  String get eventTruckBaseStatusChanged => 'Base status changed';
+
+  @override
+  String get eventTruckArchived => 'Truck archived';
+
+  @override
+  String get eventTruckRestored => 'Truck restored';
+
+  @override
+  String get clientArchiveRequired => 'Archive the client before deleting it.';
+
+  @override
+  String get deleteClientWarning =>
+      'Permanently delete this unused client? This cannot be undone.';
+
+  @override
+  String get clientHasHistory =>
+      'This client has trip history and cannot be deleted.';
+
+  @override
+  String get truckArchiveRequired => 'Archive the truck before deleting it.';
+
+  @override
+  String get deleteTruckWarning =>
+      'Permanently delete this unused truck? This cannot be undone.';
+
+  @override
+  String get truckHasHistory =>
+      'This truck has trip or tracking history and cannot be deleted.';
+
+  @override
+  String get truckReserved => 'This truck is reserved by an active trip.';
+
+  @override
+  String get odometerCorrectionRequired =>
+      'Use the correction flow and provide a reason to reduce the odometer.';
+
+  @override
+  String get defaultDriverInactive => 'The default driver must be active.';
+
+  @override
+  String get duplicateTruckIdentity =>
+      'That plate, VIN, or fleet code is already in use.';
 }

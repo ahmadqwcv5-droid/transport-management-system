@@ -9,7 +9,8 @@ public sealed class TripLifecycleService(
     ICurrentUser currentUser,
     IClock clock,
     TripEntityResolver resolver,
-    TripEventWriter events)
+    TripEventWriter events,
+    ResourceEventWriter resourceEvents)
 {
     public Task<TripResponse> MarkInTransitAsync(Guid id, CancellationToken cancellationToken) =>
         TransitionAsync(id, (trip, now) => trip.MarkInTransit(now),
@@ -23,9 +24,10 @@ public sealed class TripLifecycleService(
         var (trip, truck, driver) = await resolver.AssignedResourcesAsync(id, cancellationToken);
         var now = clock.UtcNow;
         trip.Complete(now);
-        truck.ChangeStatus(TruckStatus.Available, now);
         driver.ChangeStatus(DriverStatus.Available, now);
         events.Append(trip, "Completed");
+        resourceEvents.Truck(truck.Id, "TruckTripCompleted",
+            new { tripId = trip.Id, trip.TripNumber });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -42,10 +44,12 @@ public sealed class TripLifecycleService(
         var now = clock.UtcNow;
         var previousStatus = trip.Status;
         trip.Cancel(request.Reason, currentUser.UserId, now);
-        truck?.ChangeStatus(TruckStatus.Available, now);
         driver?.ChangeStatus(DriverStatus.Available, now);
         events.Append(trip, "Cancelled", new
             { previousStatus, reason = trip.CancellationReason });
+        if (trip.TruckId is Guid truckId)
+            resourceEvents.Truck(truckId, "TruckTripCancelled",
+                new { tripId = trip.Id, trip.TripNumber, previousStatus });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }

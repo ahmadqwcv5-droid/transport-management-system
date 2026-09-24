@@ -480,12 +480,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'لم يتم العثور على مواقع مطابقة. يمكنك إدخال الإحداثيات يدوياً.';
 
   @override
-  String get latitude => 'خط العرض';
-
-  @override
-  String get longitude => 'خط الطول';
-
-  @override
   String get invalidCoordinate => 'أدخل إحداثياً صالحاً.';
 
   @override
@@ -997,4 +991,298 @@ class AppLocalizationsAr extends AppLocalizations {
   String resourceAssignedToTrip(String tripNumber) {
     return 'محجوز للرحلة $tripNumber';
   }
+
+  @override
+  String get details => 'التفاصيل';
+
+  @override
+  String get legalName => 'الاسم القانوني';
+
+  @override
+  String get lifecycle => 'دورة الحالة';
+
+  @override
+  String get all => 'الكل';
+
+  @override
+  String get suspended => 'موقوف';
+
+  @override
+  String get reserved => 'محجوز';
+
+  @override
+  String get archived => 'مؤرشف';
+
+  @override
+  String get contacts => 'جهات الاتصال';
+
+  @override
+  String get sites => 'المواقع المحفوظة';
+
+  @override
+  String get addContact => 'إضافة جهة اتصال';
+
+  @override
+  String get jobTitle => 'المسمى الوظيفي';
+
+  @override
+  String get whatsApp => 'واتساب';
+
+  @override
+  String get primaryContact => 'جهة الاتصال الرئيسية';
+
+  @override
+  String get addSite => 'إضافة موقع';
+
+  @override
+  String get siteType => 'نوع الموقع';
+
+  @override
+  String get latitude => 'خط العرض';
+
+  @override
+  String get longitude => 'خط الطول';
+
+  @override
+  String get instructions => 'التعليمات';
+
+  @override
+  String get restore => 'استعادة';
+
+  @override
+  String get suspend => 'إيقاف';
+
+  @override
+  String get reactivate => 'إعادة تنشيط';
+
+  @override
+  String get plannedTrips => 'الرحلات المخططة';
+
+  @override
+  String get completedTrips => 'الرحلات المكتملة';
+
+  @override
+  String get cancelledTrips => 'الرحلات الملغاة';
+
+  @override
+  String get activity => 'النشاط';
+
+  @override
+  String get noActivity => 'لا يوجد نشاط بعد';
+
+  @override
+  String get fleetCode => 'رمز الأسطول';
+
+  @override
+  String get searchTrucks => 'البحث عن الشاحنات';
+
+  @override
+  String get vin => 'رقم الهيكل';
+
+  @override
+  String get truckType => 'نوع الشاحنة';
+
+  @override
+  String get payloadCapacity => 'سعة الحمولة';
+
+  @override
+  String get payloadUnit => 'وحدة الحمولة';
+
+  @override
+  String get fuelType => 'نوع الوقود';
+
+  @override
+  String get odometer => 'عداد المسافة (كم)';
+
+  @override
+  String get correctOdometer => 'تصحيح عداد المسافة';
+
+  @override
+  String get correctionReason => 'سبب التصحيح';
+
+  @override
+  String get defaultDriver => 'السائق الافتراضي';
+
+  @override
+  String get baseStatus => 'الحالة الأساسية';
+
+  @override
+  String get operationalState => 'الحالة التشغيلية';
+
+  @override
+  String get currentTrip => 'الرحلة الحالية';
+
+  @override
+  String get latestPosition => 'آخر موقع';
+
+  @override
+  String get noPosition => 'لم يتم الإبلاغ عن موقع';
+
+  @override
+  String get clientArchived => 'تمت أرشفة العميل.';
+
+  @override
+  String get clientRestored => 'تمت استعادة العميل.';
+
+  @override
+  String get truckArchived => 'تمت أرشفة الشاحنة.';
+
+  @override
+  String get truckRestored => 'تمت استعادة الشاحنة.';
+
+  @override
+  String get factory => 'مصنع';
+
+  @override
+  String get warehouse => 'مستودع';
+
+  @override
+  String get office => 'مكتب';
+
+  @override
+  String get other => 'أخرى';
+
+  @override
+  String get kilograms => 'كيلوغرام';
+
+  @override
+  String get tonnes => 'طن';
+
+  @override
+  String get diesel => 'ديزل';
+
+  @override
+  String get petrol => 'بنزين';
+
+  @override
+  String get electric => 'كهربائي';
+
+  @override
+  String get hybrid => 'هجين';
+
+  @override
+  String get boxTruck => 'شاحنة صندوقية';
+
+  @override
+  String get flatbed => 'سطحة';
+
+  @override
+  String get refrigerated => 'مبردة';
+
+  @override
+  String get tanker => 'صهريج';
+
+  @override
+  String get tractorTrailer => 'قاطرة ومقطورة';
+
+  @override
+  String get dumpTruck => 'شاحنة قلابة';
+
+  @override
+  String get savedSite => 'موقع عميل محفوظ';
+
+  @override
+  String get siteSaved => 'تم حفظ موقع العميل.';
+
+  @override
+  String get defaultDriverSuggested => 'تم اقتراح السائق الافتراضي';
+
+  @override
+  String get eventClientCreated => 'تم إنشاء العميل';
+
+  @override
+  String get eventClientProfileUpdated => 'تم تحديث ملف العميل';
+
+  @override
+  String get eventClientSuspended => 'تم إيقاف العميل';
+
+  @override
+  String get eventClientReactivated => 'تمت إعادة تنشيط العميل';
+
+  @override
+  String get eventClientArchived => 'تمت أرشفة العميل';
+
+  @override
+  String get eventClientContactAdded => 'تمت إضافة جهة اتصال';
+
+  @override
+  String get eventClientContactUpdated => 'تم تحديث جهة الاتصال';
+
+  @override
+  String get eventClientContactRemoved => 'تم حذف جهة الاتصال';
+
+  @override
+  String get eventClientPrimaryContactChanged =>
+      'تم تغيير جهة الاتصال الرئيسية';
+
+  @override
+  String get eventClientSiteAdded => 'تمت إضافة موقع';
+
+  @override
+  String get eventClientSiteUpdated => 'تم تحديث الموقع';
+
+  @override
+  String get eventClientSiteArchived => 'تمت أرشفة الموقع';
+
+  @override
+  String get eventClientSiteRestored => 'تمت استعادة الموقع';
+
+  @override
+  String get eventTruckCreated => 'تم إنشاء الشاحنة';
+
+  @override
+  String get eventTruckProfileUpdated => 'تم تحديث ملف الشاحنة';
+
+  @override
+  String get eventTruckDefaultDriverChanged => 'تم تغيير السائق الافتراضي';
+
+  @override
+  String get eventTruckOdometerUpdated => 'تم تحديث عداد المسافة';
+
+  @override
+  String get eventTruckOdometerCorrected => 'تم تصحيح عداد المسافة';
+
+  @override
+  String get eventTruckBaseStatusChanged => 'تم تغيير الحالة الأساسية';
+
+  @override
+  String get eventTruckArchived => 'تمت أرشفة الشاحنة';
+
+  @override
+  String get eventTruckRestored => 'تمت استعادة الشاحنة';
+
+  @override
+  String get clientArchiveRequired => 'أرشف العميل قبل حذفه.';
+
+  @override
+  String get deleteClientWarning =>
+      'حذف هذا العميل غير المستخدم نهائياً؟ لا يمكن التراجع عن ذلك.';
+
+  @override
+  String get clientHasHistory => 'لهذا العميل سجل رحلات ولا يمكن حذفه.';
+
+  @override
+  String get truckArchiveRequired => 'أرشف الشاحنة قبل حذفها.';
+
+  @override
+  String get deleteTruckWarning =>
+      'حذف هذه الشاحنة غير المستخدمة نهائياً؟ لا يمكن التراجع عن ذلك.';
+
+  @override
+  String get truckHasHistory =>
+      'لهذه الشاحنة سجل رحلات أو تتبع ولا يمكن حذفها.';
+
+  @override
+  String get truckReserved => 'هذه الشاحنة محجوزة لرحلة نشطة.';
+
+  @override
+  String get odometerCorrectionRequired =>
+      'استخدم مسار التصحيح وأدخل سبباً لتخفيض عداد المسافة.';
+
+  @override
+  String get defaultDriverInactive => 'يجب أن يكون السائق الافتراضي نشطاً.';
+
+  @override
+  String get duplicateTruckIdentity =>
+      'رقم اللوحة أو الهيكل أو رمز الأسطول مستخدم بالفعل.';
 }

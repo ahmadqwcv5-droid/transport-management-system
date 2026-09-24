@@ -5,6 +5,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../l10n/l10n_extensions.dart';
 import '../domain/operations_data.dart';
 import 'operations_controller.dart';
+import 'mutation_refresh_coordinator.dart';
 
 class OperationsView extends ConsumerWidget {
   const OperationsView({required this.builder, super.key});
@@ -45,8 +46,13 @@ void showResult(BuildContext context, bool success, {String? successMessage}) {
   final state = ProviderScope.containerOf(
     context,
   ).read(operationsControllerProvider);
+  final mutationError = ProviderScope.containerOf(
+    context,
+  ).read(mutationRefreshCoordinatorProvider).lastError;
   final message = success
       ? successMessage ?? context.l10n.savedSuccessfully
+      : mutationError is ApiException
+      ? localizedApiError(context, mutationError)
       : state.error is ApiException
       ? localizedApiError(context, state.error! as ApiException)
       : context.l10n.genericError;

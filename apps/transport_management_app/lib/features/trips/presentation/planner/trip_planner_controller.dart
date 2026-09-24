@@ -9,11 +9,12 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../l10n/l10n_extensions.dart';
 import '../../../locations/presentation/location_picker_dialog.dart';
+import '../../../clients/domain/client_models.dart';
 import '../../domain/trip_models.dart';
 import '../../../operations/domain/operations_data.dart';
 import '../../../operations/presentation/operations_controller.dart';
 import '../../../operations/presentation/operations_view.dart';
-import '../trips_controller.dart';
+import '../../../operations/presentation/mutation_refresh_coordinator.dart';
 import 'steps/trip_assignment_step.dart';
 import 'steps/trip_details_step.dart';
 import 'steps/trip_review_step.dart';
@@ -59,8 +60,10 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
   AssignmentOptions? _options;
   String? _truckId;
   String? _driverId;
+  bool _driverExplicitlySelected = false;
   String? _persistedStopsSignature;
   String? _persistedRouteSignature;
+  List<ClientSite> _clientSites = const [];
 
   TripPlannerState get plannerState => TripPlannerState(
     currentStep: _step,
@@ -130,6 +133,11 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
     _clientId =
         trip?.clientId ??
         data.clients.where((item) => item.isActive).firstOrNull?.id;
+    if (_clientId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_loadClientSites(_clientId!));
+      });
+    }
     _cargo.text = trip?.cargoDescription ?? '';
     _price.text = trip?.price.toString() ?? '0';
     _notes.text = trip?.notes ?? '';
@@ -156,6 +164,7 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
           : _routeSignature(trip.stops);
       _truckId = trip.truckId;
       _driverId = trip.driverId;
+      _driverExplicitlySelected = trip.driverId != null;
       _skipAssignment = trip.truckId == null || trip.driverId == null;
       if (trip.routePlan != null) {
         _step = 2;
@@ -167,6 +176,93 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
         _step = 1;
         _maxReachableStep = 1;
       }
+    }
+  }
+
+  Future<void> _loadClientSites(String clientId) async {
+    try {
+      final details = await ref.read(clientDetailsProvider(clientId).future);
+      if (!mounted || _clientId != clientId) return;
+      setState(
+        () => _clientSites = details.sites
+            .where((site) => site.isActive)
+            .toList(),
+      );
+    } catch (_) {
+      if (mounted && _clientId == clientId) {
+        setState(() => _clientSites = const []);
+      }
+    }
+  }
+
+  void _selectClient(String? value) {
+    _mutate(() {
+      _clientId = value;
+      _clientSites = const [];
+    });
+    if (value != null) unawaited(_loadClientSites(value));
+  }
+
+  Future<void> _saveAsSite(_StopFields fields) async {
+    final clientId = _clientId;
+    final point = fields.point;
+    if (clientId == null || point == null || fields.name.text.trim().isEmpty) {
+      return;
+    }
+    var type = 'Other';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(context.l10n.savedSite),
+          content: DropdownButtonFormField<String>(
+            initialValue: type,
+            decoration: InputDecoration(labelText: context.l10n.siteType),
+            items:
+                const [
+                      'Factory',
+                      'Warehouse',
+                      'Pickup',
+                      'Delivery',
+                      'Office',
+                      'Other',
+                    ]
+                    .map(
+                      (value) => DropdownMenuItem(
+                        value: value,
+                        child: Text(localizedStatus(context.l10n, value)),
+                      ),
+                    )
+                    .toList(),
+            onChanged: (value) => setState(() => type = value!),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(context.l10n.save),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await ref.read(operationsRepositoryProvider).saveClientSite(clientId, {
+      'name': fields.name.text.trim(),
+      'type': type,
+      'address': blankToNull(fields.address.text),
+      'latitude': point.latitude,
+      'longitude': point.longitude,
+    });
+    ref.invalidate(clientDetailsProvider(clientId));
+    await _loadClientSites(clientId);
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.siteSaved)));
     }
   }
 
@@ -351,8 +447,9 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
           : _routeSignature(saved.stops);
       _routeStale = false;
       if (refreshLists) {
-        await ref.read(operationsControllerProvider.notifier).reload();
-        await ref.read(tripsControllerProvider.notifier).refresh();
+        await ref
+            .read(mutationRefreshCoordinatorProvider)
+            .refresh(clientId: saved.clientId, truckId: saved.truckId);
       }
       if (!mounted) return saved;
       setState(() {
@@ -402,6 +499,30 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
       }
     }
   }
+
+  void _selectTruck(String? value) {
+    _mutate(() {
+      _truckId = value;
+      if (_driverExplicitlySelected || value == null || _options == null) {
+        return;
+      }
+      final truck = _options!.trucks
+          .where((item) => item.id == value)
+          .firstOrNull;
+      final suggested = truck?.defaultDriverId;
+      if (suggested != null &&
+          _options!.drivers.any(
+            (driver) => driver.id == suggested && driver.isEligible,
+          )) {
+        _driverId = suggested;
+      }
+    });
+  }
+
+  void _selectDriver(String? value) => _mutate(() {
+    _driverId = value;
+    _driverExplicitlySelected = value != null;
+  });
 
   String? _eligibleSelection(
     List<AssignmentResourceOption> options,
@@ -485,8 +606,9 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
             .read(operationsRepositoryProvider)
             .assignTripAndGet(saved.id, _truckId!, _driverId!);
       }
-      await ref.read(operationsControllerProvider.notifier).reload();
-      await ref.read(tripsControllerProvider.notifier).refresh();
+      await ref
+          .read(mutationRefreshCoordinatorProvider)
+          .refresh(clientId: saved.clientId, truckId: saved.truckId);
       if (!mounted) return;
       _persistedTrip = result;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -530,3 +530,27 @@ manual release gate because it uses browser, local credentials, retained runtime
 state, and optional visual providers. Run `scripts/quality-gate.sh` from the
 repository root for the equivalent local static/unit gate; follow the README's
 browser procedure for release validation.
+
+## ADR-025: Customer/fleet authority and mutation refresh
+
+**Status:** Accepted
+
+Client lifecycle is persisted as Active, Suspended, or Archived. Truck base
+state is persisted as Available, Maintenance, OutOfService, or Archived, while
+reservation and trip-derived operational state is projected independently.
+This prevents a trip transition from overwriting a maintenance/lifecycle
+decision. Default drivers are suggestions only and assignment always repeats
+eligibility and reservation checks.
+
+Contacts, saved sites, client/truck events, extended fleet profile data, and
+odometer corrections are tenant-owned records behind the focused client/fleet
+ports. A planner selection copies a saved site's values into the trip stop;
+later site edits therefore cannot mutate trip history. Hard delete is limited
+to archived resources without operational history.
+
+Flutter mutations pass through one generation-aware refresh coordinator. A
+successful command awaits reload of resource lists/details, assignment options,
+trip projections, dashboard, and tracking as applicable. A failed command keeps
+the previously visible state, duplicate taps are suppressed, and an older
+request cannot replace a newer result. Search and lifecycle/base-state filters
+are controller state and survive refresh.

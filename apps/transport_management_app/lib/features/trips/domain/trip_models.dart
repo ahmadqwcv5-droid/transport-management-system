@@ -107,10 +107,21 @@ final class AssignmentResourceOption {
     required this.reasonCode,
     this.conflictingTripId,
     this.conflictingTripNumber,
+    this.fleetCode,
+    this.resourceType,
+    this.payloadCapacity,
+    this.payloadUnit,
+    this.defaultDriverId,
   });
   final String id, displayName, status, reasonCode;
   final bool isEligible;
-  final String? conflictingTripId, conflictingTripNumber;
+  final String? conflictingTripId,
+      conflictingTripNumber,
+      fleetCode,
+      resourceType,
+      payloadUnit,
+      defaultDriverId;
+  final double? payloadCapacity;
   factory AssignmentResourceOption.fromJson(Json json) =>
       AssignmentResourceOption(
         id: json['id'] as String,
@@ -120,6 +131,11 @@ final class AssignmentResourceOption {
         reasonCode: json['reasonCode'] as String,
         conflictingTripId: json['conflictingTripId'] as String?,
         conflictingTripNumber: json['conflictingTripNumber'] as String?,
+        fleetCode: json['fleetCode'] as String?,
+        resourceType: json['resourceType'] as String?,
+        payloadCapacity: (json['payloadCapacity'] as num?)?.toDouble(),
+        payloadUnit: json['payloadUnit'] as String?,
+        defaultDriverId: json['defaultDriverId'] as String?,
       );
 }
 
@@ -131,15 +147,23 @@ final class AssignmentOptions {
     required this.drivers,
     this.currentTruckId,
     this.currentDriverId,
+    this.suggestedDefaultDriverId,
+    this.defaultDriverSuggestionReasonCode,
   });
   final String tripId;
-  final String? currentTruckId, currentDriverId;
+  final String? currentTruckId,
+      currentDriverId,
+      suggestedDefaultDriverId,
+      defaultDriverSuggestionReasonCode;
   final bool canAssign;
   final List<AssignmentResourceOption> trucks, drivers;
   factory AssignmentOptions.fromJson(Json json) => AssignmentOptions(
     tripId: json['tripId'] as String,
     currentTruckId: json['currentTruckId'] as String?,
     currentDriverId: json['currentDriverId'] as String?,
+    suggestedDefaultDriverId: json['suggestedDefaultDriverId'] as String?,
+    defaultDriverSuggestionReasonCode:
+        json['defaultDriverSuggestionReasonCode'] as String?,
     canAssign: json['canAssign'] as bool,
     trucks: (json['trucks'] as List<dynamic>)
         .cast<Json>()
