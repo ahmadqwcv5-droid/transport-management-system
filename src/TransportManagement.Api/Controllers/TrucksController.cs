@@ -8,7 +8,7 @@ namespace TransportManagement.Api.Controllers;
 [ApiController]
 [Authorize(Policy = "operations.read")]
 [Route("api/trucks")]
-public sealed class TrucksController(TruckService service) : ControllerBase
+public sealed class TrucksController(TruckService service, TruckPhotoService photos) : ControllerBase
 {
     [HttpGet]
     public async Task<IReadOnlyList<TruckResponse>> List(
@@ -61,6 +61,42 @@ public sealed class TrucksController(TruckService service) : ControllerBase
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await service.DeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/photo")]
+    [Authorize(Policy = "operations.manage")]
+    [RequestSizeLimit(5 * 1024 * 1024)]
+    public async Task<TruckPhotoResponse> UploadPhoto(Guid id, IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        await using var stream = file.OpenReadStream();
+        return await photos.UploadAsync(id, stream, cancellationToken);
+    }
+
+    [HttpGet("{id:guid}/photo")]
+    public async Task<IActionResult> Photo(Guid id, CancellationToken cancellationToken)
+    {
+        var photo = await photos.ReadAsync(id, false, cancellationToken);
+        Response.Headers.ETag = $"\"{photo.Version}\"";
+        Response.Headers.CacheControl = "private,max-age=86400";
+        return File(photo.Content, photo.ContentType);
+    }
+
+    [HttpGet("{id:guid}/photo/thumbnail")]
+    public async Task<IActionResult> Thumbnail(Guid id, CancellationToken cancellationToken)
+    {
+        var photo = await photos.ReadAsync(id, true, cancellationToken);
+        Response.Headers.ETag = $"\"{photo.Version}\"";
+        Response.Headers.CacheControl = "private,max-age=86400";
+        return File(photo.Content, photo.ContentType);
+    }
+
+    [HttpDelete("{id:guid}/photo")]
+    [Authorize(Policy = "operations.manage")]
+    public async Task<IActionResult> RemovePhoto(Guid id, CancellationToken cancellationToken)
+    {
+        await photos.RemoveAsync(id, cancellationToken);
         return NoContent();
     }
 }

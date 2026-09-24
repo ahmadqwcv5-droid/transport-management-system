@@ -5,7 +5,8 @@ using TransportManagement.Domain.Fleet;
 
 namespace TransportManagement.Application.Fleet;
 
-public sealed class DriverService(IFleetStore store, ICurrentUser currentUser, IClock clock)
+public sealed class DriverService(IFleetStore store, IDriverIdentityStore identities,
+    ICurrentUser currentUser, IClock clock)
 {
     public async Task<DriverResponse> CreateAsync(DriverRequest request, CancellationToken cancellationToken)
     {
@@ -56,6 +57,29 @@ public sealed class DriverService(IFleetStore store, ICurrentUser currentUser, I
         await store.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<DriverResponse> LinkUserAsync(Guid id, LinkDriverUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        var driver = await RequiredAsync(id, cancellationToken);
+        var user = await identities.GetUserAsync(request.UserId, cancellationToken)
+            ?? throw new NotFoundException("User was not found in the current company.", "USER_NOT_FOUND");
+        if (user.Role != Domain.Identity.AppRoles.Driver)
+            throw new ConflictException("The selected user must have the Driver role.", "DRIVER_ROLE_REQUIRED");
+        if (await identities.UserLinkedAsync(user.Id, driver.Id, cancellationToken))
+            throw new ConflictException("The user is already linked to another driver.", "DRIVER_USER_ALREADY_LINKED");
+        driver.LinkUser(user.Id, clock.UtcNow);
+        await identities.SaveChangesAsync(cancellationToken);
+        return Map(driver);
+    }
+
+    public async Task<DriverResponse> UnlinkUserAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var driver = await RequiredAsync(id, cancellationToken);
+        driver.UnlinkUser(clock.UtcNow);
+        await identities.SaveChangesAsync(cancellationToken);
+        return Map(driver);
+    }
+
     private async Task EnsureUniqueLicenseAsync(string license, Guid? excludingId, CancellationToken cancellationToken)
     {
         if (await store.LicenseExistsAsync(license, excludingId, cancellationToken))
@@ -69,5 +93,6 @@ public sealed class DriverService(IFleetStore store, ICurrentUser currentUser, I
     private static string NormalizeLicense(string license) => license.Trim().ToUpperInvariant();
     private static DriverResponse Map(Driver driver) => new(
         driver.Id, driver.FullName, driver.Phone, driver.LicenseNumber, driver.LicenseExpiryDate,
-        driver.Status, driver.Notes, driver.IsActive, driver.CreatedAt, driver.UpdatedAt);
+        driver.Status, driver.Notes, driver.IsActive, driver.CreatedAt, driver.UpdatedAt,
+        driver.UserId);
 }

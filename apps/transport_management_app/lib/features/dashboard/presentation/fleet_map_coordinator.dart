@@ -10,9 +10,12 @@ enum FleetCameraRequest {
   filteredFleet,
   selection,
   recenter,
+  routeOverview,
 }
 
 enum FleetCameraMode { localTruck, fleetBounds, routeBounds }
+
+enum FleetInteractionMode { free, followSelectedTruck, routeOverview }
 
 final class MapPoint {
   const MapPoint(this.latitude, this.longitude);
@@ -37,6 +40,8 @@ final class TruckMarkerModel {
     required this.heading,
     required this.state,
     required this.selected,
+    this.photoVersion,
+    this.photoThumbnailUrl,
   });
 
   final String id;
@@ -44,6 +49,9 @@ final class TruckMarkerModel {
   final double heading;
   final TruckMarkerState state;
   final bool selected;
+  final String? photoVersion, photoThumbnailUrl;
+  String? get photoImageName =>
+      photoVersion == null ? null : 'truck-photo:$id:$photoVersion';
 
   static TruckMarkerState stateFor(TrackedTruck truck) {
     final status = truck.truckStatus.toLowerCase();
@@ -66,10 +74,20 @@ final class TruckMarkerModel {
       other.point == point &&
       other.heading == heading &&
       other.state == state &&
-      other.selected == selected;
+      other.selected == selected &&
+      other.photoVersion == photoVersion &&
+      other.photoThumbnailUrl == photoThumbnailUrl;
 
   @override
-  int get hashCode => Object.hash(id, point, heading, state, selected);
+  int get hashCode => Object.hash(
+    id,
+    point,
+    heading,
+    state,
+    selected,
+    photoVersion,
+    photoThumbnailUrl,
+  );
 }
 
 final class RouteOverlayModel {
@@ -427,8 +445,7 @@ final class FleetMapAnnotationCoordinator {
     if (request.cameraRequest == FleetCameraRequest.none) return;
     final snapshot = request.snapshot;
     FleetCameraPlan? plan;
-    if (request.cameraRequest == FleetCameraRequest.selection ||
-        request.cameraRequest == FleetCameraRequest.recenter) {
+    if (request.cameraRequest == FleetCameraRequest.routeOverview) {
       final route = snapshot.route;
       if (route != null && route.route.isNotEmpty) {
         plan = FleetCameraPlan(
@@ -436,15 +453,16 @@ final class FleetMapAnnotationCoordinator {
           points: [...route.approachRoute, ...route.route],
           panelWidth: request.panelWidth,
         );
-      } else {
-        final truck = snapshot.trucks[snapshot.selectedTruckId];
-        if (truck != null) {
-          plan = FleetCameraPlan(
-            mode: FleetCameraMode.localTruck,
-            points: [truck.point],
-            panelWidth: request.panelWidth,
-          );
-        }
+      }
+    } else if (request.cameraRequest == FleetCameraRequest.selection ||
+        request.cameraRequest == FleetCameraRequest.recenter) {
+      final truck = snapshot.trucks[snapshot.selectedTruckId];
+      if (truck != null) {
+        plan = FleetCameraPlan(
+          mode: FleetCameraMode.localTruck,
+          points: [truck.point],
+          panelWidth: request.panelWidth,
+        );
       }
     } else if (snapshot.trucks.isNotEmpty) {
       final points = snapshot.trucks.values

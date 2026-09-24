@@ -13,6 +13,8 @@ class _ConfiguredFleetMap extends StatefulWidget {
     this.selectedTruckId,
     required this.cameraRevision,
     required this.cameraRequest,
+    required this.thumbnailLoader,
+    this.onManualCameraInteraction,
     super.key,
   });
 
@@ -27,6 +29,8 @@ class _ConfiguredFleetMap extends StatefulWidget {
   final String? selectedTruckId;
   final int cameraRevision;
   final FleetCameraRequest cameraRequest;
+  final VoidCallback? onManualCameraInteraction;
+  final AuthenticatedThumbnailLoader thumbnailLoader;
 
   @override
   State<_ConfiguredFleetMap> createState() => _ConfiguredFleetMapState();
@@ -37,6 +41,8 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
   FleetMapAnnotationCoordinator? _coordinator;
   void Function(Symbol)? _symbolTapListener;
   bool _styleLoaded = false;
+  bool _programmaticCamera = false;
+  Timer? _programmaticCameraRelease;
 
   @override
   void didUpdateWidget(covariant _ConfiguredFleetMap oldWidget) {
@@ -51,6 +57,7 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
 
   @override
   void dispose() {
+    _programmaticCameraRelease?.cancel();
     _coordinator?.dispose();
     final controller = _controller;
     final listener = _symbolTapListener;
@@ -81,7 +88,7 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
     onMapCreated: (controller) {
       _controller = controller;
       _coordinator = FleetMapAnnotationCoordinator(
-        MapLibreFleetAnnotationAdapter(controller),
+        MapLibreFleetAnnotationAdapter(controller, widget.thumbnailLoader),
       );
       void listener(Symbol symbol) {
         final truckId = symbol.data?['truckId'] as String?;
@@ -94,11 +101,20 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
       _symbolTapListener = listener;
       controller.onSymbolTapped.add(listener);
     },
+    onCameraMove: (_) {
+      if (_programmaticCamera) {
+        _scheduleProgrammaticRelease();
+      } else {
+        widget.onManualCameraInteraction?.call();
+      }
+    },
+    onCameraIdle: _scheduleProgrammaticRelease,
     onStyleLoadedCallback: () async {
       if (!mounted) return;
       _styleLoaded = true;
       widget.onStyleLoaded();
       try {
+        _beginProgrammaticCamera();
         await _coordinator?.onStyleLoaded(_snapshot(), panelWidth: 290);
         if (mounted) widget.onAnnotationsReady();
       } on Object {
@@ -111,14 +127,31 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
     final coordinator = _coordinator;
     if (coordinator == null || !_styleLoaded || !mounted) return;
     try {
+      if (cameraRequest != FleetCameraRequest.none) _beginProgrammaticCamera();
       await coordinator.synchronize(
         _snapshot(),
         cameraRequest: cameraRequest,
         panelWidth: 290,
       );
     } on Object {
+      _programmaticCameraRelease?.cancel();
+      _programmaticCamera = false;
       if (mounted) widget.onFailure();
     }
+  }
+
+  void _beginProgrammaticCamera() {
+    _programmaticCameraRelease?.cancel();
+    _programmaticCamera = true;
+  }
+
+  void _scheduleProgrammaticRelease() {
+    if (!_programmaticCamera) return;
+    _programmaticCameraRelease?.cancel();
+    _programmaticCameraRelease = Timer(
+      const Duration(milliseconds: 750),
+      () => _programmaticCamera = false,
+    );
   }
 
   FleetMapSnapshot _snapshot() {
@@ -129,6 +162,8 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
         heading: position.heading,
         state: TruckMarkerModel.stateFor(position),
         selected: position.truckId == widget.selectedTruckId,
+        photoVersion: position.photoVersion,
+        photoThumbnailUrl: position.photoThumbnailUrl,
       ),
     );
     final detail = widget.tripDetail;

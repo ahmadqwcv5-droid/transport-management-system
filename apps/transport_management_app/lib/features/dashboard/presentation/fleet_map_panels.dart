@@ -86,7 +86,11 @@ class _SelectedTruckCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.local_shipping),
+                TruckAvatar(
+                  photoUrl: position.photoThumbnailUrl,
+                  photoVersion: position.photoVersion,
+                  radius: 18,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -171,7 +175,7 @@ class _SelectedTruckCard extends StatelessWidget {
                 label: Text(
                   detail == null
                       ? context.l10n.recenter
-                      : context.l10n.fitRoute,
+                      : context.l10n.backToTruck,
                 ),
               ),
             ),
@@ -251,13 +255,10 @@ class _FleetPanel extends StatelessWidget {
                           key: Key('real-map-truck-${position.truckId}'),
                           dense: true,
                           selected: selected,
-                          leading: Icon(
-                            Icons.local_shipping,
-                            color: !position.isOnline
-                                ? Colors.grey
-                                : position.speed > 0.5
-                                ? Colors.green
-                                : Colors.blue,
+                          leading: TruckAvatar(
+                            photoUrl: position.photoThumbnailUrl,
+                            photoVersion: position.photoVersion,
+                            radius: 18,
                           ),
                           title: Text(position.plateNumber),
                           subtitle: Text(
@@ -353,11 +354,19 @@ class _FallbackMap extends StatelessWidget {
             child: InkWell(
               key: Key('fallback-truck-marker-${entry.value.truckId}'),
               onTap: () => onTruckSelected(entry.value),
-              child: CircleAvatar(
-                backgroundColor: entry.value.isOnline
-                    ? Colors.green
-                    : Colors.grey,
-                child: const Icon(Icons.local_shipping, color: Colors.white),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: entry.value.isOnline ? Colors.green : Colors.grey,
+                    width: 3,
+                  ),
+                ),
+                child: TruckAvatar(
+                  photoUrl: entry.value.photoThumbnailUrl,
+                  photoVersion: entry.value.photoVersion,
+                  radius: 18,
+                ),
               ),
             ),
           ),

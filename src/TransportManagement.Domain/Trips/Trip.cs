@@ -41,6 +41,7 @@ public sealed class Trip : Entity, ITenantOwned
     public DateTimeOffset? PlannedStartAt { get; private set; }
     public DateTimeOffset? ActualStartAt { get; private set; }
     public DateTimeOffset? ArrivedPickupAt { get; private set; }
+    public DateTimeOffset? ArrivedDeliveryAt { get; private set; }
     public DateTimeOffset? DeliveredAt { get; private set; }
     public DateTimeOffset? CompletedAt { get; private set; }
     public decimal? Price { get; private set; }
@@ -61,7 +62,7 @@ public sealed class Trip : Entity, ITenantOwned
 
     public bool ReservesResources => Status is TripStatus.Assigned or TripStatus.EnRouteToPickup
         or TripStatus.AtPickup or TripStatus.Started
-        or TripStatus.InTransit or TripStatus.Delivered;
+        or TripStatus.InTransit or TripStatus.AtDelivery or TripStatus.Delivered;
 
     public TripRepositioningPlan? CurrentRepositioningPlan => _repositioningPlans
         .Where(x => x.Status is RepositioningPlanStatus.Proposed or RepositioningPlanStatus.Active)
@@ -191,6 +192,13 @@ public sealed class Trip : Entity, ITenantOwned
         Changed(now);
     }
 
+    public void DispatchForPickupConfirmation(DateTimeOffset now)
+    {
+        EnsureStatus(TripStatus.Assigned);
+        Status = TripStatus.EnRouteToPickup;
+        Changed(now);
+    }
+
     public void MarkAtPickup(DateTimeOffset now)
     {
         if (Status == TripStatus.AtPickup) return;
@@ -218,6 +226,32 @@ public sealed class Trip : Entity, ITenantOwned
         Changed(now);
     }
 
+    public void ConfirmLoaded(DateTimeOffset now)
+    {
+        EnsureStatus(TripStatus.AtPickup);
+        ActualStartAt = now;
+        Status = TripStatus.InTransit;
+        Changed(now);
+    }
+
+    public void MarkAtDelivery(DateTimeOffset now)
+    {
+        if (Status == TripStatus.AtDelivery) return;
+        EnsureStatus(TripStatus.InTransit);
+        ArrivedDeliveryAt = now;
+        Status = TripStatus.AtDelivery;
+        Changed(now);
+    }
+
+    public void ConfirmDelivery(DateTimeOffset now)
+    {
+        EnsureStatus(TripStatus.AtDelivery);
+        DeliveredAt = now;
+        CompletedAt = now;
+        Status = TripStatus.Completed;
+        Changed(now);
+    }
+
     public void Deliver(DateTimeOffset now)
     {
         EnsureStatus(TripStatus.InTransit);
@@ -238,7 +272,7 @@ public sealed class Trip : Entity, ITenantOwned
     {
         if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 500)
             throw new DomainRuleException("A cancellation reason is required and must not exceed 500 characters.", "TRIP_CANCEL_REASON_REQUIRED");
-        if (Status is TripStatus.Delivered or TripStatus.Completed or TripStatus.Cancelled)
+        if (Status is TripStatus.AtDelivery or TripStatus.Delivered or TripStatus.Completed or TripStatus.Cancelled)
             throw new DomainRuleException($"A {Status} trip cannot be cancelled.", "INVALID_TRIP_TRANSITION");
         foreach (var plan in _repositioningPlans) plan.Expire(now);
         Status = TripStatus.Cancelled;

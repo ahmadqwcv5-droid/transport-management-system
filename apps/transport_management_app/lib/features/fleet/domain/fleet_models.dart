@@ -29,6 +29,8 @@ final class Truck {
     this.currentDriverId,
     this.canBeAssigned = true,
     this.ineligibilityReasonCode = 'AVAILABLE',
+    this.photoVersion,
+    this.photoThumbnailUrl,
   });
   final String id;
   final String plateNumber, status;
@@ -45,6 +47,7 @@ final class Truck {
       currentTripId,
       currentTripNumber,
       currentDriverId;
+  final String? photoVersion, photoThumbnailUrl;
   final String payloadUnit,
       baseStatus,
       operationalState,
@@ -80,6 +83,8 @@ final class Truck {
     canBeAssigned: json['canBeAssigned'] as bool? ?? false,
     ineligibilityReasonCode:
         json['ineligibilityReasonCode'] as String? ?? 'AVAILABLE',
+    photoVersion: json['photoVersion'] as String?,
+    photoThumbnailUrl: json['photoThumbnailUrl'] as String?,
   );
 }
 
@@ -140,11 +145,12 @@ final class Driver {
     this.phone,
     this.licenseExpiryDate,
     this.notes,
+    this.userId,
   });
   final String id;
   final String fullName, licenseNumber, status;
   final bool isActive;
-  final String? phone, licenseExpiryDate, notes;
+  final String? phone, licenseExpiryDate, notes, userId;
 
   factory Driver.fromJson(Json json) => Driver(
     id: json['id'] as String,
@@ -155,5 +161,6 @@ final class Driver {
     phone: json['phone'] as String?,
     licenseExpiryDate: json['licenseExpiryDate'] as String?,
     notes: json['notes'] as String?,
+    userId: json['userId'] as String?,
   );
 }

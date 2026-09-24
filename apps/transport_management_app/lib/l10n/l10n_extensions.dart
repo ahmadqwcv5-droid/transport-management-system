@@ -16,6 +16,7 @@ String localizedStatus(AppLocalizations l10n, String value) => switch (value) {
   'Assigned' => l10n.assigned,
   'EnRouteToPickup' => l10n.enRouteToPickup,
   'AtPickup' => l10n.atPickup,
+  'AtDelivery' => l10n.atDelivery,
   'Started' => l10n.started,
   'InTransit' => l10n.inTransit,
   'Delivered' => l10n.delivered,

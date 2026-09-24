@@ -25,7 +25,7 @@ public sealed class ResourceEventWriter(
         var now = clock.UtcNow;
         fleetStore.AddTruckEvent(new TruckEvent(Guid.NewGuid(),
             currentUser.CompanyId, truckId,
-            source == "User" ? currentUser.UserId : null, code,
+            source == "System" ? null : currentUser.UserId, code,
             Serialize(metadata), now));
     }
 

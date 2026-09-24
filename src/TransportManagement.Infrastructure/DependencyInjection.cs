@@ -14,7 +14,9 @@ using TransportManagement.Infrastructure.Tracking;
 using TransportManagement.Application.Tracking;
 using TransportManagement.Application.Routing;
 using TransportManagement.Application.Trips;
+using TransportManagement.Application.Fleet;
 using TransportManagement.Infrastructure.Routing;
+using TransportManagement.Infrastructure.Photos;
 
 namespace TransportManagement.Infrastructure;
 
@@ -49,6 +51,20 @@ public static class DependencyInjection
         services.AddScoped<ITripStore>(provider => provider.GetRequiredService<OperationsStore>());
         services.AddScoped<ITripQueryStore>(provider => provider.GetRequiredService<OperationsStore>());
         services.AddScoped<ITrackingStore, TrackingStore>();
+        services.AddScoped<ITruckPhotoStore, TruckPhotoStore>();
+        services.AddSingleton<ITruckPhotoProcessor, SkiaTruckPhotoProcessor>();
+        services.AddOptions<TruckPhotoStorageOptions>()
+            .Bind(configuration.GetSection(TruckPhotoStorageOptions.SectionName));
+        services.AddSingleton<ITruckPhotoStorage, LocalTruckPhotoStorage>();
+        var photoMaximumBytes = Math.Clamp(configuration.GetValue<int>(
+            "TruckPhotos:MaximumBytes", 5 * 1024 * 1024), 1024, 20 * 1024 * 1024);
+        var photoMaximumPixels = Math.Clamp(configuration.GetValue<int>(
+            "TruckPhotos:MaximumPixels", 40_000_000), 1_000_000, 100_000_000);
+        services.AddSingleton(new TruckPhotoPolicy(photoMaximumBytes, photoMaximumPixels));
+        services.AddScoped<LiveOperationsStore>();
+        services.AddScoped<IGeofenceStore>(provider => provider.GetRequiredService<LiveOperationsStore>());
+        services.AddScoped<INotificationStore>(provider => provider.GetRequiredService<LiveOperationsStore>());
+        services.AddScoped<IDriverIdentityStore>(provider => provider.GetRequiredService<LiveOperationsStore>());
         services.AddSingleton(new RouteProgressPolicy(
             Math.Max(10, configuration.GetValue<decimal>("Routing:OffRouteThresholdMeters", 150)),
             Math.Max(5, configuration.GetValue<decimal>("Routing:ArrivalThresholdMeters", 30))));
@@ -59,6 +75,12 @@ public static class DependencyInjection
             Math.Max(5, configuration.GetValue<decimal>("Dispatch:PickupArrivalRadiusMeters", 50)),
             Math.Max(5, configuration.GetValue<decimal>("Dispatch:ProposalOriginMovementToleranceMeters", 100)),
             Math.Max(10, configuration.GetValue<decimal>("Dispatch:SimulatorRestoreProjectionToleranceMeters", 500))));
+        services.AddSingleton(new GeofencePolicy(
+            Math.Max(5, configuration.GetValue<decimal>("Geofence:ArrivalRadiusMeters", 50)),
+            Math.Max(10, configuration.GetValue<decimal>("Geofence:ExitRadiusMeters", 80)),
+            Math.Max(2, configuration.GetValue<int>("Geofence:MinimumSamples", 2)),
+            TimeSpan.FromSeconds(Math.Max(0, configuration.GetValue<int>("Geofence:MinimumDwellSeconds", 20))),
+            TimeSpan.FromSeconds(Math.Max(10, configuration.GetValue<int>("Geofence:MaximumSampleAgeSeconds", 60)))));
 
         if (environment.IsEnvironment("Testing"))
         {
@@ -157,6 +179,10 @@ public static class DependencyInjection
             .AddPolicy("companies.manage", policy => policy.RequireRole("Owner"))
             .AddPolicy("operations.read", policy => policy.RequireRole("Owner", "Operations", "Accountant"))
             .AddPolicy("operations.manage", policy => policy.RequireRole("Owner", "Operations"));
+        services.AddAuthorizationBuilder()
+            .AddPolicy("driver.workflow", policy => policy.RequireRole("Driver"))
+            .AddPolicy("notifications.read", policy => policy.RequireRole("Owner", "Operations", "Driver"))
+            .AddPolicy("owner", policy => policy.RequireRole("Owner"));
 
         return services;
     }

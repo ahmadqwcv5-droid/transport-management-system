@@ -13,7 +13,8 @@ internal static class TripResponseMapper
 {
     public static TripResponse Map(Trip trip) => new(
         trip.Id, trip.TripNumber, trip.ClientId, trip.TruckId, trip.DriverId, trip.Origin, trip.Destination,
-        trip.CargoDescription, trip.PlannedStartAt, trip.ActualStartAt, trip.ArrivedPickupAt, trip.DeliveredAt,
+        trip.CargoDescription, trip.PlannedStartAt, trip.ActualStartAt, trip.ArrivedPickupAt,
+        trip.ArrivedDeliveryAt, trip.DeliveredAt,
         trip.CompletedAt, trip.Price, trip.Notes, trip.Status, trip.IsArchived,
         trip.ArchivedAt, trip.CancellationReason, trip.CancelledAt, trip.Version,
         Readiness(trip), AllowedActions(trip),
@@ -74,9 +75,10 @@ internal static class TripResponseMapper
             TripStatus.Draft => new List<string> { "edit", "delete", "cancel" },
             TripStatus.Assigned => ["reassign", "unassign", "preview-repositioning", "dispatch-to-pickup", "cancel"],
             TripStatus.EnRouteToPickup => ["arrive-pickup", "cancel"],
-            TripStatus.AtPickup => ["start", "cancel"],
+            TripStatus.AtPickup => ["confirm-loaded", "start", "cancel"],
             TripStatus.Started => ["mark-in-transit", "cancel"],
             TripStatus.InTransit => ["deliver", "cancel"],
+            TripStatus.AtDelivery => ["confirm-delivery"],
             TripStatus.Delivered => ["complete"],
             TripStatus.Completed or TripStatus.Cancelled when !trip.IsArchived => ["archive"],
             TripStatus.Completed or TripStatus.Cancelled when trip.IsArchived => ["unarchive"],
@@ -134,7 +136,8 @@ public sealed class TripEventWriter(
     {
         var now = clock.UtcNow;
         tripStore.AddTripEvent(new TripEvent(Guid.NewGuid(), currentUser.CompanyId,
-            trip.Id, eventType, now, source == "User" ? currentUser.UserId : null,
+            trip.Id, eventType, now,
+            source is "User" or "ManagerOverride" ? currentUser.UserId : null,
             source, metadata is null ? null : JsonSerializer.Serialize(metadata), now));
     }
 }

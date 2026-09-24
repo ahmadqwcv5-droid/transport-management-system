@@ -45,4 +45,14 @@ public sealed class DriversController(DriverService service) : ControllerBase
         await service.DeactivateAsync(id, cancellationToken);
         return NoContent();
     }
+
+    [HttpPut("{id:guid}/user-link")]
+    [Authorize(Policy = "owner")]
+    public Task<DriverResponse> LinkUser(Guid id, LinkDriverUserRequest request,
+        CancellationToken cancellationToken) => service.LinkUserAsync(id, request, cancellationToken);
+
+    [HttpDelete("{id:guid}/user-link")]
+    [Authorize(Policy = "owner")]
+    public Task<DriverResponse> UnlinkUser(Guid id, CancellationToken cancellationToken) =>
+        service.UnlinkUserAsync(id, cancellationToken);
 }

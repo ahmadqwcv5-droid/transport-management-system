@@ -12,7 +12,7 @@ public sealed class TripEvent : Entity, ITenantOwned
     {
         if (string.IsNullOrWhiteSpace(eventType) || eventType.Length > 80)
             throw new DomainRuleException("Trip event type is invalid.");
-        if (source is not ("User" or "System" or "Migration"))
+        if (source is not ("User" or "System" or "Migration" or "ManagerOverride"))
             throw new DomainRuleException("Trip event source is invalid.");
         if (metadata?.Length > 4000)
             throw new DomainRuleException("Trip event metadata is too large.");

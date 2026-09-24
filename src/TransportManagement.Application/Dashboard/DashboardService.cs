@@ -18,7 +18,8 @@ public sealed class DashboardService(
         var positions = await trackingService.CurrentAsync(cancellationToken);
         var simulatorTrucks = await trackingService.SimulatorInventoryAsync(false, cancellationToken);
         var activeStatuses = new[] { TripStatus.Assigned, TripStatus.EnRouteToPickup,
-            TripStatus.AtPickup, TripStatus.Started, TripStatus.InTransit, TripStatus.Delivered };
+            TripStatus.AtPickup, TripStatus.Started, TripStatus.InTransit,
+            TripStatus.AtDelivery, TripStatus.Delivered };
         var today = clock.UtcNow.UtcDateTime.Date;
         var reservedTruckIds = trips.Where(x => x.TruckId.HasValue
                 && activeStatuses.Contains(x.Status)).Select(x => x.TruckId!.Value)

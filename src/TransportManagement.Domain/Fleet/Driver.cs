@@ -30,6 +30,21 @@ public sealed class Driver : Entity, ITenantOwned
     public DriverStatus Status { get; private set; }
     public string? Notes { get; private set; }
     public bool IsActive { get; private set; }
+    public Guid? UserId { get; private set; }
+
+    public void LinkUser(Guid userId, DateTimeOffset now)
+    {
+        if (userId == Guid.Empty)
+            throw new DomainRuleException("A valid user is required.", "DRIVER_USER_REQUIRED");
+        UserId = userId;
+        Touch(now);
+    }
+
+    public void UnlinkUser(DateTimeOffset now)
+    {
+        UserId = null;
+        Touch(now);
+    }
 
     public void Update(
         string fullName,

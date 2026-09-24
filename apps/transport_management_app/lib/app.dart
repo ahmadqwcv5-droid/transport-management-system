@@ -14,23 +14,40 @@ import 'features/trips/presentation/trip_details_screen.dart';
 import 'features/trips/presentation/trip_planner_screen.dart';
 import 'features/trips/presentation/trips_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
+import 'features/live_operations/presentation/driver_my_trip_screen.dart';
+import 'features/live_operations/presentation/notifications_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'shared/widgets/app_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authRouteState = ref.watch(
     authControllerProvider.select(
-      (auth) => (isLoading: auth.isLoading, signedIn: auth.value != null),
+      (auth) => (
+        isLoading: auth.isLoading,
+        signedIn: auth.value != null,
+        role: auth.value?.user.role,
+      ),
     ),
   );
   final signedIn = authRouteState.signedIn;
   return GoRouter(
-    initialLocation: signedIn ? '/dashboard' : '/login',
+    initialLocation: signedIn
+        ? (authRouteState.role == 'Driver' ? '/my-trip' : '/dashboard')
+        : '/login',
     redirect: (context, state) {
       if (authRouteState.isLoading) return null;
       final onLogin = state.matchedLocation == '/login';
       if (!signedIn && !onLogin) return '/login';
-      if (signedIn && onLogin) return '/dashboard';
+      if (signedIn && onLogin) {
+        return authRouteState.role == 'Driver' ? '/my-trip' : '/dashboard';
+      }
+      final driver = authRouteState.role == 'Driver';
+      final driverRoute =
+          state.matchedLocation == '/my-trip' ||
+          state.matchedLocation == '/notifications' ||
+          state.matchedLocation == '/settings';
+      if (driver && !driverRoute) return '/my-trip';
+      if (!driver && state.matchedLocation == '/my-trip') return '/dashboard';
       return null;
     },
     routes: [
@@ -44,6 +61,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         builder: (_, _) =>
             const AppShell(selectedIndex: 5, child: SettingsScreen()),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (_, _) =>
+            const AppShell(selectedIndex: -1, child: NotificationsScreen()),
+      ),
+      GoRoute(
+        path: '/my-trip',
+        builder: (_, _) =>
+            const AppShell(selectedIndex: 0, child: DriverMyTripScreen()),
       ),
       GoRoute(
         path: '/clients',

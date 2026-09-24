@@ -1285,4 +1285,89 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get duplicateTruckIdentity =>
       'رقم اللوحة أو الهيكل أو رمز الأسطول مستخدم بالفعل.';
+
+  @override
+  String get uploadTruckPhoto => 'رفع صورة الشاحنة';
+
+  @override
+  String get removeTruckPhoto => 'إزالة صورة الشاحنة';
+
+  @override
+  String get notifications => 'الإشعارات';
+
+  @override
+  String get markAllRead => 'تعليم الكل كمقروء';
+
+  @override
+  String get noNotifications => 'لا توجد إشعارات بعد';
+
+  @override
+  String get markRead => 'تعليم كمقروء';
+
+  @override
+  String get notificationArrivedPickup => 'وصلت الشاحنة إلى موقع الاستلام';
+
+  @override
+  String get notificationArrivedDelivery => 'وصلت الشاحنة إلى موقع التسليم';
+
+  @override
+  String get notificationDepartureConfirmed =>
+      'تم تأكيد تحميل الشحنة والمغادرة';
+
+  @override
+  String get notificationDeliveryConfirmed => 'تم تأكيد التسليم';
+
+  @override
+  String get operationalUpdate => 'تحديث تشغيلي';
+
+  @override
+  String get myTrip => 'رحلتي';
+
+  @override
+  String get noAssignedTrip => 'لا توجد رحلة نشطة مسندة إليك';
+
+  @override
+  String get confirmLoaded => 'تأكيد التحميل وبدء الرحلة';
+
+  @override
+  String get confirmLoadedWarning =>
+      'هل تؤكد تحميل الشحنة والمغادرة من موقع الاستلام؟';
+
+  @override
+  String get confirmDelivery => 'تأكيد التسليم';
+
+  @override
+  String get confirmDeliveryWarning =>
+      'هل تؤكد اكتمال تسليم الشحنة؟ سيؤدي ذلك إلى إكمال الرحلة.';
+
+  @override
+  String get atDelivery => 'عند موقع التسليم';
+
+  @override
+  String get managerOverrideDeparture => 'تجاوز تأكيد المغادرة';
+
+  @override
+  String get managerOverrideDelivery => 'تجاوز تأكيد التسليم';
+
+  @override
+  String get managerOverride => 'تجاوز المدير';
+
+  @override
+  String get managerOverrideWarning =>
+      'استخدم هذا فقط عندما يتعذر على السائق المرتبط التأكيد. سيتم تدقيق السبب وهويتك.';
+
+  @override
+  String get overrideReason => 'سبب التجاوز';
+
+  @override
+  String get resumeFollow => 'استئناف التتبع';
+
+  @override
+  String get showFullRoute => 'عرض المسار بالكامل';
+
+  @override
+  String get actionConfirmed => 'تم حفظ التأكيد.';
+
+  @override
+  String get backToTruck => 'العودة إلى الشاحنة';
 }

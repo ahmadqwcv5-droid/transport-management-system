@@ -153,6 +153,18 @@ public sealed class TripsController(
     public Task<TripResponse> Complete(Guid id, CancellationToken cancellationToken) =>
         lifecycle.CompleteAsync(id, cancellationToken);
 
+    [HttpPost("{id:guid}/override/confirm-loaded")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TripResponse> OverrideConfirmLoaded(Guid id,
+        ManagerOverrideRequest request, CancellationToken cancellationToken) =>
+        lifecycle.ConfirmLoadedAsync(id, "ManagerOverride", request.Reason, cancellationToken);
+
+    [HttpPost("{id:guid}/override/confirm-delivery")]
+    [Authorize(Policy = "operations.manage")]
+    public Task<TripResponse> OverrideConfirmDelivery(Guid id,
+        ManagerOverrideRequest request, CancellationToken cancellationToken) =>
+        lifecycle.ConfirmDeliveryAsync(id, "ManagerOverride", request.Reason, cancellationToken);
+
     [HttpPost("{id:guid}/cancel")]
     [Authorize(Policy = "operations.manage")]
     public Task<TripResponse> Cancel(Guid id, CancelTripRequest request,

@@ -58,11 +58,18 @@ final class TrackedTruck {
     this.currentTripId,
     this.movementPhase,
     this.repositioningPlanId,
+    this.photoVersion,
+    this.photoThumbnailUrl,
   });
   final String truckId, plateNumber, truckStatus, recordedAt;
   final double latitude, longitude, speed, heading;
   final bool isOnline;
-  final String? driverName, currentTripId, movementPhase, repositioningPlanId;
+  final String? driverName,
+      currentTripId,
+      movementPhase,
+      repositioningPlanId,
+      photoVersion,
+      photoThumbnailUrl;
   factory TrackedTruck.fromJson(Json json) => TrackedTruck(
     truckId: json['truckId'] as String,
     plateNumber: json['plateNumber'] as String,
@@ -77,6 +84,8 @@ final class TrackedTruck {
     currentTripId: json['currentTripId'] as String?,
     movementPhase: json['movementPhase'] as String?,
     repositioningPlanId: json['repositioningPlanId'] as String?,
+    photoVersion: json['photoVersion'] as String?,
+    photoThumbnailUrl: json['photoThumbnailUrl'] as String?,
   );
 }
 

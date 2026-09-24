@@ -112,6 +112,8 @@ final class AssignmentResourceOption {
     this.payloadCapacity,
     this.payloadUnit,
     this.defaultDriverId,
+    this.photoVersion,
+    this.photoThumbnailUrl,
   });
   final String id, displayName, status, reasonCode;
   final bool isEligible;
@@ -121,6 +123,7 @@ final class AssignmentResourceOption {
       resourceType,
       payloadUnit,
       defaultDriverId;
+  final String? photoVersion, photoThumbnailUrl;
   final double? payloadCapacity;
   factory AssignmentResourceOption.fromJson(Json json) =>
       AssignmentResourceOption(
@@ -136,6 +139,8 @@ final class AssignmentResourceOption {
         payloadCapacity: (json['payloadCapacity'] as num?)?.toDouble(),
         payloadUnit: json['payloadUnit'] as String?,
         defaultDriverId: json['defaultDriverId'] as String?,
+        photoVersion: json['photoVersion'] as String?,
+        photoThumbnailUrl: json['photoThumbnailUrl'] as String?,
       );
 }
 
@@ -299,6 +304,7 @@ final class Trip {
     this.driverId,
     this.actualStartAt,
     this.arrivedPickupAt,
+    this.arrivedDeliveryAt,
     this.deliveredAt,
     this.completedAt,
     this.notes,
@@ -319,6 +325,7 @@ final class Trip {
       driverId,
       actualStartAt,
       arrivedPickupAt,
+      arrivedDeliveryAt,
       deliveredAt,
       completedAt,
       notes,
@@ -346,6 +353,7 @@ final class Trip {
     plannedStartAt: json['plannedStartAt'] as String?,
     actualStartAt: json['actualStartAt'] as String?,
     arrivedPickupAt: json['arrivedPickupAt'] as String?,
+    arrivedDeliveryAt: json['arrivedDeliveryAt'] as String?,
     deliveredAt: json['deliveredAt'] as String?,
     completedAt: json['completedAt'] as String?,
     price: json['price'] as num?,

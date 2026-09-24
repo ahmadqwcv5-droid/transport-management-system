@@ -209,13 +209,15 @@ internal sealed class DriverConfiguration : IEntityTypeConfiguration<Driver>
         builder.Property(x => x.Notes).HasMaxLength(2000);
         builder.HasIndex(x => x.CompanyId);
         builder.HasIndex(x => new { x.CompanyId, x.LicenseNumber }).IsUnique();
+        builder.HasIndex(x => x.UserId).IsUnique().HasFilter("\"UserId\" IS NOT NULL");
         builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithOne().HasForeignKey<Driver>(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 
 internal sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
 {
-    private const string ReservedStatuses = "\"Status\" IN ('Assigned', 'EnRouteToPickup', 'AtPickup', 'Started', 'InTransit', 'Delivered')";
+    private const string ReservedStatuses = "\"Status\" IN ('Assigned', 'EnRouteToPickup', 'AtPickup', 'Started', 'InTransit', 'AtDelivery', 'Delivered')";
 
     public void Configure(EntityTypeBuilder<Trip> builder)
     {
@@ -249,6 +251,58 @@ internal sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         builder.HasOne(x => x.RoutePlan).WithOne().HasForeignKey<TripRoutePlan>(x => x.TripId).OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(x => x.RepositioningPlans).WithOne().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Restrict);
         builder.HasMany(x => x.Events).WithOne().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class TripGeofenceObservationConfiguration : IEntityTypeConfiguration<TripGeofenceObservation>
+{
+    public void Configure(EntityTypeBuilder<TripGeofenceObservation> builder)
+    {
+        builder.ToTable("trip_geofence_observations");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Stage).HasConversion<string>().HasMaxLength(20);
+        builder.Property(x => x.RouteIdentity).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Version).IsConcurrencyToken();
+        builder.HasIndex(x => new { x.CompanyId, x.TripId, x.Stage, x.RouteIdentity }).IsUnique();
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Trip>().WithMany().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class OperationNotificationConfiguration : IEntityTypeConfiguration<OperationNotification>
+{
+    public void Configure(EntityTypeBuilder<OperationNotification> builder)
+    {
+        builder.ToTable("operation_notifications");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Type).HasMaxLength(80).IsRequired();
+        builder.Property(x => x.Severity).HasMaxLength(20).IsRequired();
+        builder.Property(x => x.EventKey).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.DataJson).HasColumnType("jsonb");
+        builder.HasIndex(x => new { x.CompanyId, x.EventKey }).IsUnique();
+        builder.HasIndex(x => new { x.CompanyId, x.CreatedAt });
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Trip>().WithMany().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Truck>().WithMany().HasForeignKey(x => x.TruckId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Driver>().WithMany().HasForeignKey(x => x.DriverId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.ReadByUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class TruckPhotoConfiguration : IEntityTypeConfiguration<TruckPhoto>
+{
+    public void Configure(EntityTypeBuilder<TruckPhoto> builder)
+    {
+        builder.ToTable("truck_photos");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.StorageKey).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.ContentType).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.Version).HasMaxLength(64).IsRequired();
+        builder.HasIndex(x => new { x.CompanyId, x.TruckId }).IsUnique();
+        builder.HasIndex(x => x.StorageKey).IsUnique();
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Truck>().WithMany().HasForeignKey(x => x.TruckId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.UploadedByUserId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

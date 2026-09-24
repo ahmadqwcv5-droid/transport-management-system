@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import '../../../l10n/l10n_extensions.dart';
+import '../../../shared/widgets/truck_avatar.dart';
 import '../domain/dashboard_models.dart';
 import 'dashboard_controller.dart';
 import 'fleet_map_coordinator.dart';
@@ -54,7 +55,6 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   late FleetMapMode _mode;
   Timer? _loadingTimer;
   int _attempt = 0;
-  bool _annotationsReady = false;
   bool _onlineOnly = false;
   bool _movingOnly = false;
   bool _showTrail = true;
@@ -63,6 +63,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   bool _loadingDetail = false;
   int _cameraRevision = 0;
   FleetCameraRequest _cameraRequest = FleetCameraRequest.none;
+  FleetInteractionMode _cameraMode = FleetInteractionMode.free;
   ({TrackedTruck truck, bool fitCamera})? _pendingDetailRefresh;
   bool _detailRefreshRunning = false;
 
@@ -104,7 +105,6 @@ class _FleetMapState extends ConsumerState<FleetMap> {
         _loadingTimer?.cancel();
         setState(() {
           _mode = FleetMapMode.unconfigured;
-          _annotationsReady = false;
         });
       } else {
         _retry();
@@ -122,6 +122,14 @@ class _FleetMapState extends ConsumerState<FleetMap> {
           (oldSelected?.recordedAt != currentSelected!.recordedAt ||
               oldSelected?.currentTripId != currentSelected.currentTripId)) {
         _queueDetailRefresh(currentSelected, fitCamera: false);
+      }
+      if (_cameraMode == FleetInteractionMode.followSelectedTruck &&
+          oldSelected?.recordedAt != currentSelected?.recordedAt &&
+          currentSelected != null) {
+        setState(() {
+          _cameraRevision++;
+          _cameraRequest = FleetCameraRequest.recenter;
+        });
       }
     }
   }
@@ -240,6 +248,10 @@ class _FleetMapState extends ConsumerState<FleetMap> {
             selectedTruckId: _selectedTruckId,
             cameraRevision: _cameraRevision,
             cameraRequest: _cameraRequest,
+            onManualCameraInteraction: _pauseFollow,
+            thumbnailLoader: ref
+                .read(dashboardRepositoryProvider)
+                .authenticatedImage,
           )
         : widget.mapBuilder!(
             key: ValueKey('maplibre-attempt-$_attempt'),
@@ -285,7 +297,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
               ),
             ),
           ),
-        if (_mode == FleetMapMode.loaded && _annotationsReady)
+        if (_mode == FleetMapMode.loaded)
           PositionedDirectional(
             start: 12,
             bottom: 12,
@@ -316,6 +328,30 @@ class _FleetMapState extends ConsumerState<FleetMap> {
               onRecenter: _recenter,
             ),
           ),
+        if (_selected != null && _mode == FleetMapMode.loaded)
+          PositionedDirectional(
+            end: 12,
+            bottom: 12,
+            child: Wrap(
+              spacing: 8,
+              children: [
+                if (_cameraMode != FleetInteractionMode.followSelectedTruck)
+                  FilledButton.tonalIcon(
+                    key: const Key('map-resume-follow'),
+                    onPressed: _recenter,
+                    icon: const Icon(Icons.my_location),
+                    label: Text(context.l10n.resumeFollow),
+                  ),
+                if (_tripDetail != null)
+                  OutlinedButton.icon(
+                    key: const Key('map-show-full-route'),
+                    onPressed: _showFullRoute,
+                    icon: const Icon(Icons.zoom_out_map),
+                    label: Text(context.l10n.showFullRoute),
+                  ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -328,6 +364,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
       _loadingDetail = position.currentTripId != null;
       _cameraRevision++;
       _cameraRequest = FleetCameraRequest.selection;
+      _cameraMode = FleetInteractionMode.followSelectedTruck;
     });
     if (position.currentTripId == null) return;
     _queueDetailRefresh(position, fitCamera: true);
@@ -354,10 +391,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
             setState(() {
               _tripDetail = detail;
               _loadingDetail = false;
-              if (request.fitCamera) {
-                _cameraRevision++;
-                _cameraRequest = FleetCameraRequest.selection;
-              }
+              // Loading route detail never changes the selected-truck camera.
             });
           }
         } on Object {
@@ -392,6 +426,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
       _selectedTruckId = null;
       _tripDetail = null;
       _loadingDetail = false;
+      _cameraMode = FleetInteractionMode.free;
     });
   }
 
@@ -399,7 +434,21 @@ class _FleetMapState extends ConsumerState<FleetMap> {
     setState(() {
       _cameraRevision++;
       _cameraRequest = FleetCameraRequest.recenter;
+      _cameraMode = FleetInteractionMode.followSelectedTruck;
     });
+  }
+
+  void _showFullRoute() {
+    setState(() {
+      _cameraRevision++;
+      _cameraRequest = FleetCameraRequest.routeOverview;
+      _cameraMode = FleetInteractionMode.routeOverview;
+    });
+  }
+
+  void _pauseFollow() {
+    if (_cameraMode == FleetInteractionMode.free) return;
+    setState(() => _cameraMode = FleetInteractionMode.free);
   }
 
   void _armTimeout() {
@@ -413,7 +462,6 @@ class _FleetMapState extends ConsumerState<FleetMap> {
     setState(() {
       _attempt++;
       _mode = FleetMapMode.loading;
-      _annotationsReady = false;
     });
     _armTimeout();
   }
@@ -433,7 +481,6 @@ class _FleetMapState extends ConsumerState<FleetMap> {
 
   void _onAnnotationsReady(int attempt) {
     if (!mounted || attempt != _attempt || _mode != FleetMapMode.loaded) return;
-    setState(() => _annotationsReady = true);
   }
 
   void _onFailure(int attempt) {
@@ -441,10 +488,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
       return;
     }
     _loadingTimer?.cancel();
-    setState(() {
-      _mode = FleetMapMode.failed;
-      _annotationsReady = false;
-    });
+    setState(() => _mode = FleetMapMode.failed);
   }
 }
 
@@ -461,6 +505,8 @@ Widget _productionMapBuilder({
   String? selectedTruckId,
   int cameraRevision = 0,
   FleetCameraRequest cameraRequest = FleetCameraRequest.none,
+  VoidCallback? onManualCameraInteraction,
+  required AuthenticatedThumbnailLoader thumbnailLoader,
 }) => _ConfiguredFleetMap(
   key: key,
   styleUrl: styleUrl,
@@ -474,4 +520,6 @@ Widget _productionMapBuilder({
   selectedTruckId: selectedTruckId,
   cameraRevision: cameraRevision,
   cameraRequest: cameraRequest,
+  onManualCameraInteraction: onManualCameraInteraction,
+  thumbnailLoader: thumbnailLoader,
 );

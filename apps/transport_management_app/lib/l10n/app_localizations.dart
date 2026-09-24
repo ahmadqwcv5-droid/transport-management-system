@@ -2563,6 +2563,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'That plate, VIN, or fleet code is already in use.'**
   String get duplicateTruckIdentity;
+
+  /// No description provided for @uploadTruckPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload truck photo'**
+  String get uploadTruckPhoto;
+
+  /// No description provided for @removeTruckPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove truck photo'**
+  String get removeTruckPhoto;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @markAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get markAllRead;
+
+  /// No description provided for @noNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get noNotifications;
+
+  /// No description provided for @markRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get markRead;
+
+  /// No description provided for @notificationArrivedPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck arrived at pickup'**
+  String get notificationArrivedPickup;
+
+  /// No description provided for @notificationArrivedDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck arrived at delivery'**
+  String get notificationArrivedDelivery;
+
+  /// No description provided for @notificationDepartureConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cargo loaded and departure confirmed'**
+  String get notificationDepartureConfirmed;
+
+  /// No description provided for @notificationDeliveryConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery confirmed'**
+  String get notificationDeliveryConfirmed;
+
+  /// No description provided for @operationalUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Operational update'**
+  String get operationalUpdate;
+
+  /// No description provided for @myTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'My trip'**
+  String get myTrip;
+
+  /// No description provided for @noAssignedTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'No active trip is assigned to you'**
+  String get noAssignedTrip;
+
+  /// No description provided for @confirmLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm loaded and start trip'**
+  String get confirmLoaded;
+
+  /// No description provided for @confirmLoadedWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm that cargo is loaded and you are departing the pickup?'**
+  String get confirmLoadedWarning;
+
+  /// No description provided for @confirmDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm delivery'**
+  String get confirmDelivery;
+
+  /// No description provided for @confirmDeliveryWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm that the cargo handoff is complete? This completes the trip.'**
+  String get confirmDeliveryWarning;
+
+  /// No description provided for @atDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'At delivery'**
+  String get atDelivery;
+
+  /// No description provided for @managerOverrideDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'Override departure confirmation'**
+  String get managerOverrideDeparture;
+
+  /// No description provided for @managerOverrideDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Override delivery confirmation'**
+  String get managerOverrideDelivery;
+
+  /// No description provided for @managerOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager override'**
+  String get managerOverride;
+
+  /// No description provided for @managerOverrideWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this only when the linked driver cannot confirm. The reason and your identity are audited.'**
+  String get managerOverrideWarning;
+
+  /// No description provided for @overrideReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Override reason'**
+  String get overrideReason;
+
+  /// No description provided for @resumeFollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume follow'**
+  String get resumeFollow;
+
+  /// No description provided for @showFullRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Show full route'**
+  String get showFullRoute;
+
+  /// No description provided for @actionConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation saved.'**
+  String get actionConfirmed;
+
+  /// No description provided for @backToTruck.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to truck'**
+  String get backToTruck;
 }
 
 class _AppLocalizationsDelegate

@@ -24,7 +24,8 @@ public sealed record AssignmentResourceOptionResponse(
     string ReasonCode, Guid? ConflictingTripId = null,
     string? ConflictingTripNumber = null, string? FleetCode = null,
     string? ResourceType = null, decimal? PayloadCapacity = null,
-    string? PayloadUnit = null, Guid? DefaultDriverId = null);
+    string? PayloadUnit = null, Guid? DefaultDriverId = null,
+    string? PhotoVersion = null, string? PhotoThumbnailUrl = null);
 public sealed record AssignmentOptionsResponse(
     Guid TripId, Guid? CurrentTruckId, Guid? CurrentDriverId,
     bool CanAssign, IReadOnlyList<AssignmentResourceOptionResponse> Trucks,
@@ -32,6 +33,8 @@ public sealed record AssignmentOptionsResponse(
     Guid? SuggestedDefaultDriverId = null,
     string? DefaultDriverSuggestionReasonCode = null);
 public sealed record CancelTripRequest([param: MaxLength(500)] string Reason);
+public sealed record ManagerOverrideRequest(
+    [param: Required, MinLength(5), MaxLength(500)] string Reason);
 public sealed record DispatchToPickupRequest(Guid? RepositioningPlanId);
 public sealed record TripListQuery(
     int Page = 1, int PageSize = 20, string? Search = null,
@@ -61,7 +64,8 @@ public sealed record TripResponse(
     Guid Id, string TripNumber, Guid ClientId, Guid? TruckId, Guid? DriverId,
     string? Origin, string? Destination, string CargoDescription,
     DateTimeOffset? PlannedStartAt, DateTimeOffset? ActualStartAt,
-    DateTimeOffset? ArrivedPickupAt, DateTimeOffset? DeliveredAt,
+    DateTimeOffset? ArrivedPickupAt, DateTimeOffset? ArrivedDeliveryAt,
+    DateTimeOffset? DeliveredAt,
     DateTimeOffset? CompletedAt, decimal? Price, string? Notes,
     TripStatus Status, bool IsArchived, DateTimeOffset? ArchivedAt,
     string? CancellationReason, DateTimeOffset? CancelledAt, long Version,

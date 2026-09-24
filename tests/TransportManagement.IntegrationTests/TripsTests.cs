@@ -28,7 +28,8 @@ public sealed class TripsTests(ApiFactory factory) : IClassFixture<ApiFactory>
             latitude = 39.9208m,
             longitude = 32.8541m
         })).RequiredJsonAsync();
-        await AssertTransitionAsync(client, $"/api/trips/{tripId}/dispatch-to-pickup", "AtPickup", new { });
+        await AssertTransitionAsync(client, $"/api/trips/{tripId}/dispatch-to-pickup", "EnRouteToPickup", new { });
+        await AssertTransitionAsync(client, $"/api/trips/{tripId}/arrive-pickup", "AtPickup");
         await AssertTransitionAsync(client, $"/api/trips/{tripId}/start", "Started");
         Assert.Equal("OnTrip", (await client.GetJsonAsync<JsonElement>($"/api/trucks/{resources.TruckId}"))
             .GetProperty("status").GetString());

@@ -8,7 +8,8 @@ using TransportManagement.Domain.Trips;
 
 namespace TransportManagement.Application.Fleet;
 
-public sealed class TruckService(IFleetStore store, ICurrentUser currentUser, IClock clock)
+public sealed class TruckService(IFleetStore store, ITruckPhotoStore photos,
+    ICurrentUser currentUser, IClock clock)
 {
     public async Task<TruckResponse> CreateAsync(TruckRequest request, CancellationToken cancellationToken)
     {
@@ -150,6 +151,7 @@ public sealed class TruckService(IFleetStore store, ICurrentUser currentUser, IC
 
     private async Task<TruckResponse> MapAsync(Truck truck, CancellationToken cancellationToken)
     {
+        var photo = await photos.GetAsync(truck.Id, cancellationToken);
         var trip = await store.CurrentTruckTripAsync(truck.Id, cancellationToken);
         Driver? defaultDriver = null;
         if (truck.DefaultDriverId is Guid driverId)
@@ -159,7 +161,8 @@ public sealed class TruckService(IFleetStore store, ICurrentUser currentUser, IC
             TripStatus.Assigned => "Reserved",
             TripStatus.EnRouteToPickup => "EnRouteToPickup",
             TripStatus.AtPickup => "AtPickup",
-            TripStatus.Started or TripStatus.InTransit or TripStatus.Delivered => "OnTrip",
+            TripStatus.Started or TripStatus.InTransit => "OnTrip",
+            TripStatus.AtDelivery or TripStatus.Delivered => "AtDelivery",
             _ => truck.Status.ToString()
         };
         var legacyStatus = operational is "EnRouteToPickup" or "AtPickup" or "OnTrip"
@@ -177,7 +180,9 @@ public sealed class TruckService(IFleetStore store, ICurrentUser currentUser, IC
             truck.FleetCode, truck.Vin, truck.Type, truck.PayloadCapacity,
             truck.PayloadUnit, truck.FuelType, truck.OdometerKilometers,
             truck.DefaultDriverId, defaultDriver?.FullName, truck.Status, operational,
-            trip?.Id, trip?.TripNumber, trip?.DriverId, reason == "AVAILABLE", reason);
+            trip?.Id, trip?.TripNumber, trip?.DriverId, reason == "AVAILABLE", reason,
+            photo?.Version, photo is null ? null
+                : $"/api/trucks/{truck.Id}/photo/thumbnail?v={photo.Version}");
     }
 
     private async Task<Truck> RequiredAsync(Guid id, CancellationToken cancellationToken) =>

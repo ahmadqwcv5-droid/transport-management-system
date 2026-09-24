@@ -7,7 +7,8 @@ public sealed record TruckPositionResponse(
     decimal Latitude, decimal Longitude, decimal Speed, decimal Heading,
     DateTimeOffset RecordedAt, bool IsOnline, string TrackingState,
     Guid? CurrentTripId, string? DriverName, MovementPhase? MovementPhase,
-    Guid? RepositioningPlanId);
+    Guid? RepositioningPlanId, string? PhotoVersion = null,
+    string? PhotoThumbnailUrl = null);
 
 public sealed record SimulatorControlRequest(
     string Action, Guid? TruckId = null, double? SpeedMultiplier = null,

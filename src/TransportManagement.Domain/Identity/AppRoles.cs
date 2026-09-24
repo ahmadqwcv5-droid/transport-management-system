@@ -6,7 +6,8 @@ public static class AppRoles
     public const string Operations = "Operations";
     public const string Accountant = "Accountant";
     public const string Employee = "Employee";
+    public const string Driver = "Driver";
 
     public static readonly IReadOnlySet<string> All =
-        new HashSet<string>(StringComparer.Ordinal) { Owner, Operations, Accountant, Employee };
+        new HashSet<string>(StringComparer.Ordinal) { Owner, Operations, Accountant, Employee, Driver };
 }

@@ -15,6 +15,7 @@ import '../../../operations/domain/operations_data.dart';
 import '../../../operations/presentation/operations_controller.dart';
 import '../../../operations/presentation/operations_view.dart';
 import '../../../operations/presentation/mutation_refresh_coordinator.dart';
+import '../../../../shared/widgets/truck_avatar.dart';
 import 'steps/trip_assignment_step.dart';
 import 'steps/trip_details_step.dart';
 import 'steps/trip_review_step.dart';

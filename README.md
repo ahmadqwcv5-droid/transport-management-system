@@ -763,6 +763,58 @@ Use a disposable Development/Testing tenant. The workflow writes screenshots
 and JSON results to `docs/evidence/sprint4/`; it never resets the retained demo
 owner or PostgreSQL volume.
 
+## Sprint 4.1 live fleet and driver workflow
+
+Sprint 4.1 adds restart-safe pickup/delivery geofences, persisted localized
+notifications, linked-driver authorization and confirmations, secure processed
+truck photos, and explicit Free/Follow/Route Overview map modes. The canonical
+new-trip lifecycle is:
+
+```text
+Draft -> Assigned -> EnRouteToPickup -> AtPickup
+      -> InTransit -> AtDelivery -> Completed
+```
+
+Start the stack without removing its retained volumes:
+
+```bash
+sudo docker-compose -p tms-smoke up -d --build
+sudo docker-compose -p tms-smoke ps
+```
+
+Run the app from `apps/transport_management_app`:
+
+```bash
+../../.tooling/flutter/bin/flutter pub get
+../../.tooling/flutter/bin/flutter run -d web-server --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=MAP_STYLE_URL=https://demotiles.maplibre.org/style.json \
+  --dart-define=TRACKING_SIMULATOR_ENABLED=true
+```
+
+For the repeatable Firefox workflow, start `geckodriver --port 4444`, then run:
+
+```bash
+../../.tooling/flutter/bin/flutter drive \
+  --driver=test_driver/integration_test_sprint4_1.dart \
+  --target=integration_test/sprint4_1_smoke_test.dart \
+  -d web-server --browser-name=firefox --driver-port=4444 --headless \
+  --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=E2E_EMAIL=YOUR_DEDICATED_SMOKE_OWNER \
+  --dart-define=E2E_DRIVER_EMAIL=YOUR_LINKED_DRIVER_USER \
+  --dart-define=E2E_DRIVER_USER_ID=YOUR_LINKED_DRIVER_USER_ID \
+  --dart-define=E2E_SECOND_DRIVER_EMAIL=YOUR_SECOND_DRIVER_USER \
+  --dart-define=E2E_SECOND_DRIVER_USER_ID=YOUR_SECOND_DRIVER_USER_ID \
+  --dart-define=E2E_PASSWORD=YOUR_DEVELOPMENT_PASSWORD \
+  --dart-define=MAP_STYLE_URL=https://demotiles.maplibre.org/style.json \
+  --dart-define=TRACKING_SIMULATOR_ENABLED=true
+```
+
+The three accounts must belong to one disposable Development/Testing tenant;
+the two driver users must have the `Driver` role. Evidence and exact coverage are documented in
+[`docs/evidence/sprint4_1/`](docs/evidence/sprint4_1/).
+
 Known Sprint 3.2 limitations: the simulator is process-local and
 development-only; polling is used instead of push; the current MapLibre Flutter
 API exposes style readiness but no complete tile-rendered/error signal, so a

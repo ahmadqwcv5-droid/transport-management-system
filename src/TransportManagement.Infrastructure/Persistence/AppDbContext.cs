@@ -31,6 +31,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurren
     public DbSet<TripEvent> TripEvents => Set<TripEvent>();
     public DbSet<TripNumberCounter> TripNumberCounters => Set<TripNumberCounter>();
     public DbSet<TruckPosition> TruckPositions => Set<TruckPosition>();
+    public DbSet<TripGeofenceObservation> TripGeofenceObservations => Set<TripGeofenceObservation>();
+    public DbSet<OperationNotification> OperationNotifications => Set<OperationNotification>();
+    public DbSet<TruckPhoto> TruckPhotos => Set<TruckPhoto>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

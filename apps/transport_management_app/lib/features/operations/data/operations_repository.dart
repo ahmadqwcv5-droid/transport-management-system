@@ -300,6 +300,29 @@ final class OperationsRepository {
     '/api/trips/$id/${action == 'MarkInTransit' ? 'mark-in-transit' : action.toLowerCase()}',
   );
 
+  Future<void> managerOverride(String id, String action, String reason) =>
+      _send('POST', '/api/trips/$id/override/$action', {'reason': reason});
+
+  Future<void> uploadTruckPhoto(
+    String id,
+    List<int> bytes,
+    String filename,
+  ) async {
+    try {
+      await _client.dio.post<void>(
+        '/api/trucks/$id/photo',
+        data: FormData.fromMap({
+          'file': MultipartFile.fromBytes(bytes, filename: filename),
+        }),
+      );
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<void> removeTruckPhoto(String id) =>
+      _send('DELETE', '/api/trucks/$id/photo');
+
   Future<RepositioningPreview> previewRepositioning(String tripId) async {
     try {
       final response = await _client.dio.post<Json>(

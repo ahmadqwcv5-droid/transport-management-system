@@ -7,6 +7,7 @@ import '../../../operations/presentation/operations_controller.dart';
 import '../../../operations/presentation/mutation_refresh_coordinator.dart';
 import '../../../operations/presentation/operations_view.dart';
 import '../../../../l10n/l10n_extensions.dart';
+import '../../../../shared/widgets/truck_avatar.dart';
 
 class TrucksScreen extends ConsumerStatefulWidget {
   const TrucksScreen({super.key});
@@ -190,7 +191,10 @@ class _TruckTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => Card(
     child: ListTile(
       onTap: () => context.go('/trucks/${truck.id}'),
-      leading: const CircleAvatar(child: Icon(Icons.local_shipping_outlined)),
+      leading: TruckAvatar(
+        photoUrl: truck.photoThumbnailUrl,
+        photoVersion: truck.photoVersion,
+      ),
       title: Text(truck.plateNumber),
       subtitle: Text(
         '${[truck.fleetCode, truck.make, truck.model, truck.type].whereType<String>().join(' ')} • ${localizedStatus(context.l10n, truck.operationalState)}',

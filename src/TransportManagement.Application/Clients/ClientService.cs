@@ -216,7 +216,8 @@ public sealed class ClientService(IClientStore store, IFleetStore fleetStore,
     private static string? Normalize(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     private static bool IsActiveTrip(Trip trip) => trip.Status is TripStatus.EnRouteToPickup
-        or TripStatus.AtPickup or TripStatus.Started or TripStatus.InTransit or TripStatus.Delivered;
+        or TripStatus.AtPickup or TripStatus.Started or TripStatus.InTransit
+        or TripStatus.AtDelivery or TripStatus.Delivered;
     private static ClientResponse Map(Client client, int sites = 0, int trips = 0) => new(
         client.Id, client.Name, client.ContactPerson, client.Phone, client.Email,
         client.Address, client.Notes, client.IsActive, client.CreatedAt, client.UpdatedAt,

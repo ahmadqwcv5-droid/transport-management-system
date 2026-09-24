@@ -168,6 +168,7 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
             action = "seed-position", truckId, latitude = 39m, longitude = 32m
         })).RequiredJsonAsync();
         await (await client.PostJsonAsync($"/api/trips/{tripAId}/dispatch-to-pickup", new { })).RequiredJsonAsync();
+        await (await client.PostEmptyAsync($"/api/trips/{tripAId}/arrive-pickup")).RequiredJsonAsync();
         await (await client.PostEmptyAsync($"/api/trips/{tripAId}/start")).RequiredJsonAsync();
         await (await client.PostEmptyAsync($"/api/trips/{tripAId}/mark-in-transit")).RequiredJsonAsync();
         await (await client.PostEmptyAsync($"/api/trips/{tripAId}/deliver")).RequiredJsonAsync();
@@ -405,6 +406,7 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
             action = "seed-position", truckId, latitude = 39.9208m, longitude = 32.8541m
         })).RequiredJsonAsync();
         await (await client.PostJsonAsync($"/api/trips/{tripId}/dispatch-to-pickup", new { })).RequiredJsonAsync();
+        await (await client.PostEmptyAsync($"/api/trips/{tripId}/arrive-pickup")).RequiredJsonAsync();
         await (await client.PostEmptyAsync($"/api/trips/{tripId}/start")).RequiredJsonAsync();
         await (await client.PostEmptyAsync($"/api/trips/{tripId}/mark-in-transit")).RequiredJsonAsync();
         return truckId;

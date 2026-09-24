@@ -554,3 +554,46 @@ trip projections, dashboard, and tracking as applicable. A failed command keeps
 the previously visible state, duplicate taps are suppressed, and an older
 request cannot replace a newer result. Search and lifecycle/base-state filters
 are controller state and survive refresh.
+
+## ADR-026: Persisted live operations and linked-driver authority
+
+**Status:** Accepted
+
+The canonical new-trip lifecycle is `Draft -> Assigned -> EnRouteToPickup ->
+AtPickup -> InTransit -> AtDelivery -> Completed`. Historical `Started` and
+`Delivered` values and their compatibility commands remain readable and
+operable, but new workflows never require them. Pickup and delivery arrivals
+are backend-owned transitions based on accepted telemetry; driver confirmation
+is required to leave each stop. Manager overrides use separate commands with a
+mandatory bounded reason and append the authenticated actor/source to audit.
+
+Geofence evidence is tenant-owned persistence keyed by trip, stop stage, and
+route revision. The configured 50 m arrival radius, 80 m exit radius, two
+samples, 20-second dwell, and 60-second freshness window survive restarts and
+use hysteresis to prevent jitter. Observation, lifecycle transition, trip
+event, notification, and simulator targeting share the command transaction;
+stable event keys and optimistic concurrency make repeated samples idempotent.
+
+An optional tenant-scoped one-to-one `Driver.UserId` link grants the `Driver`
+role only the minimum current-trip projection and the two confirmation
+commands. Driver APIs resolve identity server-side and cannot enumerate the
+company, dashboard, simulator, tracking feed, or another driver's trip.
+Owner-only link/unlink commands enforce tenant, role, and uniqueness checks.
+
+Operational notifications persist stable type/payload identifiers and are
+localized only in Flutter. Owner/Operations see their bounded company feed;
+drivers see only notifications linked to their driver record. Read state is
+persisted and the UI refreshes on entry plus focused polling.
+
+Truck photos use generated storage keys, private authenticated endpoints, and
+a replace-safe metadata row. Infrastructure decodes JPEG/PNG/WebP, bounds byte
+and pixel counts, strips metadata by re-encoding, and writes WebP detail and
+thumbnail variants to durable storage. ETag/photo version is part of list,
+detail, dashboard, and map projections. No physical path is exposed.
+
+Fleet camera behavior is explicit: Free, Follow Selected Truck, and Route
+Overview. Programmatic moves are guarded from gesture callbacks; manual input
+pauses Follow, Resume restores it, and Route Overview fits exactly once.
+Photo markers remain upright while a separate cue represents heading. The
+accessible fleet selector is available once the map style loads and is not
+gated on an optional annotation-completion callback.

@@ -257,6 +257,7 @@ extension TripPlannerSteps on TripPlannerController {
     required ValueChanged<String?> onChanged,
   }) {
     final eligible = options.where((item) => item.isEligible).toList();
+    final isTruck = label == context.l10n.truck;
     return Column(
       key: key,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -280,9 +281,23 @@ extension TripPlannerSteps on TripPlannerController {
                 .map(
                   (item) => DropdownMenuItem<String>(
                     value: item.id,
-                    child: Text(
-                      assignmentOptionLabel(item),
-                      overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      children: [
+                        if (isTruck) ...[
+                          TruckAvatar(
+                            photoUrl: item.photoThumbnailUrl,
+                            photoVersion: item.photoVersion,
+                            radius: 15,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Expanded(
+                          child: Text(
+                            assignmentOptionLabel(item),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 )

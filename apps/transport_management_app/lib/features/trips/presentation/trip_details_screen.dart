@@ -113,6 +113,8 @@ class _TripDetailsContent extends ConsumerWidget {
                     _Fact(context.l10n.started, trip.actualStartAt!),
                   if (trip.arrivedPickupAt != null)
                     _Fact(context.l10n.atPickup, trip.arrivedPickupAt!),
+                  if (trip.arrivedDeliveryAt != null)
+                    _Fact(context.l10n.atDelivery, trip.arrivedDeliveryAt!),
                   if (trip.deliveredAt != null)
                     _Fact(context.l10n.delivered, trip.deliveredAt!),
                   if (trip.completedAt != null)
@@ -244,7 +246,16 @@ class _TripDetailsContent extends ConsumerWidget {
                     label: Text(context.l10n.editDraft),
                   ),
                 for (final action in trip.allowedActions.where(
-                  (value) => value != 'dispatch-to-pickup',
+                  (value) => !const {
+                    'dispatch-to-pickup',
+                    'arrive-pickup',
+                    'start',
+                    'mark-in-transit',
+                    'deliver',
+                    'complete',
+                    'confirm-loaded',
+                    'confirm-delivery',
+                  }.contains(value),
                 ))
                   FilledButton(
                     key: Key('trip-action-$action'),
@@ -276,6 +287,22 @@ class _TripDetailsContent extends ConsumerWidget {
                         : _act(context, ref, trip, action),
                     child: Text(_label(context, action)),
                   ),
+                if (trip.status == 'AtPickup')
+                  OutlinedButton.icon(
+                    key: const Key('manager-override-loaded'),
+                    onPressed: () =>
+                        _override(context, ref, trip, 'confirm-loaded'),
+                    icon: const Icon(Icons.admin_panel_settings_outlined),
+                    label: Text(context.l10n.managerOverrideDeparture),
+                  ),
+                if (trip.status == 'AtDelivery')
+                  OutlinedButton.icon(
+                    key: const Key('manager-override-delivery'),
+                    onPressed: () =>
+                        _override(context, ref, trip, 'confirm-delivery'),
+                    icon: const Icon(Icons.admin_panel_settings_outlined),
+                    label: Text(context.l10n.managerOverrideDelivery),
+                  ),
               ],
             ),
         ],
@@ -299,6 +326,63 @@ class _TripDetailsContent extends ConsumerWidget {
     'duplicate' => context.l10n.duplicateAsDraft,
     _ => value,
   };
+
+  static Future<void> _override(
+    BuildContext context,
+    WidgetRef ref,
+    Trip trip,
+    String action,
+  ) async {
+    final reason = TextEditingController();
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.managerOverride),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(context.l10n.managerOverrideWarning),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('manager-override-reason'),
+              controller: reason,
+              maxLength: 500,
+              decoration: InputDecoration(
+                labelText: context.l10n.overrideReason,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => reason.text.trim().length >= 5
+                ? Navigator.pop(dialogContext, reason.text.trim())
+                : null,
+            child: Text(context.l10n.confirm),
+          ),
+        ],
+      ),
+    );
+    if (value == null || !context.mounted) return;
+    final ok = await ref
+        .read(mutationRefreshCoordinatorProvider)
+        .mutate(
+          () => ref
+              .read(operationsRepositoryProvider)
+              .managerOverride(trip.id, action, value),
+          clientId: trip.clientId,
+          truckId: trip.truckId,
+        );
+    if (context.mounted) {
+      showResult(context, ok);
+      if (ok) ref.invalidate(tripDetailsProvider(trip.id));
+    }
+  }
+
   static Future<void> _previewAndDispatch(
     BuildContext context,
     WidgetRef ref,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_selector/file_selector.dart';
 
 import '../../../../l10n/l10n_extensions.dart';
 import '../../../clients/domain/client_models.dart';
@@ -9,6 +10,7 @@ import '../../../operations/presentation/operations_controller.dart';
 import '../../../operations/presentation/operations_view.dart';
 import '../../domain/fleet_models.dart';
 import 'trucks_screen.dart';
+import '../../../../shared/widgets/truck_avatar.dart';
 
 class TruckDetailsScreen extends ConsumerWidget {
   const TruckDetailsScreen({required this.truckId, super.key});
@@ -48,6 +50,12 @@ class _Header extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => Row(
     children: [
+      TruckAvatar(
+        photoUrl: truck.photoThumbnailUrl,
+        photoVersion: truck.photoVersion,
+        radius: 36,
+      ),
+      const SizedBox(width: 12),
       Expanded(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,6 +82,20 @@ class _Header extends ConsumerWidget {
           ],
         ),
       ),
+      if (canManageOperations(ref))
+        IconButton(
+          key: const Key('upload-truck-photo'),
+          icon: const Icon(Icons.add_a_photo_outlined),
+          tooltip: context.l10n.uploadTruckPhoto,
+          onPressed: () => _uploadPhoto(context, ref),
+        ),
+      if (canManageOperations(ref) && truck.photoVersion != null)
+        IconButton(
+          key: const Key('remove-truck-photo'),
+          icon: const Icon(Icons.no_photography_outlined),
+          tooltip: context.l10n.removeTruckPhoto,
+          onPressed: () => _removePhoto(context, ref),
+        ),
       if (canManageOperations(ref))
         IconButton(
           key: const Key('edit-truck-details'),
@@ -241,6 +263,38 @@ class _Header extends ConsumerWidget {
         ),
     ],
   );
+
+  Future<void> _uploadPhoto(BuildContext context, WidgetRef ref) async {
+    const typeGroup = XTypeGroup(
+      label: 'images',
+      extensions: ['jpg', 'jpeg', 'png', 'webp'],
+      mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      webWildCards: ['image/jpeg', 'image/png', 'image/webp'],
+    );
+    final file = await openFile(acceptedTypeGroups: const [typeGroup]);
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    final ok = await ref
+        .read(mutationRefreshCoordinatorProvider)
+        .mutate(
+          () => ref
+              .read(operationsRepositoryProvider)
+              .uploadTruckPhoto(truck.id, bytes, file.name),
+          truckId: truck.id,
+        );
+    if (context.mounted) showResult(context, ok);
+  }
+
+  Future<void> _removePhoto(BuildContext context, WidgetRef ref) async {
+    final ok = await ref
+        .read(mutationRefreshCoordinatorProvider)
+        .mutate(
+          () =>
+              ref.read(operationsRepositoryProvider).removeTruckPhoto(truck.id),
+          truckId: truck.id,
+        );
+    if (context.mounted) showResult(context, ok);
+  }
 }
 
 class _Profile extends StatelessWidget {

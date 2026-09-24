@@ -8,6 +8,7 @@ public enum TripStatus
     AtPickup,
     Started,
     InTransit,
+    AtDelivery,
     Delivered,
     Completed,
     Cancelled

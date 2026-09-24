@@ -1,6 +1,8 @@
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Domain.Fleet;
 using TransportManagement.Domain.Trips;
+using System.Text.Json;
+using TransportManagement.Domain.Common;
 
 namespace TransportManagement.Application.Trips;
 
@@ -10,8 +12,49 @@ public sealed class TripLifecycleService(
     IClock clock,
     TripEntityResolver resolver,
     TripEventWriter events,
-    ResourceEventWriter resourceEvents)
+    ResourceEventWriter resourceEvents,
+    INotificationStore notifications)
 {
+    public async Task<TripResponse> ConfirmLoadedAsync(Guid id, string source,
+        string? reason, CancellationToken cancellationToken)
+    {
+        var (trip, truck, driver) = await resolver.AssignedResourcesAsync(id, cancellationToken);
+        RequireOverrideReason(source, reason);
+        var now = clock.UtcNow;
+        var previousStatus = trip.Status;
+        trip.ConfirmLoaded(now);
+        if (driver.Status != DriverStatus.OnTrip) driver.ChangeStatus(DriverStatus.OnTrip, now);
+        events.Append(trip, "DriverConfirmedDeparture", new
+        {
+            previousStatus, nextStatus = trip.Status, reason
+        }, source);
+        resourceEvents.Truck(truck.Id, "TruckCargoDepartureConfirmed",
+            new { tripId = trip.Id, trip.TripNumber }, source);
+        AddNotification(trip, "DriverConfirmedDeparture", source, reason, now);
+        await tripStore.SaveChangesAsync(cancellationToken);
+        return TripResponseMapper.Map(trip);
+    }
+
+    public async Task<TripResponse> ConfirmDeliveryAsync(Guid id, string source,
+        string? reason, CancellationToken cancellationToken)
+    {
+        var (trip, truck, driver) = await resolver.AssignedResourcesAsync(id, cancellationToken);
+        RequireOverrideReason(source, reason);
+        var now = clock.UtcNow;
+        var previousStatus = trip.Status;
+        trip.ConfirmDelivery(now);
+        driver.ChangeStatus(DriverStatus.Available, now);
+        events.Append(trip, "DriverConfirmedDelivery", new
+        {
+            previousStatus, nextStatus = trip.Status, reason
+        }, source);
+        resourceEvents.Truck(truck.Id, "TruckDeliveryConfirmed",
+            new { tripId = trip.Id, trip.TripNumber }, source);
+        AddNotification(trip, "DriverConfirmedDelivery", source, reason, now);
+        await tripStore.SaveChangesAsync(cancellationToken);
+        return TripResponseMapper.Map(trip);
+    }
+
     public Task<TripResponse> MarkInTransitAsync(Guid id, CancellationToken cancellationToken) =>
         TransitionAsync(id, (trip, now) => trip.MarkInTransit(now),
             "MarkedInTransit", cancellationToken);
@@ -36,7 +79,7 @@ public sealed class TripLifecycleService(
         Guid id, CancelTripRequest request, CancellationToken cancellationToken)
     {
         var trip = await resolver.TripAsync(id, cancellationToken);
-        var release = trip.Status is TripStatus.EnRouteToPickup or TripStatus.AtPickup
+        var release = trip.Status is TripStatus.Assigned or TripStatus.EnRouteToPickup or TripStatus.AtPickup
             or TripStatus.Started or TripStatus.InTransit;
         Truck? truck = null;
         Driver? driver = null;
@@ -81,5 +124,22 @@ public sealed class TripLifecycleService(
         events.Append(trip, eventType);
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
+    }
+
+    private static void RequireOverrideReason(string source, string? reason)
+    {
+        if (source == "ManagerOverride"
+            && (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length is < 5 or > 500))
+            throw new DomainRuleException("An override reason between 5 and 500 characters is required.",
+                "MANAGER_OVERRIDE_REASON_REQUIRED");
+    }
+
+    private void AddNotification(Trip trip, string type, string source,
+        string? reason, DateTimeOffset now)
+    {
+        var eventKey = $"{type}:{trip.Id:N}:{trip.Version}";
+        notifications.Add(new OperationNotification(Guid.NewGuid(), currentUser.CompanyId,
+            type, "Info", trip.Id, trip.TruckId, trip.DriverId, eventKey,
+            JsonSerializer.Serialize(new { trip.TripNumber, source, reason }), now));
     }
 }

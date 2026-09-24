@@ -59,6 +59,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 28),
                       TextFormField(
+                        key: const Key('login-email'),
                         controller: _email,
                         keyboardType: TextInputType.emailAddress,
                         autofillHints: const [AutofillHints.username],
@@ -73,6 +74,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
+                        key: const Key('login-password'),
                         controller: _password,
                         obscureText: true,
                         autofillHints: const [AutofillHints.password],
@@ -100,6 +102,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ],
                       const SizedBox(height: 24),
                       FilledButton(
+                        key: const Key('login-submit'),
                         onPressed: auth.isLoading ? null : _submit,
                         child: auth.isLoading
                             ? const SizedBox.square(

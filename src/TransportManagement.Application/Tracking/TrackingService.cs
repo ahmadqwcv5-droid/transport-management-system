@@ -12,12 +12,13 @@ public sealed class TrackingService(
     ITrackingProvider provider,
     ITrackingStore trackingStore,
     IFleetStore fleetStore,
+    ITruckPhotoStore photoStore,
     ITripQueryStore tripStore,
     ICurrentUser currentUser,
     IClock clock,
     TrackingPolicy policy,
     DispatchPolicy dispatchPolicy,
-    TripDispatchService tripDispatchService)
+    GeofenceEvaluationService geofences)
 {
     public async Task<IReadOnlyList<TruckPositionResponse>> CurrentAsync(CancellationToken cancellationToken)
     {
@@ -47,15 +48,16 @@ public sealed class TrackingService(
             {
                 trackingStore.AddPositions(changed);
                 await trackingStore.SaveChangesAsync(cancellationToken);
-                foreach (var position in changed.Where(x =>
-                    x.MovementPhase == MovementPhase.Repositioning && x.TripId.HasValue))
-                    await tripDispatchService.EvaluateArrivalAsync(
-                        position.TripId!.Value, position, cancellationToken);
+                foreach (var position in changed.Where(x => x.TripId.HasValue))
+                    await geofences.EvaluateAsync(position, cancellationToken);
                 latest = await trackingStore.LatestPositionsAsync(cancellationToken);
             }
         }
         var drivers = await fleetStore.ListDriversAsync(null, null, null, cancellationToken);
-        return latest.Join(trucks, p => p.TruckId, t => t.Id, (p, t) => Map(p, t.PlateNumber, t.Status.ToString(), trips, drivers)).ToArray();
+        var photos = (await photoStore.ListAsync(cancellationToken)).ToDictionary(x => x.TruckId);
+        return latest.Join(trucks, p => p.TruckId, t => t.Id,
+            (p, t) => Map(p, t.PlateNumber, t.Status.ToString(), trips, drivers,
+                photos.GetValueOrDefault(t.Id))).ToArray();
     }
 
     public async Task<TruckPositionResponse> CurrentForTruckAsync(Guid truckId, CancellationToken cancellationToken)
@@ -67,7 +69,8 @@ public sealed class TrackingService(
             ?? throw new NotFoundException("No tracking position is available.", "POSITION_NOT_FOUND");
         var trips = await tripStore.ListTripsAsync(null, null, truckId, null, null, null, cancellationToken);
         var drivers = await fleetStore.ListDriversAsync(null, null, null, cancellationToken);
-        return Map(position, truck.PlateNumber, truck.Status.ToString(), trips, drivers);
+        return Map(position, truck.PlateNumber, truck.Status.ToString(), trips, drivers,
+            await photoStore.GetAsync(truckId, cancellationToken));
     }
 
     public async Task<IReadOnlyList<TruckPositionResponse>> HistoryAsync(Guid truckId, int limit, CancellationToken cancellationToken)
@@ -77,7 +80,8 @@ public sealed class TrackingService(
         var trips = await tripStore.ListTripsAsync(null, null, truckId, null, null, null, cancellationToken);
         var drivers = await fleetStore.ListDriversAsync(null, null, null, cancellationToken);
         return (await trackingStore.HistoryAsync(truckId, Math.Clamp(limit, 1, 200), cancellationToken))
-            .Select(p => Map(p, truck.PlateNumber, truck.Status.ToString(), trips, drivers)).ToArray();
+            .Select(p => Map(p, truck.PlateNumber, truck.Status.ToString(), trips, drivers,
+                null)).ToArray();
     }
 
     public async Task<TripTrackingHistoryResponse> TripHistoryAsync(
@@ -197,7 +201,8 @@ public sealed class TrackingService(
     }
 
     private TruckPositionResponse Map(TruckPosition position, string plate, string status,
-        IReadOnlyList<Domain.Trips.Trip> trips, IReadOnlyList<Domain.Fleet.Driver> drivers)
+        IReadOnlyList<Domain.Trips.Trip> trips, IReadOnlyList<Domain.Fleet.Driver> drivers,
+        Domain.Fleet.TruckPhoto? photo)
     {
         var trip = trips.FirstOrDefault(x => x.TruckId == position.TruckId && x.ReservesResources);
         var driver = trip?.DriverId is Guid driverId ? drivers.FirstOrDefault(x => x.Id == driverId) : null;
@@ -205,7 +210,9 @@ public sealed class TrackingService(
         return new(position.TruckId, plate, status, position.Latitude, position.Longitude,
             position.Speed, position.Heading, position.RecordedAt, isOnline,
             isOnline ? "Online" : "Offline", trip?.Id, driver?.FullName,
-            position.MovementPhase, position.RepositioningPlanId);
+            position.MovementPhase, position.RepositioningPlanId,
+            photo?.Version, photo is null ? null
+                : $"/api/trucks/{position.TruckId}/photo/thumbnail?v={photo.Version}");
     }
 
     private bool ShouldPersist(TrackingSample sample, TrackingTarget target, TruckPosition previous)
@@ -236,16 +243,18 @@ public sealed class TrackingService(
         {
             var trip = trips.FirstOrDefault(x => x.TruckId == truckId && x.ReservesResources && x.RoutePlan is not null);
             var approach = trip?.CurrentRepositioningPlan;
-            var isApproach = trip?.Status == TripStatus.EnRouteToPickup
+            var isApproach = trip?.Status == TripStatus.EnRouteToPickup;
+            var hasApproachRoute = isApproach
                 && approach?.Status == RepositioningPlanStatus.Active;
             var isCargo = trip?.Status is TripStatus.Started or TripStatus.InTransit;
-            IReadOnlyList<GeoCoordinate> coordinates = isApproach
+            IReadOnlyList<GeoCoordinate> coordinates = hasApproachRoute
                 ? RouteGeometry.FromGeoJson(approach!.Geometry)
                 : isCargo && trip?.RoutePlan is not null
                     ? RouteGeometry.FromGeoJson(trip.RoutePlan.Geometry)
                     : [];
             latestByTruck.TryGetValue(truckId, out var latest);
-            var retainStationaryContext = trip?.Status is TripStatus.AtPickup or TripStatus.Delivered;
+            var retainStationaryContext = trip?.Status is TripStatus.AtPickup
+                or TripStatus.AtDelivery or TripStatus.Delivered;
             var phase = isApproach ? MovementPhase.Repositioning
                 : isCargo ? MovementPhase.Cargo
                 : retainStationaryContext ? latest?.MovementPhase : MovementPhase.CurrentLocation;
@@ -253,16 +262,16 @@ public sealed class TrackingService(
                 : retainStationaryContext ? latest?.TripId : null;
             var targetRouteId = isCargo ? trip?.RoutePlan?.Id
                 : retainStationaryContext ? latest?.RoutePlanId : null;
-            var targetApproachId = isApproach ? approach!.Id
+            var targetApproachId = hasApproachRoute ? approach!.Id
                 : retainStationaryContext ? latest?.RepositioningPlanId : null;
             return new TrackingTarget(
                 truckId,
                 targetTripId,
                 targetRouteId,
-                isApproach ? $"approach:{approach!.Id:N}" : isCargo
+                hasApproachRoute ? $"approach:{approach!.Id:N}" : isCargo
                     ? $"cargo:{trip!.RoutePlan!.StopsFingerprint}" : null,
                 coordinates,
-                isApproach || isCargo,
+                hasApproachRoute || isCargo,
                 phase,
                 targetApproachId,
                 latest is null ? null : new(latest.Latitude, latest.Longitude),

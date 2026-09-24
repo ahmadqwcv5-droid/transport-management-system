@@ -320,9 +320,16 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("\"UserId\" IS NOT NULL");
 
                     b.HasIndex("CompanyId", "LicenseNumber")
                         .IsUnique();
@@ -460,6 +467,72 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                     b.HasIndex("CompanyId", "TruckId", "CreatedAt");
 
                     b.ToTable("truck_events", (string)null);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Fleet.TruckPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("OriginalByteSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long>("ThumbnailByteSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("TruckId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
+                    b.HasIndex("TruckId");
+
+                    b.HasIndex("UploadedByUserId");
+
+                    b.HasIndex("CompanyId", "TruckId")
+                        .IsUnique();
+
+                    b.ToTable("truck_photos", (string)null);
                 });
 
             modelBuilder.Entity("TransportManagement.Domain.Identity.RefreshToken", b =>
@@ -641,6 +714,72 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                     b.ToTable("truck_positions", (string)null);
                 });
 
+            modelBuilder.Entity("TransportManagement.Domain.Trips.OperationNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DataJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid?>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReadByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("TripId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TruckId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("ReadByUserId");
+
+                    b.HasIndex("TripId");
+
+                    b.HasIndex("TruckId");
+
+                    b.HasIndex("CompanyId", "CreatedAt");
+
+                    b.HasIndex("CompanyId", "EventKey")
+                        .IsUnique();
+
+                    b.ToTable("operation_notifications", (string)null);
+                });
+
             modelBuilder.Entity("TransportManagement.Domain.Trips.Trip", b =>
                 {
                     b.Property<Guid>("Id")
@@ -655,6 +794,9 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("ArchivedByUserId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ArrivedDeliveryAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset?>("ArrivedPickupAt")
                         .HasColumnType("timestamp with time zone");
@@ -743,7 +885,7 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CompanyId", "DriverId")
                         .IsUnique()
-                        .HasFilter("\"DriverId\" IS NOT NULL AND \"Status\" IN ('Assigned', 'EnRouteToPickup', 'AtPickup', 'Started', 'InTransit', 'Delivered')");
+                        .HasFilter("\"DriverId\" IS NOT NULL AND \"Status\" IN ('Assigned', 'EnRouteToPickup', 'AtPickup', 'Started', 'InTransit', 'AtDelivery', 'Delivered')");
 
                     b.HasIndex("CompanyId", "PlannedStartAt");
 
@@ -754,7 +896,7 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CompanyId", "TruckId")
                         .IsUnique()
-                        .HasFilter("\"TruckId\" IS NOT NULL AND \"Status\" IN ('Assigned', 'EnRouteToPickup', 'AtPickup', 'Started', 'InTransit', 'Delivered')");
+                        .HasFilter("\"TruckId\" IS NOT NULL AND \"Status\" IN ('Assigned', 'EnRouteToPickup', 'AtPickup', 'Started', 'InTransit', 'AtDelivery', 'Delivered')");
 
                     b.ToTable("trips", (string)null);
                 });
@@ -805,6 +947,63 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                     b.HasIndex("CompanyId", "TripId", "OccurredAt");
 
                     b.ToTable("trip_events", (string)null);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Trips.TripGeofenceObservation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ConsecutiveSamples")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FirstQualifyingAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsInside")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LastSampleAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RouteIdentity")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Stage")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TripId");
+
+                    b.HasIndex("CompanyId", "TripId", "Stage", "RouteIdentity")
+                        .IsUnique();
+
+                    b.ToTable("trip_geofence_observations", (string)null);
                 });
 
             modelBuilder.Entity("TransportManagement.Domain.Trips.TripNumberCounter", b =>
@@ -1130,6 +1329,11 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithOne()
+                        .HasForeignKey("TransportManagement.Domain.Fleet.Driver", "UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("TransportManagement.Domain.Fleet.Truck", b =>
@@ -1163,6 +1367,27 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("TruckId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Fleet.TruckPhoto", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Truck", null)
+                        .WithMany()
+                        .HasForeignKey("TruckId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UploadedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -1220,6 +1445,35 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TransportManagement.Domain.Trips.OperationNotification", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Driver", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReadByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Truck", null)
+                        .WithMany()
+                        .HasForeignKey("TruckId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("TransportManagement.Domain.Trips.Trip", b =>
                 {
                     b.HasOne("TransportManagement.Domain.Clients.Client", null)
@@ -1260,6 +1514,21 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
 
                     b.HasOne("TransportManagement.Domain.Trips.Trip", null)
                         .WithMany("Events")
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Trips.TripGeofenceObservation", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Trips.Trip", null)
+                        .WithMany()
                         .HasForeignKey("TripId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

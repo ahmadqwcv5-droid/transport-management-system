@@ -16,7 +16,7 @@ internal sealed class OperationsStore(AppDbContext dbContext) :
     private static readonly SemaphoreSlim CounterLock = new(1, 1);
     private static readonly TripStatus[] ReservedStatuses =
         [TripStatus.Assigned, TripStatus.EnRouteToPickup, TripStatus.AtPickup,
-            TripStatus.Started, TripStatus.InTransit, TripStatus.Delivered];
+            TripStatus.Started, TripStatus.InTransit, TripStatus.AtDelivery, TripStatus.Delivered];
 
     public Task<Client?> GetClientAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Clients.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -270,7 +270,8 @@ internal sealed class OperationsStore(AppDbContext dbContext) :
             {
                 "active" => source.Where(x => !x.ArchivedAt.HasValue &&
                     (x.Status == TripStatus.EnRouteToPickup || x.Status == TripStatus.AtPickup ||
-                     x.Status == TripStatus.Started || x.Status == TripStatus.InTransit || x.Status == TripStatus.Delivered)),
+                     x.Status == TripStatus.Started || x.Status == TripStatus.InTransit
+                     || x.Status == TripStatus.AtDelivery || x.Status == TripStatus.Delivered)),
                 "planned" => source.Where(x => !x.ArchivedAt.HasValue &&
                     (x.Status == TripStatus.Draft || x.Status == TripStatus.Assigned)),
                 "completed" => source.Where(x => !x.ArchivedAt.HasValue && x.Status == TripStatus.Completed),

@@ -28,6 +28,27 @@ void main() {
       expect(mapMarkerRotation(450), 90);
     });
 
+    test('photo marker stays upright and exposes a separate heading cue', () {
+      final photoTruck = truck(
+        'photo',
+        heading: 135,
+        photoVersion: 'version-2',
+        photoThumbnailUrl: '/api/trucks/photo/photo/thumbnail?v=version-2',
+      );
+
+      expect(photoTruck.photoImageName, 'truck-photo:photo:version-2');
+      final options = truckSymbolOptions(photoTruck);
+      expect(options.iconImage, photoTruck.photoImageName);
+      expect(options.iconRotate, 0);
+      expect(options.textField, '▲');
+      expect(options.textRotate, 135);
+
+      final fallback = truckSymbolOptions(photoTruck, forceFallback: true);
+      expect(fallback.iconImage, truckMarkerImageName);
+      expect(fallback.iconRotate, 135);
+      expect(fallback.textField, isNull);
+    });
+
     test('selection and operating states have non-color-only treatment', () {
       final moving = truckStatusCircleOptions(truck('moving'));
       final stationary = truckStatusCircleOptions(
@@ -285,7 +306,7 @@ void main() {
     });
 
     test(
-      'selection and recenter fit route with responsive panel padding',
+      'selection follows locally and route overview fits exactly on request',
       () async {
         final adapter = FakeFleetMapAdapter();
         final coordinator = FleetMapAnnotationCoordinator(adapter);
@@ -303,8 +324,23 @@ void main() {
           panelWidth: 290,
         );
 
-        expect(adapter.cameraPlans.single.mode, FleetCameraMode.routeBounds);
+        expect(adapter.cameraPlans.single.mode, FleetCameraMode.localTruck);
+        expect(adapter.cameraPlans.single.points, hasLength(1));
         expect(adapter.cameraPlans.single.panelWidth, 290);
+
+        adapter.cameraPlans.clear();
+        await coordinator.synchronize(
+          snapshot,
+          cameraRequest: FleetCameraRequest.routeOverview,
+          panelWidth: 290,
+        );
+
+        expect(adapter.cameraPlans.single.mode, FleetCameraMode.routeBounds);
+        expect(adapter.cameraPlans.single.points, hasLength(3));
+
+        adapter.cameraPlans.clear();
+        await coordinator.synchronize(snapshot);
+        expect(adapter.cameraPlans, isEmpty);
       },
     );
 
@@ -398,12 +434,16 @@ TruckMarkerModel truck(
   double heading = 0,
   TruckMarkerState state = TruckMarkerState.moving,
   bool selected = false,
+  String? photoVersion,
+  String? photoThumbnailUrl,
 }) => TruckMarkerModel(
   id: id,
   point: MapPoint(latitude, longitude),
   heading: heading,
   state: state,
   selected: selected,
+  photoVersion: photoVersion,
+  photoThumbnailUrl: photoThumbnailUrl,
 );
 
 FleetMapSnapshot fleetSnapshot(

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
@@ -8,6 +10,19 @@ import '../../trips/domain/trip_models.dart' as ops;
 final class DashboardRepository {
   DashboardRepository(this._client);
   final ApiClient _client;
+
+  Future<Uint8List> authenticatedImage(String url) async {
+    try {
+      final response = await _client.dio.get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return Uint8List.fromList(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
   Future<DashboardData> load() async {
     try {
       final response = await _client.dio.get<Json>('/api/dashboard');

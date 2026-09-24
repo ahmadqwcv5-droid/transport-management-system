@@ -50,7 +50,9 @@ public sealed record TruckResponse(
     string? CurrentTripNumber = null,
     Guid? CurrentDriverId = null,
     bool CanBeAssigned = true,
-    string IneligibilityReasonCode = "AVAILABLE");
+    string IneligibilityReasonCode = "AVAILABLE",
+    string? PhotoVersion = null,
+    string? PhotoThumbnailUrl = null);
 
 public sealed record LatestTruckPositionResponse(
     decimal Latitude, decimal Longitude, decimal Speed, decimal Heading,

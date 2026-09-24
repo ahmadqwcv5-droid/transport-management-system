@@ -8,6 +8,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
+    && mkdir -p /data/truck-photos \
+    && chown "$APP_UID:$APP_UID" /data/truck-photos \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app .
 USER $APP_UID

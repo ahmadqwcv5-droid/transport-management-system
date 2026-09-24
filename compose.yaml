@@ -49,11 +49,16 @@ services:
       Geocoding__Provider: ${GEOCODING_PROVIDER:-}
       Geocoding__BaseUrl: ${GEOCODING_BASE_URL:-}
       Geocoding__UserAgent: ${GEOCODING_USER_AGENT:-TransportManagement-Development}
+      TruckPhotos__RootPath: /data/truck-photos
+      TruckPhotos__MaximumBytes: ${TRUCK_PHOTO_MAXIMUM_BYTES:-5242880}
+      TruckPhotos__MaximumPixels: ${TRUCK_PHOTO_MAXIMUM_PIXELS:-40000000}
     ports:
       - "5080:8080"
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - truck_photo_data:/data/truck-photos
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent http://localhost:8080/health >/dev/null || exit 1"]
       interval: 10s
@@ -62,3 +67,4 @@ services:
 
 volumes:
   postgres_data:
+  truck_photo_data:

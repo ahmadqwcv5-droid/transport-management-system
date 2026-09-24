@@ -11,6 +11,7 @@ public sealed record DriverRequest(
     [param: MaxLength(2000)] string? Notes);
 
 public sealed record DriverStatusRequest(DriverStatus Status);
+public sealed record LinkDriverUserRequest(Guid UserId);
 
 public sealed record DriverResponse(
     Guid Id,
@@ -22,4 +23,5 @@ public sealed record DriverResponse(
     string? Notes,
     bool IsActive,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    Guid? UserId);

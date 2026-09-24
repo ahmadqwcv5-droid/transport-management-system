@@ -31,7 +31,7 @@ public sealed class TripDispatchService(
         var now = clock.UtcNow;
         if (distance <= dispatchPolicy.PickupArrivalRadiusMeters)
         {
-            trip.MarkAtPickup(now);
+            trip.DispatchForPickupConfirmation(now);
         }
         else
         {
@@ -51,10 +51,8 @@ public sealed class TripDispatchService(
             trip.DispatchToPickup(plan, now);
         }
         driver.ChangeStatus(DriverStatus.OnTrip, now);
-        events.Append(trip, trip.Status == TripStatus.AtPickup
-            ? "ArrivedAtPickup" : "DispatchedToPickup");
-        resourceEvents.Truck(truck.Id, trip.Status == TripStatus.AtPickup
-            ? "TruckArrivedAtPickup" : "TruckDispatchedToPickup",
+        events.Append(trip, "DispatchedToPickup");
+        resourceEvents.Truck(truck.Id, "TruckDispatchedToPickup",
             new { tripId = trip.Id, trip.TripNumber });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
@@ -76,25 +74,6 @@ public sealed class TripDispatchService(
             new { tripId = trip.Id, trip.TripNumber });
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
-    }
-
-    public async Task<bool> EvaluateArrivalAsync(
-        Guid tripId, TruckPosition position, CancellationToken cancellationToken)
-    {
-        var trip = await tripStore.GetTripAsync(tripId, cancellationToken);
-        if (trip is null || trip.Status != TripStatus.EnRouteToPickup
-            || trip.TruckId != position.TruckId) return false;
-        var pickup = RequiredPickup(trip);
-        var distance = RouteGeometry.DistanceMeters([
-            new(position.Latitude, position.Longitude), pickup
-        ]);
-        if (distance > dispatchPolicy.PickupArrivalRadiusMeters) return false;
-        trip.MarkAtPickup(clock.UtcNow);
-        events.Append(trip, "ArrivedAtPickup", source: "System");
-        resourceEvents.Truck(position.TruckId, "TruckArrivedAtPickup",
-            new { tripId = trip.Id, trip.TripNumber }, "System");
-        await tripStore.SaveChangesAsync(cancellationToken);
-        return true;
     }
 
     public async Task<RepositioningProgressResponse> ProgressAsync(

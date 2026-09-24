@@ -114,8 +114,11 @@ public sealed class DispatchTests(ApiFactory factory) : IClassFixture<ApiFactory
         Assert.Equal(JsonValueKind.Null, preview.GetProperty("plan").ValueKind);
         var dispatched = await (await companyA.PostJsonAsync(
             $"/api/trips/{resources.TripId}/dispatch-to-pickup", new { })).RequiredJsonAsync();
-        Assert.Equal("AtPickup", dispatched.GetProperty("status").GetString());
-        Assert.Contains("start", dispatched.GetProperty("allowedActions").EnumerateArray().Select(x => x.GetString()));
+        Assert.Equal("EnRouteToPickup", dispatched.GetProperty("status").GetString());
+        var arrived = await (await companyA.PostEmptyAsync(
+            $"/api/trips/{resources.TripId}/arrive-pickup")).RequiredJsonAsync();
+        Assert.Equal("AtPickup", arrived.GetProperty("status").GetString());
+        Assert.Contains("confirm-loaded", arrived.GetProperty("allowedActions").EnumerateArray().Select(x => x.GetString()));
 
         var foreign = await companyB.PostEmptyAsync(
             $"/api/trips/{resources.TripId}/repositioning/preview");
@@ -144,6 +147,8 @@ public sealed class DispatchTests(ApiFactory factory) : IClassFixture<ApiFactory
         await (await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "step" }))
             .RequiredJsonAsync();
         await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        await (await client.PostEmptyAsync(
+            $"/api/trips/{resources.TripId}/arrive-pickup")).RequiredJsonAsync();
         var arrived = await client.GetJsonAsync<JsonElement>($"/api/trips/{resources.TripId}");
         Assert.Equal("AtPickup", arrived.GetProperty("status").GetString());
         var history = await client.GetJsonAsync<JsonElement>(

@@ -8,6 +8,7 @@ namespace TransportManagement.Application.Trips;
 public sealed class TripAssignmentService(
     ITripStore tripStore,
     IFleetStore fleetStore,
+    ITruckPhotoStore photoStore,
     IClock clock,
     TripEntityResolver resolver,
     TripEventWriter events,
@@ -24,6 +25,7 @@ public sealed class TripAssignmentService(
         var drivers = await fleetStore.ListDriversAsync(null, null, null, cancellationToken);
         var truckReservations = (await fleetStore.TruckReservationsAsync(trip.Id, cancellationToken))
             .GroupBy(x => x.ResourceId).ToDictionary(x => x.Key, x => x.First());
+        var photos = (await photoStore.ListAsync(cancellationToken)).ToDictionary(x => x.TruckId);
         var driverReservations = (await fleetStore.DriverReservationsAsync(trip.Id, cancellationToken))
             .GroupBy(x => x.ResourceId).ToDictionary(x => x.Key, x => x.First());
         var selectedTruck = trip.TruckId.HasValue
@@ -39,7 +41,8 @@ public sealed class TripAssignmentService(
             : "AVAILABLE";
         return new(trip.Id, trip.TruckId, trip.DriverId, canChoose,
             trucks.Select(truck => TruckOption(truck, canChoose,
-                truckReservations.GetValueOrDefault(truck.Id))).ToArray(),
+                truckReservations.GetValueOrDefault(truck.Id),
+                photos.GetValueOrDefault(truck.Id))).ToArray(),
             drivers.Select(driver => DriverOption(driver, canChoose,
                 driverReservations.GetValueOrDefault(driver.Id))).ToArray(),
             suggestionReason == "AVAILABLE" ? suggestedDriver?.Id : null,
@@ -116,7 +119,8 @@ public sealed class TripAssignmentService(
     }
 
     private static AssignmentResourceOptionResponse TruckOption(
-        Truck truck, bool tripCanAssign, ResourceReservation? reservation)
+        Truck truck, bool tripCanAssign, ResourceReservation? reservation,
+        TruckPhoto? photo)
     {
         var reason = !tripCanAssign ? "TRIP_NOT_READY_FOR_ASSIGNMENT"
             : !truck.IsActive ? "RESOURCE_INACTIVE"
@@ -127,7 +131,9 @@ public sealed class TripAssignmentService(
         return new(truck.Id, truck.PlateNumber, truck.Status.ToString(),
             reason == "AVAILABLE", reason, reservation?.TripId, reservation?.TripNumber,
             truck.FleetCode, truck.Type?.ToString(), truck.PayloadCapacity,
-            truck.PayloadUnit.ToString(), truck.DefaultDriverId);
+            truck.PayloadUnit.ToString(), truck.DefaultDriverId,
+            photo?.Version, photo is null ? null
+                : $"/api/trucks/{truck.Id}/photo/thumbnail?v={photo.Version}");
     }
 
     private static AssignmentResourceOptionResponse DriverOption(

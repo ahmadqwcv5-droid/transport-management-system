@@ -11,12 +11,15 @@ using TransportManagement.Domain.Identity;
 using TransportManagement.Infrastructure.Persistence;
 using TransportManagement.Infrastructure.Routing;
 using TransportManagement.Infrastructure.Tracking;
+using TransportManagement.Application.Tracking;
 
 namespace TransportManagement.IntegrationTests;
 
 public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly string _databaseName = $"tms-tests-{Guid.NewGuid()}";
+    private readonly string _photoRoot = Path.Combine(Path.GetTempPath(),
+        $"tms-photo-tests-{Guid.NewGuid():N}");
     private readonly bool _useFailingRoutingProvider;
     private readonly bool _simulatorEnabled = true;
     public static readonly Guid CompanyAId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
@@ -47,6 +50,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 ["Jwt:RefreshTokenDays"] = "14"
                 , ["Tracking:Provider"] = "Simulator"
                 , ["Tracking:SimulatorEnabled"] = "true"
+                , ["Tracking:SimulatorStepDistanceMeters"] = "100000"
+                , ["Geofence:MinimumDwellSeconds"] = "0"
+                , ["Geofence:MinimumSamples"] = "2"
+                , ["TruckPhotos:RootPath"] = _photoRoot
             }));
         builder.ConfigureServices(services =>
         {
@@ -54,6 +61,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
             services.RemoveAll<AppDbContext>();
             services.RemoveAll<ITrackingProvider>();
+            services.RemoveAll<GeofencePolicy>();
+            services.AddSingleton(new GeofencePolicy(50, 80, 2,
+                TimeSpan.Zero, TimeSpan.FromSeconds(60)));
             if (_simulatorEnabled)
                 services.AddSingleton<ITrackingProvider, SimulatedTrackingProvider>();
             else

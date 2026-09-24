@@ -1296,4 +1296,89 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get duplicateTruckIdentity =>
       'That plate, VIN, or fleet code is already in use.';
+
+  @override
+  String get uploadTruckPhoto => 'Upload truck photo';
+
+  @override
+  String get removeTruckPhoto => 'Remove truck photo';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get markAllRead => 'Mark all read';
+
+  @override
+  String get noNotifications => 'No notifications yet';
+
+  @override
+  String get markRead => 'Mark as read';
+
+  @override
+  String get notificationArrivedPickup => 'Truck arrived at pickup';
+
+  @override
+  String get notificationArrivedDelivery => 'Truck arrived at delivery';
+
+  @override
+  String get notificationDepartureConfirmed =>
+      'Cargo loaded and departure confirmed';
+
+  @override
+  String get notificationDeliveryConfirmed => 'Delivery confirmed';
+
+  @override
+  String get operationalUpdate => 'Operational update';
+
+  @override
+  String get myTrip => 'My trip';
+
+  @override
+  String get noAssignedTrip => 'No active trip is assigned to you';
+
+  @override
+  String get confirmLoaded => 'Confirm loaded and start trip';
+
+  @override
+  String get confirmLoadedWarning =>
+      'Confirm that cargo is loaded and you are departing the pickup?';
+
+  @override
+  String get confirmDelivery => 'Confirm delivery';
+
+  @override
+  String get confirmDeliveryWarning =>
+      'Confirm that the cargo handoff is complete? This completes the trip.';
+
+  @override
+  String get atDelivery => 'At delivery';
+
+  @override
+  String get managerOverrideDeparture => 'Override departure confirmation';
+
+  @override
+  String get managerOverrideDelivery => 'Override delivery confirmation';
+
+  @override
+  String get managerOverride => 'Manager override';
+
+  @override
+  String get managerOverrideWarning =>
+      'Use this only when the linked driver cannot confirm. The reason and your identity are audited.';
+
+  @override
+  String get overrideReason => 'Override reason';
+
+  @override
+  String get resumeFollow => 'Resume follow';
+
+  @override
+  String get showFullRoute => 'Show full route';
+
+  @override
+  String get actionConfirmed => 'Confirmation saved.';
+
+  @override
+  String get backToTruck => 'Back to truck';
 }

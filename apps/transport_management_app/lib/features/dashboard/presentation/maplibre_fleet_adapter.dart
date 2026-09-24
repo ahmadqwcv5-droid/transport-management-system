@@ -10,19 +10,35 @@ const truckMarkerHeadingOffset = 0.0;
 double mapMarkerRotation(double trackingHeading) =>
     (trackingHeading + truckMarkerHeadingOffset) % 360;
 
-SymbolOptions truckSymbolOptions(TruckMarkerModel truck) => SymbolOptions(
-  geometry: _latLng(truck.point),
-  iconImage: truckMarkerImageName,
-  iconSize: truck.selected ? 0.82 : 0.70,
-  iconRotate: mapMarkerRotation(truck.heading),
-  iconAnchor: 'center',
-  iconOpacity: switch (truck.state) {
-    TruckMarkerState.offline => 0.5,
-    TruckMarkerState.maintenance => 0.72,
-    _ => 1,
-  },
-  zIndex: truck.selected ? 20 : 10,
-);
+SymbolOptions truckSymbolOptions(
+  TruckMarkerModel truck, {
+  bool forceFallback = false,
+}) {
+  final usesPhoto = !forceFallback && truck.photoImageName != null;
+  return SymbolOptions(
+    geometry: _latLng(truck.point),
+    iconImage: forceFallback
+        ? truckMarkerImageName
+        : truck.photoImageName ?? truckMarkerImageName,
+    iconSize: truck.selected ? 0.82 : 0.70,
+    // Keep human-recognizable photos upright. The small arrow supplies heading.
+    iconRotate: usesPhoto ? 0 : mapMarkerRotation(truck.heading),
+    iconAnchor: 'center',
+    iconOpacity: switch (truck.state) {
+      TruckMarkerState.offline => 0.5,
+      TruckMarkerState.maintenance => 0.72,
+      _ => 1,
+    },
+    zIndex: truck.selected ? 20 : 10,
+    textField: usesPhoto ? '▲' : null,
+    textSize: usesPhoto ? 13 : null,
+    textRotate: usesPhoto ? mapMarkerRotation(truck.heading) : null,
+    textOffset: usesPhoto ? const Offset(0, -1.8) : null,
+    textColor: usesPhoto ? '#0F172A' : null,
+    textHaloColor: usesPhoto ? '#FFFFFF' : null,
+    textHaloWidth: usesPhoto ? 1.5 : null,
+  );
+}
 
 CircleOptions truckStatusCircleOptions(TruckMarkerModel truck) {
   final selectedExtra = truck.selected ? 6.0 : 0.0;
@@ -49,11 +65,14 @@ CircleOptions truckStatusCircleOptions(TruckMarkerModel truck) {
   );
 }
 
+typedef AuthenticatedThumbnailLoader = Future<Uint8List> Function(String url);
+
 final class MapLibreFleetAnnotationAdapter
     implements FleetMapAnnotationAdapter {
-  MapLibreFleetAnnotationAdapter(this.controller);
+  MapLibreFleetAnnotationAdapter(this.controller, this.thumbnailLoader);
 
   final MapLibreMapController controller;
+  final AuthenticatedThumbnailLoader thumbnailLoader;
   final Map<String, Symbol> _trucks = {};
   final Map<String, Circle> _statuses = {};
   final Map<String, Circle> _stops = {};
@@ -62,6 +81,8 @@ final class MapLibreFleetAnnotationAdapter
   static const _approachLayerId = 'tms-approach-route-layer';
   bool _approachRouteAdded = false;
   final Map<String, Line> _trails = {};
+  final Set<String> _registeredPhotoImages = {};
+  final Set<String> _failedPhotoImages = {};
 
   @override
   Future<void> prepareStyle() async {
@@ -71,6 +92,8 @@ final class MapLibreFleetAnnotationAdapter
     _plannedRoute = null;
     _approachRouteAdded = false;
     _trails.clear();
+    _registeredPhotoImages.clear();
+    _failedPhotoImages.clear();
 
     final bytes = await rootBundle.load(truckMarkerAsset);
     await controller.addImage(
@@ -99,17 +122,39 @@ final class MapLibreFleetAnnotationAdapter
 
   @override
   Future<void> addTruck(TruckMarkerModel truck) async {
+    final photoReady = await _ensurePhoto(truck);
     _trucks[truck.id] = await controller.addSymbol(
-      truckSymbolOptions(truck),
+      truckSymbolOptions(truck, forceFallback: !photoReady),
       <String, dynamic>{'truckId': truck.id},
     );
   }
 
   @override
   Future<void> updateTruck(TruckMarkerModel truck) async {
+    final photoReady = await _ensurePhoto(truck);
     final symbol = _trucks[truck.id];
     if (symbol == null) return addTruck(truck);
-    await controller.updateSymbol(symbol, truckSymbolOptions(truck));
+    await controller.updateSymbol(
+      symbol,
+      truckSymbolOptions(truck, forceFallback: !photoReady),
+    );
+  }
+
+  Future<bool> _ensurePhoto(TruckMarkerModel truck) async {
+    final name = truck.photoImageName;
+    final url = truck.photoThumbnailUrl;
+    if (name == null || url == null || _registeredPhotoImages.contains(name)) {
+      return name == null || _registeredPhotoImages.contains(name);
+    }
+    if (_failedPhotoImages.contains(name)) return false;
+    try {
+      await controller.addImage(name, await thumbnailLoader(url));
+      _registeredPhotoImages.add(name);
+      return true;
+    } on Object {
+      _failedPhotoImages.add(name);
+      return false;
+    }
   }
 
   @override
