@@ -73,7 +73,7 @@ internal static class TripResponseMapper
         var actions = trip.Status switch
         {
             TripStatus.Draft => new List<string> { "edit", "delete", "cancel" },
-            TripStatus.Assigned => ["reassign", "unassign", "preview-repositioning", "dispatch-to-pickup", "cancel"],
+            TripStatus.Assigned => ["reassign", "unassign", "preview-repositioning", "override-dispatch-to-pickup", "cancel"],
             TripStatus.EnRouteToPickup => ["arrive-pickup", "cancel"],
             TripStatus.AtPickup => ["confirm-loaded", "start", "cancel"],
             TripStatus.Started => ["mark-in-transit", "cancel"],

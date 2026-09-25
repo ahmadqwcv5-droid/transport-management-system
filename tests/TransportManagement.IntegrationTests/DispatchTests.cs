@@ -32,7 +32,7 @@ public sealed class DispatchTests(ApiFactory factory) : IClassFixture<ApiFactory
 
         var dispatched = await (await client.PostJsonAsync(
             $"/api/trips/{resources.TripId}/dispatch-to-pickup",
-            new { repositioningPlanId = planId })).RequiredJsonAsync();
+            new { repositioningPlanId = planId, reason = "Test manager override" })).RequiredJsonAsync();
         Assert.Equal("EnRouteToPickup", dispatched.GetProperty("status").GetString());
         Assert.Equal(cargoRouteId, dispatched.GetProperty("routePlan").GetProperty("id").GetGuid());
         Assert.Equal("Active", dispatched.GetProperty("repositioningPlan").GetProperty("status").GetString());
@@ -96,7 +96,7 @@ public sealed class DispatchTests(ApiFactory factory) : IClassFixture<ApiFactory
         await AddPositionAsync(moved.TruckId, 39.01m, 32, true, DateTimeOffset.UtcNow.AddMilliseconds(1));
         await AssertProblemAsync(
             await client.PostJsonAsync($"/api/trips/{moved.TripId}/dispatch-to-pickup",
-                new { repositioningPlanId = planId }),
+                new { repositioningPlanId = planId, reason = "Test manager override" }),
             HttpStatusCode.Conflict, "REPOSITIONING_ROUTE_STALE");
     }
 
@@ -113,7 +113,7 @@ public sealed class DispatchTests(ApiFactory factory) : IClassFixture<ApiFactory
         Assert.True(preview.GetProperty("alreadyAtPickup").GetBoolean());
         Assert.Equal(JsonValueKind.Null, preview.GetProperty("plan").ValueKind);
         var dispatched = await (await companyA.PostJsonAsync(
-            $"/api/trips/{resources.TripId}/dispatch-to-pickup", new { })).RequiredJsonAsync();
+            $"/api/trips/{resources.TripId}/dispatch-to-pickup", new { reason = "Test manager override" })).RequiredJsonAsync();
         Assert.Equal("EnRouteToPickup", dispatched.GetProperty("status").GetString());
         var arrived = await (await companyA.PostEmptyAsync(
             $"/api/trips/{resources.TripId}/arrive-pickup")).RequiredJsonAsync();
@@ -142,7 +142,7 @@ public sealed class DispatchTests(ApiFactory factory) : IClassFixture<ApiFactory
         var planId = preview.GetProperty("plan").GetProperty("id").GetGuid();
         await (await client.PostJsonAsync(
             $"/api/trips/{resources.TripId}/dispatch-to-pickup",
-            new { repositioningPlanId = planId })).RequiredJsonAsync();
+            new { repositioningPlanId = planId, reason = "Test manager override" })).RequiredJsonAsync();
 
         await (await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "step" }))
             .RequiredJsonAsync();

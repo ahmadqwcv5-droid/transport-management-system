@@ -15,11 +15,16 @@ public sealed class TripDispatchService(
     DispatchPolicy dispatchPolicy,
     TripEntityResolver resolver,
     TripEventWriter events,
-    ResourceEventWriter resourceEvents)
+    ResourceEventWriter resourceEvents,
+    IDriverIdentityStore driverIdentities,
+    ICurrentUser currentUser)
 {
     public async Task<TripResponse> DispatchToPickupAsync(
-        Guid id, DispatchToPickupRequest request, CancellationToken cancellationToken)
+        Guid id, Guid? repositioningPlanId, string source, string? reason,
+        CancellationToken cancellationToken)
     {
+        if (source == "ManagerOverride" && string.IsNullOrWhiteSpace(reason))
+            throw new DomainRuleException("An override reason is required.", "OVERRIDE_REASON_REQUIRED");
         var (trip, truck, driver) = await resolver.AssignedResourcesAsync(id, cancellationToken);
         if (trip.Status != TripStatus.Assigned)
             throw new DomainRuleException("Dispatch requires an assigned trip.", "INVALID_TRIP_TRANSITION");
@@ -36,7 +41,7 @@ public sealed class TripDispatchService(
         else
         {
             var plan = trip.CurrentRepositioningPlan;
-            if (plan is null || request.RepositioningPlanId != plan.Id)
+            if (plan is null || repositioningPlanId != plan.Id)
                 throw new ConflictException("A valid repositioning route is required.", "REPOSITIONING_ROUTE_REQUIRED");
             var moved = RouteGeometry.DistanceMeters([
                 new(plan.OriginLatitude, plan.OriginLongitude),
@@ -51,7 +56,19 @@ public sealed class TripDispatchService(
             trip.DispatchToPickup(plan, now);
         }
         driver.ChangeStatus(DriverStatus.OnTrip, now);
-        events.Append(trip, "DispatchedToPickup");
+        var conflicts = await driverIdentities.GetConflictingSessionsAsync(
+            driver.Id, truck.Id, cancellationToken);
+        var session = conflicts.FirstOrDefault(x => x.DriverId == driver.Id && x.TruckId == truck.Id);
+        foreach (var conflict in conflicts.Where(x => x != session))
+            conflict.End("VehicleHandoff", now);
+        if (session is null)
+        {
+            session = new DriverTruckSession(Guid.NewGuid(), currentUser.CompanyId,
+                driver.Id, truck.Id, trip.Id, now);
+            driverIdentities.AddSession(session);
+        }
+        else session.LinkTrip(trip.Id, now);
+        events.Append(trip, "DispatchedToPickup", new { reason }, source);
         resourceEvents.Truck(truck.Id, "TruckDispatchedToPickup",
             new { tripId = trip.Id, trip.TripNumber });
         await tripStore.SaveChangesAsync(cancellationToken);

@@ -1573,4 +1573,40 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get operationalTripAlertMessage =>
       'يوجد حدث تشغيلي متعلق برحلة يحتاج إلى انتباهك.';
+
+  @override
+  String get departToPickup => 'الانطلاق إلى الاستلام';
+
+  @override
+  String get departToPickupWarning =>
+      'هل تريد بدء مسار التوجه إلى موقع الاستلام الآن؟';
+
+  @override
+  String get confirmLoadedAndDepart => 'تم التحميل — الانطلاق إلى التسليم';
+
+  @override
+  String get endVehicleSession => 'إنهاء جلسة المركبة';
+
+  @override
+  String get endVehicleSessionWarning =>
+      'هل تريد إزالة هذه الشاحنة من مساحة عمل السائق؟';
+
+  @override
+  String get changePassword => 'تغيير كلمة المرور';
+
+  @override
+  String get currentPassword => 'كلمة المرور الحالية';
+
+  @override
+  String get newPassword => 'كلمة المرور الجديدة';
+
+  @override
+  String get confirmNewPassword => 'تأكيد كلمة المرور الجديدة';
+
+  @override
+  String get passwordChangedLoginAgain =>
+      'تم تغيير كلمة المرور. سجّل الدخول مجدداً بكلمة المرور الجديدة.';
+
+  @override
+  String get passwordMinimumLength => 'استخدم 12 حرفاً على الأقل.';
 }

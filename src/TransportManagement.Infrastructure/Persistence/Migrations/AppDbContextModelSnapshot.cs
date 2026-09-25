@@ -337,6 +337,68 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                     b.ToTable("drivers", (string)null);
                 });
 
+            modelBuilder.Entity("TransportManagement.Domain.Fleet.DriverTruckSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EndReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("LastTripId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("StartedFromTripId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TruckId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("LastTripId");
+
+                    b.HasIndex("StartedFromTripId");
+
+                    b.HasIndex("TruckId");
+
+                    b.HasIndex("CompanyId", "DriverId")
+                        .IsUnique()
+                        .HasFilter("\"EndedAt\" IS NULL");
+
+                    b.HasIndex("CompanyId", "TruckId")
+                        .IsUnique()
+                        .HasFilter("\"EndedAt\" IS NULL");
+
+                    b.ToTable("driver_truck_sessions", (string)null);
+                });
+
             modelBuilder.Entity("TransportManagement.Domain.Fleet.Truck", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1379,6 +1441,39 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .WithOne()
                         .HasForeignKey("TransportManagement.Domain.Fleet.Driver", "UserId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Fleet.DriverTruckSession", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Driver", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("LastTripId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("StartedFromTripId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Truck", null)
+                        .WithMany()
+                        .HasForeignKey("TruckId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TransportManagement.Domain.Fleet.Truck", b =>

@@ -255,6 +255,7 @@ class _TripDetailsContent extends ConsumerWidget {
                     'complete',
                     'confirm-loaded',
                     'confirm-delivery',
+                    'override-dispatch-to-pickup',
                   }.contains(value),
                 ))
                   FilledButton(
@@ -367,6 +368,7 @@ class _TripDetailsContent extends ConsumerWidget {
         ],
       ),
     );
+    reason.dispose();
     if (value == null || !context.mounted) return;
     final ok = await ref
         .read(mutationRefreshCoordinatorProvider)
@@ -418,17 +420,31 @@ class _TripDetailsContent extends ConsumerWidget {
     }
     if (!context.mounted) return;
     final resolvedPreview = preview;
+    final reason = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(context.l10n.dispatchToPickup),
-        content: Text(
-          resolvedPreview.alreadyAtPickup
-              ? context.l10n.alreadyAtPickup
-              : '${context.l10n.approachDistance}: '
-                    '${(resolvedPreview.plan!.route.distanceMeters / 1000).toStringAsFixed(1)} km\n'
-                    '${context.l10n.approachDuration}: '
-                    '${Duration(seconds: resolvedPreview.plan!.route.estimatedDurationSeconds).inMinutes} min',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              resolvedPreview.alreadyAtPickup
+                  ? context.l10n.alreadyAtPickup
+                  : '${context.l10n.approachDistance}: '
+                        '${(resolvedPreview.plan!.route.distanceMeters / 1000).toStringAsFixed(1)} km\n'
+                        '${context.l10n.approachDuration}: '
+                        '${Duration(seconds: resolvedPreview.plan!.route.estimatedDurationSeconds).inMinutes} min',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('manager-dispatch-override-reason'),
+              controller: reason,
+              decoration: InputDecoration(
+                labelText: context.l10n.overrideReason,
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -437,19 +453,29 @@ class _TripDetailsContent extends ConsumerWidget {
           ),
           FilledButton(
             key: const Key('confirm-dispatch-to-pickup'),
-            onPressed: () => Navigator.pop(dialogContext, true),
+            onPressed: () {
+              if (reason.text.trim().length >= 5) {
+                Navigator.pop(dialogContext, true);
+              }
+            },
             child: Text(context.l10n.dispatchToPickup),
           ),
         ],
       ),
     );
+    final overrideReason = reason.text.trim();
+    reason.dispose();
     if (confirmed != true || !context.mounted) return;
     final dispatched = await ref
         .read(mutationRefreshCoordinatorProvider)
         .mutate(
           () => ref
               .read(operationsRepositoryProvider)
-              .dispatchToPickup(trip.id, resolvedPreview.plan?.id),
+              .dispatchToPickup(
+                trip.id,
+                resolvedPreview.plan?.id,
+                overrideReason,
+              ),
           clientId: trip.clientId,
           truckId: trip.truckId,
         );
@@ -461,6 +487,7 @@ class _TripDetailsContent extends ConsumerWidget {
       );
       if (dispatched) ref.invalidate(tripDetailsProvider(trip.id));
     }
+    reason.dispose();
   }
 
   static Future<void> _recoverLocation(

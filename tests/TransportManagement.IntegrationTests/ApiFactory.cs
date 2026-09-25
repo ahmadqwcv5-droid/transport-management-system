@@ -49,7 +49,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 ["Jwt:AccessTokenMinutes"] = "15",
                 ["Jwt:RefreshTokenDays"] = "14"
                 , ["Tracking:Provider"] = "Simulator"
-                , ["Tracking:SimulatorEnabled"] = "true"
+                , ["Tracking:SimulatorEnabled"] = _simulatorEnabled.ToString()
                 , ["Tracking:SimulatorStepDistanceMeters"] = "100000"
                 , ["Geofence:MinimumDwellSeconds"] = "0"
                 , ["Geofence:MinimumSamples"] = "2"

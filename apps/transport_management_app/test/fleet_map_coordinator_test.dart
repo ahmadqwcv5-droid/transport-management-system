@@ -450,39 +450,42 @@ void main() {
     });
   });
 
-  test('ten moving polls produce stable operation-count evidence', () async {
-    final adapter = FakeFleetMapAdapter();
-    final coordinator = FleetMapAnnotationCoordinator(adapter);
-    await coordinator.onStyleLoaded(
-      fleetSnapshot([truck('one')], route: route(trailLength: 2)),
-    );
-
-    for (var index = 1; index <= 10; index++) {
-      await coordinator.synchronize(
-        fleetSnapshot([
-          truck('one', latitude: 40 + index / 1000),
-        ], route: route(trailLength: index + 2)),
+  test(
+    'thirty moving polls preserve marker identity without fallback frames',
+    () async {
+      final adapter = FakeFleetMapAdapter();
+      final coordinator = FleetMapAnnotationCoordinator(adapter);
+      await coordinator.onStyleLoaded(
+        fleetSnapshot([truck('one')], route: route(trailLength: 2)),
       );
-    }
 
-    final counts = coordinator.telemetry;
-    expect(counts.imageRegistrations, 1);
-    expect(counts.symbolAdditions, 1);
-    expect(counts.symbolUpdates, 10);
-    expect(counts.symbolRemovals, 0);
-    expect(counts.plannedRouteAdditions, 1);
-    expect(counts.plannedRouteUpdates, 0);
-    expect(counts.plannedRouteRemovals, 0);
-    expect(counts.trailAdditions, 1);
-    expect(counts.trailUpdates, 10);
-    expect(counts.trailRemovals, 0);
-    expect(counts.stopMarkerAdditions, 2);
-    expect(counts.stopMarkerRemovals, 0);
-    expect(counts.globalSymbolClears, 0);
-    expect(counts.globalLineClears, 0);
-    expect(counts.globalCircleClears, 0);
-    expect(counts.cameraMovesCausedByPolling, 0);
-  });
+      for (var index = 1; index <= 30; index++) {
+        await coordinator.synchronize(
+          fleetSnapshot([
+            truck('one', latitude: 40 + index / 1000),
+          ], route: route(trailLength: index + 2)),
+        );
+      }
+
+      final counts = coordinator.telemetry;
+      expect(counts.imageRegistrations, 1);
+      expect(counts.symbolAdditions, 1);
+      expect(counts.symbolUpdates, 30);
+      expect(counts.symbolRemovals, 0);
+      expect(counts.plannedRouteAdditions, 1);
+      expect(counts.plannedRouteUpdates, 0);
+      expect(counts.plannedRouteRemovals, 0);
+      expect(counts.trailAdditions, 1);
+      expect(counts.trailUpdates, 30);
+      expect(counts.trailRemovals, 0);
+      expect(counts.stopMarkerAdditions, 2);
+      expect(counts.stopMarkerRemovals, 0);
+      expect(counts.globalSymbolClears, 0);
+      expect(counts.globalLineClears, 0);
+      expect(counts.globalCircleClears, 0);
+      expect(counts.cameraMovesCausedByPolling, 0);
+    },
+  );
 
   test(
     'independent trail segments keep stable identifiers during polling',

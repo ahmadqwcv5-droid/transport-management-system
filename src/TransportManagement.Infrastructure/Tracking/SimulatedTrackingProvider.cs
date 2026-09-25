@@ -21,7 +21,7 @@ public sealed class SimulatedTrackingProvider(IConfiguration configuration) : IT
 
     private sealed class CompanySimulation
     {
-        public bool Running { get; set; }
+        public bool Running { get; set; } = true;
         public double SpeedMultiplier { get; set; } = 1;
         public int Step { get; set; }
         public Dictionary<Guid, TruckSimulation> Trucks { get; } = [];

@@ -38,7 +38,6 @@ class DriverMyTripScreen extends ConsumerWidget {
                   .refresh,
             );
           }
-          final trip = workspace.currentTrip!;
           return RefreshIndicator(
             onRefresh: ref.read(driverTripControllerProvider.notifier).refresh,
             child: ListView(
@@ -63,17 +62,31 @@ class DriverMyTripScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 _WorkspaceCard(workspace: workspace),
                 const SizedBox(height: 16),
-                if (trip.status == 'AtPickup')
+                if (workspace.allowedActions.contains(
+                  'confirm-loaded-and-depart',
+                ))
                   _ActionButton(
-                    label: context.l10n.confirmLoaded,
+                    label: context.l10n.confirmLoadedAndDepart,
                     message: context.l10n.confirmLoadedWarning,
                     onConfirm: () => _confirm(context, ref, delivery: false),
                   ),
-                if (trip.status == 'AtDelivery')
+                if (workspace.allowedActions.contains('depart-to-pickup'))
+                  _ActionButton(
+                    label: context.l10n.departToPickup,
+                    message: context.l10n.departToPickupWarning,
+                    onConfirm: () => _depart(context, ref),
+                  ),
+                if (workspace.allowedActions.contains('confirm-delivery'))
                   _ActionButton(
                     label: context.l10n.confirmDelivery,
                     message: context.l10n.confirmDeliveryWarning,
                     onConfirm: () => _confirm(context, ref, delivery: true),
+                  ),
+                if (workspace.allowedActions.contains('end-vehicle-session'))
+                  _ActionButton(
+                    label: context.l10n.endVehicleSession,
+                    message: context.l10n.endVehicleSessionWarning,
+                    onConfirm: () => _endSession(context, ref),
                   ),
               ],
             ),
@@ -98,6 +111,27 @@ class DriverMyTripScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Future<void> _depart(BuildContext context, WidgetRef ref) async {
+    final ok = await ref.read(driverTripControllerProvider.notifier).depart();
+    if (context.mounted) _result(context, ok);
+  }
+
+  Future<void> _endSession(BuildContext context, WidgetRef ref) async {
+    final ok = await ref
+        .read(driverTripControllerProvider.notifier)
+        .endVehicleSession();
+    if (context.mounted) _result(context, ok);
+  }
+
+  void _result(BuildContext context, bool ok) =>
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok ? context.l10n.actionConfirmed : context.l10n.genericError,
+          ),
+        ),
+      );
 }
 
 class _WorkspaceCard extends StatelessWidget {

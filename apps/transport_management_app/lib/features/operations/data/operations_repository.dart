@@ -334,11 +334,11 @@ final class OperationsRepository {
     }
   }
 
-  Future<void> dispatchToPickup(String tripId, String? planId) => _send(
-    'POST',
-    '/api/trips/$tripId/dispatch-to-pickup',
-    {'repositioningPlanId': planId},
-  );
+  Future<void> dispatchToPickup(String tripId, String? planId, String reason) =>
+      _send('POST', '/api/trips/$tripId/dispatch-to-pickup', {
+        'repositioningPlanId': planId,
+        'reason': reason,
+      });
 
   Future<List<LocationResult>> searchLocations(String query) async {
     try {

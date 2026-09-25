@@ -37,6 +37,9 @@ public sealed record CancelTripRequest([param: MaxLength(500)] string Reason);
 public sealed record ManagerOverrideRequest(
     [param: Required, MinLength(5), MaxLength(500)] string Reason);
 public sealed record DispatchToPickupRequest(Guid? RepositioningPlanId);
+public sealed record ManagerDispatchToPickupRequest(
+    Guid? RepositioningPlanId,
+    [param: Required, MinLength(5), MaxLength(500)] string Reason);
 public sealed record TripListQuery(
     int Page = 1, int PageSize = 20, string? Search = null,
     string? OperationalGroup = null, TripStatus? Status = null,

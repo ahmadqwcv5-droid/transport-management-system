@@ -96,6 +96,26 @@ final class AuthRepository {
     }
   }
 
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+    String confirmation,
+  ) async {
+    try {
+      await _apiClient.dio.put<void>(
+        '/api/auth/me/password',
+        data: {
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+          'confirmPassword': confirmation,
+        },
+      );
+      await _tokenStore.clear();
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
   Future<AuthSession> _saveResponse(Map<String, dynamic> data) async {
     _tokenStore.setAccessToken(data['accessToken'] as String);
     await _tokenStore.setRefreshToken(data['refreshToken'] as String);

@@ -31,7 +31,18 @@ public sealed class DriverWorkflowController(DriverWorkflowService service) : Co
     public Task<TripResponse> ConfirmLoaded(CancellationToken cancellationToken) =>
         service.ConfirmLoadedAsync(cancellationToken);
 
+    [HttpPost("depart-to-pickup")]
+    public Task<TripResponse> DepartToPickup(CancellationToken cancellationToken) =>
+        service.DepartToPickupAsync(cancellationToken);
+
     [HttpPost("confirm-delivery")]
     public Task<TripResponse> ConfirmDelivery(CancellationToken cancellationToken) =>
         service.ConfirmDeliveryAsync(cancellationToken);
+
+    [HttpPost("end-vehicle-session")]
+    public async Task<IActionResult> EndVehicleSession(CancellationToken cancellationToken)
+    {
+        await service.EndVehicleSessionAsync(cancellationToken);
+        return NoContent();
+    }
 }

@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using TransportManagement.Application.Abstractions;
+using TransportManagement.Application.Tracking;
 using TransportManagement.Domain.Tracking;
 using TransportManagement.Domain.Trips;
 using TransportManagement.Infrastructure.Persistence;
@@ -107,6 +109,14 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
         for (var index = 0; index < 10; index++)
             await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        using (var ingestionScope = factory.Services.CreateScope())
+        {
+            var companyContext = ingestionScope.ServiceProvider
+                .GetRequiredService<ICompanyExecutionContext>();
+            using var company = companyContext.Enter(ApiFactory.CompanyAId);
+            await ingestionScope.ServiceProvider.GetRequiredService<TrackingIngestionService>()
+                .TickAsync(TestContext.Current.CancellationToken);
+        }
 
         var history = await client.GetJsonAsync<JsonElement[]>(
             $"/api/tracking/trucks/{truckId}/history?limit=200");
@@ -167,7 +177,7 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         {
             action = "seed-position", truckId, latitude = 39m, longitude = 32m
         })).RequiredJsonAsync();
-        await (await client.PostJsonAsync($"/api/trips/{tripAId}/dispatch-to-pickup", new { })).RequiredJsonAsync();
+        await (await client.PostJsonAsync($"/api/trips/{tripAId}/dispatch-to-pickup", new { reason = "Test manager override" })).RequiredJsonAsync();
         await (await client.PostEmptyAsync($"/api/trips/{tripAId}/arrive-pickup")).RequiredJsonAsync();
         await (await client.PostEmptyAsync($"/api/trips/{tripAId}/start")).RequiredJsonAsync();
         await (await client.PostEmptyAsync($"/api/trips/{tripAId}/mark-in-transit")).RequiredJsonAsync();
@@ -266,7 +276,7 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         await client.PostJsonAsync("/api/tracking/simulator/control", new { action = "pause" });
         await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
         var pausedCount = await HistoryCountAsync(client, truckId);
-        Assert.Equal(3, pausedCount);
+        Assert.Equal(4, pausedCount);
 
         await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
         await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
@@ -304,7 +314,7 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
 
         var history = await client.GetJsonAsync<JsonElement>($"/api/tracking/trips/{tripId}/history");
         var segments = history.GetProperty("segments").EnumerateArray().ToArray();
-        Assert.Equal(2, segments.Length);
+        Assert.Equal(3, segments.Length);
         Assert.All(segments, segment => Assert.NotEmpty(segment.GetProperty("points").EnumerateArray()));
         Assert.All(segments, segment => Assert.NotEqual(Guid.Empty, segment.GetProperty("trackingRunId").GetGuid()));
         Assert.All(segments, segment => Assert.Equal(JsonValueKind.String, segment.GetProperty("routePlanId").ValueKind));
@@ -405,7 +415,7 @@ public sealed class TrackingTests(ApiFactory factory) : IClassFixture<ApiFactory
         {
             action = "seed-position", truckId, latitude = 39.9208m, longitude = 32.8541m
         })).RequiredJsonAsync();
-        await (await client.PostJsonAsync($"/api/trips/{tripId}/dispatch-to-pickup", new { })).RequiredJsonAsync();
+        await (await client.PostJsonAsync($"/api/trips/{tripId}/dispatch-to-pickup", new { reason = "Test manager override" })).RequiredJsonAsync();
         await (await client.PostEmptyAsync($"/api/trips/{tripId}/arrive-pickup")).RequiredJsonAsync();
         await (await client.PostEmptyAsync($"/api/trips/{tripId}/start")).RequiredJsonAsync();
         await (await client.PostEmptyAsync($"/api/trips/{tripId}/mark-in-transit")).RequiredJsonAsync();

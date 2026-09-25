@@ -3103,6 +3103,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A trip-related operational event needs your attention.'**
   String get operationalTripAlertMessage;
+
+  /// No description provided for @departToPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Depart to pickup'**
+  String get departToPickup;
+
+  /// No description provided for @departToPickupWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the approach route to the pickup now?'**
+  String get departToPickupWarning;
+
+  /// No description provided for @confirmLoadedAndDepart.
+  ///
+  /// In en, this message translates to:
+  /// **'Loaded — depart to delivery'**
+  String get confirmLoadedAndDepart;
+
+  /// No description provided for @endVehicleSession.
+  ///
+  /// In en, this message translates to:
+  /// **'End vehicle session'**
+  String get endVehicleSession;
+
+  /// No description provided for @endVehicleSessionWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this truck from your Driver workspace?'**
+  String get endVehicleSessionWarning;
+
+  /// No description provided for @changePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get changePassword;
+
+  /// No description provided for @currentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get currentPassword;
+
+  /// No description provided for @newPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get newPassword;
+
+  /// No description provided for @confirmNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get confirmNewPassword;
+
+  /// No description provided for @passwordChangedLoginAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed. Sign in again with the new password.'**
+  String get passwordChangedLoginAgain;
+
+  /// No description provided for @passwordMinimumLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least 12 characters.'**
+  String get passwordMinimumLength;
 }
 
 class _AppLocalizationsDelegate

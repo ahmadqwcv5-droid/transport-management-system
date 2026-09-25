@@ -7,6 +7,11 @@ namespace TransportManagement.Infrastructure.Persistence;
 
 internal sealed class IdentityStore(AppDbContext dbContext, ICurrentUser currentUser) : IIdentityStore
 {
+    public async Task<IReadOnlyList<Guid>> ListActiveCompanyIdsAsync(
+        CancellationToken cancellationToken) => await dbContext.Companies
+        .IgnoreQueryFilters().Where(x => x.IsActive).Select(x => x.Id)
+        .OrderBy(x => x).ToListAsync(cancellationToken);
+
     public Task<User?> FindUserByEmailAsync(string email, CancellationToken cancellationToken) =>
         dbContext.Users.IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Email == email, cancellationToken);
 
@@ -33,6 +38,8 @@ internal sealed class IdentityStore(AppDbContext dbContext, ICurrentUser current
             .ToListAsync(cancellationToken);
         foreach (var token in tokens) token.Revoke(now);
     }
+
+    public void AddUserEvent(CompanyUserEvent userEvent) => dbContext.CompanyUserEvents.Add(userEvent);
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken) =>
         await dbContext.SaveChangesAsync(cancellationToken);

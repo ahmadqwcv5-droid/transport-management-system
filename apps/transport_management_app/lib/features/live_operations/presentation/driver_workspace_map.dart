@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import '../../dashboard/presentation/circular_marker_image.dart';
+import '../../dashboard/presentation/fleet_map_coordinator.dart';
 import '../../dashboard/presentation/maplibre_fleet_adapter.dart';
 import '../domain/live_operations_models.dart';
 
@@ -35,6 +36,7 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
   final Set<String> _images = {};
   bool _styleLoaded = false;
   bool _failed = false;
+  FleetInteractionMode _cameraMode = FleetInteractionMode.followSelectedTruck;
 
   @override
   void didUpdateWidget(covariant DriverWorkspaceMap oldWidget) {
@@ -66,34 +68,73 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
       child: Listener(
         key: const Key('driver-map-input-listener'),
         behavior: HitTestBehavior.translucent,
-        child: MapLibreMap(
-          key: const Key('driver-workspace-map'),
-          styleString: widget.styleUrl,
-          initialCameraPosition: CameraPosition(target: target, zoom: 13.5),
-          annotationOrder: const [
-            AnnotationType.line,
-            AnnotationType.circle,
-            AnnotationType.symbol,
-          ],
-          onMapCreated: (controller) => _controller = controller,
-          onStyleLoadedCallback: () async {
-            try {
-              _styleLoaded = true;
-              final controller = _controller;
-              if (controller == null) return;
-              final fallback = await rootBundle.load(truckMarkerAsset);
-              await controller.addImage(
-                truckMarkerImageName,
-                fallback.buffer.asUint8List(
-                  fallback.offsetInBytes,
-                  fallback.lengthInBytes,
+        onPointerDown: (_) {
+          if (_cameraMode != FleetInteractionMode.free) {
+            setState(() => _cameraMode = FleetInteractionMode.free);
+          }
+        },
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: MapLibreMap(
+                key: const Key('driver-workspace-map'),
+                styleString: widget.styleUrl,
+                initialCameraPosition: CameraPosition(
+                  target: target,
+                  zoom: 13.5,
                 ),
-              );
-              await _sync();
-            } on Object {
-              _markFailed();
-            }
-          },
+                annotationOrder: const [
+                  AnnotationType.line,
+                  AnnotationType.circle,
+                  AnnotationType.symbol,
+                ],
+                onMapCreated: (controller) => _controller = controller,
+                onStyleLoadedCallback: () async {
+                  try {
+                    _styleLoaded = true;
+                    final controller = _controller;
+                    if (controller == null) return;
+                    final fallback = await rootBundle.load(truckMarkerAsset);
+                    await controller.addImage(
+                      truckMarkerImageName,
+                      fallback.buffer.asUint8List(
+                        fallback.offsetInBytes,
+                        fallback.lengthInBytes,
+                      ),
+                    );
+                    await _sync();
+                  } on Object {
+                    _markFailed();
+                  }
+                },
+              ),
+            ),
+            PositionedDirectional(
+              top: 12,
+              end: 12,
+              child: Column(
+                children: [
+                  FloatingActionButton.small(
+                    key: const Key('driver-map-follow'),
+                    heroTag: 'driver-map-follow',
+                    onPressed: _followTruck,
+                    child: Icon(
+                      _cameraMode == FleetInteractionMode.followSelectedTruck
+                          ? Icons.gps_fixed
+                          : Icons.gps_not_fixed,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  FloatingActionButton.small(
+                    key: const Key('driver-map-route-overview'),
+                    heroTag: 'driver-map-route-overview',
+                    onPressed: _routeOverview,
+                    child: const Icon(Icons.zoom_out_map),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -121,7 +162,7 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
       final photoUrl = truck.photoThumbnailUrl;
       final photoVersion = truck.photoVersion;
       if (photoUrl != null && photoVersion != null) {
-        final candidate = 'driver-truck-marker-v2:${truck.id}:$photoVersion';
+        final candidate = truckPhotoMarkerImageName(truck.id, photoVersion);
         try {
           if (_images.add(candidate)) {
             final source = await widget.photoLoader(photoUrl);
@@ -146,6 +187,11 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
         _truck = await controller.addSymbol(options);
       } else {
         await controller.updateSymbol(_truck!, options);
+      }
+      if (_cameraMode == FleetInteractionMode.followSelectedTruck) {
+        await controller.animateCamera(
+          CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)),
+        );
       }
     }
 
@@ -180,6 +226,54 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _followTruck() async {
+    setState(() => _cameraMode = FleetInteractionMode.followSelectedTruck);
+    final position = widget.workspace.currentPosition;
+    if (position != null) {
+      await _controller?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(position.latitude, position.longitude),
+          13.5,
+        ),
+      );
+    }
+  }
+
+  Future<void> _routeOverview() async {
+    setState(() => _cameraMode = FleetInteractionMode.routeOverview);
+    final points = <LatLng>[
+      ...?widget.workspace.activeRoute?.coordinates.map(
+        (point) => LatLng(point.latitude, point.longitude),
+      ),
+      ...?widget.workspace.approachRoute?.route.coordinates.map(
+        (point) => LatLng(point.latitude, point.longitude),
+      ),
+    ];
+    if (points.length >= 2) {
+      final latitudes = points.map((point) => point.latitude);
+      final longitudes = points.map((point) => point.longitude);
+      final bounds = LatLngBounds(
+        southwest: LatLng(
+          latitudes.reduce((a, b) => a < b ? a : b),
+          longitudes.reduce((a, b) => a < b ? a : b),
+        ),
+        northeast: LatLng(
+          latitudes.reduce((a, b) => a > b ? a : b),
+          longitudes.reduce((a, b) => a > b ? a : b),
+        ),
+      );
+      await _controller?.animateCamera(
+        CameraUpdate.newLatLngBounds(
+          bounds,
+          left: 42,
+          top: 42,
+          right: 42,
+          bottom: 42,
+        ),
+      );
     }
   }
 

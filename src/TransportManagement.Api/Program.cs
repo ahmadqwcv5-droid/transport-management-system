@@ -25,15 +25,26 @@ builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
     context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
-builder.Services.AddRateLimiter(options => options.AddPolicy("geocoding", context =>
-    RateLimitPartition.GetFixedWindowLimiter(
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("geocoding", context => RateLimitPartition.GetFixedWindowLimiter(
         context.User.Identity?.Name ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
         _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 30,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0
-        })));
+        }));
+    options.AddPolicy("password-change", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirst("user_id")?.Value
+            ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        }));
+});
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("postgresql");
 builder.Services.AddCors(options => options.AddPolicy("frontend", policy => policy
     .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
@@ -58,8 +69,8 @@ else if (app.Environment.IsEnvironment("Testing")
 
 app.UseHttpsRedirection();
 app.UseCors("frontend");
-app.UseRateLimiter();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health", new HealthCheckOptions());

@@ -25,3 +25,8 @@ public sealed record LocalePreferenceRequest(
     [param: Required, RegularExpression("^(en|ar)$")] string PreferredLocale);
 
 public sealed record NotificationSoundsPreferenceRequest(bool Enabled);
+
+public sealed record ChangePasswordRequest(
+    [param: Required] string CurrentPassword,
+    [param: Required, MinLength(12), MaxLength(200)] string NewPassword,
+    [param: Required] string ConfirmPassword);

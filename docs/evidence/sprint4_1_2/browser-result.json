@@ -1,0 +1,14 @@
+{
+  "sprint": "4.1.2",
+  "recordedDate": "2026-09-25",
+  "environment": "isolated-tms-s412",
+  "realFlutterWeb": true,
+  "browser": "Firefox",
+  "webdriverConnected": true,
+  "independentManagerAndDriverFlowPassed": false,
+  "status": "incomplete",
+  "failureStage": "legacy-flutter-drive-client-harness",
+  "failureSummary": "Multiple exceptions (6)",
+  "credentialsStored": false,
+  "tokensStored": false
+}

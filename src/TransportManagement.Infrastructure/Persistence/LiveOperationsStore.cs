@@ -61,6 +61,21 @@ internal sealed class LiveOperationsStore(AppDbContext dbContext) :
                 && CurrentStatuses.Contains(x.Status)).OrderByDescending(x => x.UpdatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
+    public Task<Trip?> GetTripAsync(Guid tripId, CancellationToken cancellationToken) =>
+        dbContext.Trips.Include(x => x.Stops).Include(x => x.RoutePlan)
+            .Include(x => x.RepositioningPlans).SingleOrDefaultAsync(x => x.Id == tripId, cancellationToken);
+
+    public Task<DriverTruckSession?> GetActiveSessionAsync(Guid driverId,
+        CancellationToken cancellationToken) => dbContext.DriverTruckSessions
+        .SingleOrDefaultAsync(x => x.DriverId == driverId && x.EndedAt == null, cancellationToken);
+
+    public async Task<IReadOnlyList<DriverTruckSession>> GetConflictingSessionsAsync(
+        Guid driverId, Guid truckId, CancellationToken cancellationToken) =>
+        await dbContext.DriverTruckSessions.Where(x => x.EndedAt == null
+            && (x.DriverId == driverId || x.TruckId == truckId)).ToListAsync(cancellationToken);
+
+    public void AddSession(DriverTruckSession session) => dbContext.DriverTruckSessions.Add(session);
+
     public Task<bool> UserLinkedAsync(Guid userId, Guid? excludingDriverId,
         CancellationToken cancellationToken) => dbContext.Drivers.AnyAsync(x =>
             x.UserId == userId && (!excludingDriverId.HasValue || x.Id != excludingDriverId),

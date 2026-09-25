@@ -569,7 +569,7 @@ mandatory bounded reason and append the authenticated actor/source to audit.
 
 Geofence evidence is tenant-owned persistence keyed by trip, stop stage, and
 route revision. The configured 50 m arrival radius, 80 m exit radius, two
-samples, 20-second dwell, and 60-second freshness window survive restarts and
+samples, eight-second dwell, and 60-second freshness window survive restarts and
 use hysteresis to prevent jitter. Observation, lifecycle transition, trip
 event, notification, and simulator targeting share the command transaction;
 stable event keys and optimistic concurrency make repeated samples idempotent.
@@ -640,3 +640,32 @@ script fails closed if the retained `tms-smoke_postgres_data` volume appears in
 the resolved configuration or mounted container. Current and legacy Compose
 clients use an explicit project argument or `COMPOSE_PROJECT_NAME`, avoiding
 implicit directory-derived volume selection.
+
+## ADR-028: Browser-independent ingestion and Driver vehicle sessions
+
+**Status:** Accepted
+
+Tracking reads are projections only. A hosted Development/Testing simulator
+worker enumerates active companies and invokes the same company-explicit
+ingestion use case intended for future GPS adapters. Each tick is sequential,
+non-overlapping, cancellation-aware, and failure-isolated by company. The use
+case normalizes a provider sample, bounds history writes by meaningful change or
+heartbeat, evaluates persisted geofence evidence, advances backend-owned arrival
+states, and persists idempotent tracking notifications. No background operation
+fabricates an HTTP identity; an explicit execution context supplies only the
+company scope.
+
+Movement authority is separated from arrival detection. A linked Driver departs
+an Assigned trip to pickup and confirms cargo departure/delivery; a manager may
+perform the equivalent exception only with an audited reason. Completion ends
+commercial resource reservation but retains a tenant-owned `DriverTruckSession`
+so the Driver still sees that truck's scoped live position. Explicit session end
+removes this access, while filtered unique indexes prevent concurrent active
+sessions for either a Driver or Truck and a handoff closes the prior session.
+
+Manager and Driver maps share camera semantics and versioned marker-image
+identity. Follow pauses on pointer input, Free never recenters from polling, and
+Route Overview performs one fit. Two-second polling is guarded against overlap.
+Authenticated users may change their own password only after current-password
+verification and policy checks; success appends a security event, revokes all
+refresh tokens, and returns the client to login.

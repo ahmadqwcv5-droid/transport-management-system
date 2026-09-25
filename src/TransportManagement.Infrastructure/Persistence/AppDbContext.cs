@@ -25,6 +25,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurren
     public DbSet<Truck> Trucks => Set<Truck>();
     public DbSet<TruckEvent> TruckEvents => Set<TruckEvent>();
     public DbSet<Driver> Drivers => Set<Driver>();
+    public DbSet<DriverTruckSession> DriverTruckSessions => Set<DriverTruckSession>();
     public DbSet<Trip> Trips => Set<Trip>();
     public DbSet<TripStop> TripStops => Set<TripStop>();
     public DbSet<TripRoutePlan> TripRoutePlans => Set<TripRoutePlan>();

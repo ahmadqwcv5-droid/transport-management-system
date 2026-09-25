@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../domain/dashboard_models.dart';
+import 'circular_marker_image.dart';
 
 enum TruckMarkerState { moving, stationary, offline, maintenance }
 
@@ -50,8 +51,9 @@ final class TruckMarkerModel {
   final TruckMarkerState state;
   final bool selected;
   final String? photoVersion, photoThumbnailUrl;
-  String? get photoImageName =>
-      photoVersion == null ? null : 'truck-photo-marker-v2:$id:$photoVersion';
+  String? get photoImageName => photoVersion == null
+      ? null
+      : truckPhotoMarkerImageName(id, photoVersion!);
 
   static TruckMarkerState stateFor(TrackedTruck truck) {
     final status = truck.truckStatus.toLowerCase();

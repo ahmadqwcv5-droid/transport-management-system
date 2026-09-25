@@ -120,8 +120,9 @@ public sealed class TripsController(
     [HttpPost("{id:guid}/dispatch-to-pickup")]
     [Authorize(Policy = "operations.manage")]
     public Task<TripResponse> DispatchToPickup(
-        Guid id, DispatchToPickupRequest request, CancellationToken cancellationToken) =>
-        dispatch.DispatchToPickupAsync(id, request, cancellationToken);
+        Guid id, ManagerDispatchToPickupRequest request, CancellationToken cancellationToken) =>
+        dispatch.DispatchToPickupAsync(id, request.RepositioningPlanId,
+            "ManagerOverride", request.Reason, cancellationToken);
 
     [HttpPost("{id:guid}/arrive-pickup")]
     [Authorize(Policy = "operations.manage")]

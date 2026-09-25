@@ -75,4 +75,22 @@ class AuthController extends AsyncNotifier<AuthSession?> {
       return false;
     }
   }
+
+  Future<bool> changePassword(
+    String currentPassword,
+    String newPassword,
+    String confirmation,
+  ) async {
+    try {
+      await _repository.changePassword(
+        currentPassword,
+        newPassword,
+        confirmation,
+      );
+      state = const AsyncData(null);
+      return true;
+    } on Object {
+      return false;
+    }
+  }
 }

@@ -44,8 +44,12 @@ final class LiveOperationsRepository {
   }
 
   Future<void> confirmLoaded() => _post('/api/driver/my-trip/confirm-loaded');
+  Future<void> departToPickup() =>
+      _post('/api/driver/my-trip/depart-to-pickup');
   Future<void> confirmDelivery() =>
       _post('/api/driver/my-trip/confirm-delivery');
+  Future<void> endVehicleSession() =>
+      _post('/api/driver/my-trip/end-vehicle-session');
 
   Future<void> _post(String path) async {
     try {

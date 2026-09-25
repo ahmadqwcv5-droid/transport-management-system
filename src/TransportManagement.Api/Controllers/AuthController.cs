@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TransportManagement.Application.Auth;
 
 namespace TransportManagement.Api.Controllers;
@@ -49,4 +50,14 @@ public sealed class AuthController(AuthService authService) : ControllerBase
     public Task<CurrentUserResponse> UpdateNotificationSounds(
         NotificationSoundsPreferenceRequest request, CancellationToken cancellationToken) =>
         authService.UpdateNotificationSoundsAsync(request, cancellationToken);
+
+    [Authorize]
+    [EnableRateLimiting("password-change")]
+    [HttpPut("me/password")]
+    public async Task<IActionResult> ChangePassword(
+        ChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        await authService.ChangePasswordAsync(request, cancellationToken);
+        return NoContent();
+    }
 }

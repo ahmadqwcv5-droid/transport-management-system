@@ -145,7 +145,7 @@ void main() {
     );
     await managerApi.post<void>(
       '/api/trips/$tripId/dispatch-to-pickup',
-      data: <String, dynamic>{},
+      data: {'reason': 'Browser acceptance manager override'},
     );
 
     await tester.pumpWidget(

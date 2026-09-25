@@ -231,6 +231,27 @@ internal sealed class DriverConfiguration : IEntityTypeConfiguration<Driver>
     }
 }
 
+internal sealed class DriverTruckSessionConfiguration : IEntityTypeConfiguration<DriverTruckSession>
+{
+    public void Configure(EntityTypeBuilder<DriverTruckSession> builder)
+    {
+        builder.ToTable("driver_truck_sessions");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.EndReason).HasMaxLength(200);
+        builder.Property(x => x.Version).IsConcurrencyToken();
+        builder.Ignore(x => x.IsActive);
+        builder.HasIndex(x => new { x.CompanyId, x.DriverId })
+            .IsUnique().HasFilter("\"EndedAt\" IS NULL");
+        builder.HasIndex(x => new { x.CompanyId, x.TruckId })
+            .IsUnique().HasFilter("\"EndedAt\" IS NULL");
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Driver>().WithMany().HasForeignKey(x => x.DriverId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Truck>().WithMany().HasForeignKey(x => x.TruckId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Trip>().WithMany().HasForeignKey(x => x.StartedFromTripId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Trip>().WithMany().HasForeignKey(x => x.LastTripId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
 internal sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
 {
     private const string ReservedStatuses = "\"Status\" IN ('Assigned', 'EnRouteToPickup', 'AtPickup', 'Started', 'InTransit', 'AtDelivery', 'Delivered')";

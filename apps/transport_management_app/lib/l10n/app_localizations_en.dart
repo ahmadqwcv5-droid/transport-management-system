@@ -1585,4 +1585,40 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get operationalTripAlertMessage =>
       'A trip-related operational event needs your attention.';
+
+  @override
+  String get departToPickup => 'Depart to pickup';
+
+  @override
+  String get departToPickupWarning =>
+      'Start the approach route to the pickup now?';
+
+  @override
+  String get confirmLoadedAndDepart => 'Loaded — depart to delivery';
+
+  @override
+  String get endVehicleSession => 'End vehicle session';
+
+  @override
+  String get endVehicleSessionWarning =>
+      'Remove this truck from your Driver workspace?';
+
+  @override
+  String get changePassword => 'Change password';
+
+  @override
+  String get currentPassword => 'Current password';
+
+  @override
+  String get newPassword => 'New password';
+
+  @override
+  String get confirmNewPassword => 'Confirm new password';
+
+  @override
+  String get passwordChangedLoginAgain =>
+      'Password changed. Sign in again with the new password.';
+
+  @override
+  String get passwordMinimumLength => 'Use at least 12 characters.';
 }

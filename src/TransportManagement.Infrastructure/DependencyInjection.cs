@@ -39,6 +39,7 @@ public static class DependencyInjection
                 "Jwt:SigningKey must be at least 32 bytes.")
             .ValidateOnStart();
         services.AddHttpContextAccessor();
+        services.AddScoped<ICompanyExecutionContext, CompanyExecutionContext>();
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IRuntimeEnvironment, RuntimeEnvironment>();
@@ -81,7 +82,7 @@ public static class DependencyInjection
             Math.Max(5, configuration.GetValue<decimal>("Geofence:ArrivalRadiusMeters", 50)),
             Math.Max(10, configuration.GetValue<decimal>("Geofence:ExitRadiusMeters", 80)),
             Math.Max(2, configuration.GetValue<int>("Geofence:MinimumSamples", 2)),
-            TimeSpan.FromSeconds(Math.Max(0, configuration.GetValue<int>("Geofence:MinimumDwellSeconds", 20))),
+            TimeSpan.FromSeconds(Math.Max(5, configuration.GetValue<int>("Geofence:MinimumDwellSeconds", 8))),
             TimeSpan.FromSeconds(Math.Max(10, configuration.GetValue<int>("Geofence:MaximumSampleAgeSeconds", 60)))));
 
         if (environment.IsEnvironment("Testing"))
@@ -136,7 +137,12 @@ public static class DependencyInjection
             && (environment.IsDevelopment() || environment.IsEnvironment("Testing"))
             && configuration["Tracking:Provider"]?.Equals("Simulator", StringComparison.OrdinalIgnoreCase) == true;
         if (simulatorEnabled)
+        {
             services.AddSingleton<ITrackingProvider, SimulatedTrackingProvider>();
+            services.AddSingleton(new TrackingSchedulerOptions(TimeSpan.FromSeconds(Math.Clamp(
+                configuration.GetValue<int>("Tracking:SimulatorTickSeconds", 2), 1, 30))));
+            services.AddHostedService<TrackingIngestionWorker>();
+        }
         else
             services.AddSingleton<ITrackingProvider, UnconfiguredTrackingProvider>();
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>

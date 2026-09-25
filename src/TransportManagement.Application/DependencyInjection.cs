@@ -35,6 +35,7 @@ public static class DependencyInjection
         .AddScoped<LocationService>()
         .AddScoped<RouteProgressService>()
         .AddScoped<TrackingService>()
+        .AddScoped<TrackingIngestionService>()
         .AddScoped<GeofenceEvaluationService>()
         .AddScoped<NotificationService>()
         .AddScoped<DriverWorkflowService>()

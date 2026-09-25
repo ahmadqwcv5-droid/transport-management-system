@@ -202,10 +202,9 @@ public sealed class Trip : Entity, ITenantOwned
     public void MarkAtPickup(DateTimeOffset now)
     {
         if (Status == TripStatus.AtPickup) return;
-        if (Status is not (TripStatus.Assigned or TripStatus.EnRouteToPickup))
-            throw new DomainRuleException("Arrival requires an assigned or dispatched trip.", "INVALID_TRIP_TRANSITION");
-        if (Status == TripStatus.EnRouteToPickup)
-            CurrentRepositioningPlan?.Complete(now);
+        if (Status != TripStatus.EnRouteToPickup)
+            throw new DomainRuleException("Arrival requires a dispatched trip.", "INVALID_TRIP_TRANSITION");
+        CurrentRepositioningPlan?.Complete(now);
         ArrivedPickupAt = now;
         Status = TripStatus.AtPickup;
         Changed(now);

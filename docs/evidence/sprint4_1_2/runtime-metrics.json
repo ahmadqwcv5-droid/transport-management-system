@@ -1,0 +1,23 @@
+{
+  "sprint": "4.1.2",
+  "recordedDate": "2026-09-25",
+  "environment": "isolated-tms-s412",
+  "apiHealthy": true,
+  "latestMigration": "20260925084826_Sprint412DriverOperationsTracking",
+  "browserIndependentIngestion": {
+    "browserRunning": false,
+    "intervalSeconds": 10,
+    "positionCountBefore": 361,
+    "positionCountAfter": 369,
+    "advanced": true
+  },
+  "pickupArrivalSamples": [
+    {"dwellSeconds": 10.001, "notificationPersistenceSeconds": 0.010},
+    {"dwellSeconds": 8.003, "notificationPersistenceSeconds": 0.011},
+    {"dwellSeconds": 8.002, "notificationPersistenceSeconds": 0.012},
+    {"dwellSeconds": 8.002, "notificationPersistenceSeconds": 0.016}
+  ],
+  "retainedCountsMatchBefore": true,
+  "credentialsStored": false,
+  "tokensStored": false
+}

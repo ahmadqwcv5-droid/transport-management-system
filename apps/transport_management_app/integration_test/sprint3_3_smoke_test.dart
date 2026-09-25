@@ -51,7 +51,7 @@ void main() {
     await _seed(api, truckId, 39.9208, 32.8541);
     await api.post<void>(
       '/api/trips/$tripAId/dispatch-to-pickup',
-      data: <String, dynamic>{},
+      data: {'reason': 'Browser acceptance manager override'},
     );
     await api.post<void>('/api/trips/$tripAId/start');
     await api.post<void>('/api/trips/$tripAId/mark-in-transit');
@@ -124,7 +124,10 @@ void main() {
 
     await api.post<void>(
       '/api/trips/$tripBId/dispatch-to-pickup',
-      data: {'repositioningPlanId': planId},
+      data: {
+        'repositioningPlanId': planId,
+        'reason': 'Browser acceptance manager override',
+      },
     );
     await _control(api, 'step');
     await api.get<List<dynamic>>('/api/tracking/positions');

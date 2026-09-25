@@ -79,6 +79,31 @@ public sealed class AuthService(
         return await MapAsync(user, cancellationToken);
     }
 
+    public async Task ChangePasswordAsync(ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var user = await store.FindUserByIdAsync(currentUser.UserId, cancellationToken)
+            ?? throw new Common.NotFoundException("User was not found.", "USER_NOT_FOUND");
+        if (!passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+            throw new Domain.Common.DomainRuleException(
+                "The current password is incorrect.", "CURRENT_PASSWORD_INCORRECT");
+        if (!string.Equals(request.NewPassword, request.ConfirmPassword, StringComparison.Ordinal))
+            throw new Domain.Common.DomainRuleException(
+                "The password confirmation does not match.", "PASSWORD_CONFIRMATION_MISMATCH");
+        if (request.NewPassword.Length < 12)
+            throw new Domain.Common.DomainRuleException(
+                "The new password must contain at least 12 characters.", "PASSWORD_POLICY_FAILED");
+        if (passwordHasher.Verify(request.NewPassword, user.PasswordHash))
+            throw new Domain.Common.DomainRuleException(
+                "The new password must be different.", "PASSWORD_REUSE_NOT_ALLOWED");
+        var now = clock.UtcNow;
+        user.ResetPassword(passwordHasher.Hash(request.NewPassword), now);
+        await store.RevokeAllUserTokensAsync(user.Id, now, cancellationToken);
+        store.AddUserEvent(new CompanyUserEvent(Guid.NewGuid(), user.CompanyId,
+            user.Id, user.Id, "PasswordChanged", null, now));
+        await store.SaveChangesAsync(cancellationToken);
+    }
+
     private async Task<AuthResponse> IssueTokensAsync(
         User user,
         RefreshToken? tokenToReplace,

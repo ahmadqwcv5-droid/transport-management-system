@@ -1,6 +1,9 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+String truckPhotoMarkerImageName(String truckId, String photoVersion) =>
+    'truck-photo-marker-v2:$truckId:$photoVersion';
+
 final class CircularMarkerImageProcessor {
   const CircularMarkerImageProcessor({this.size = 96});
 

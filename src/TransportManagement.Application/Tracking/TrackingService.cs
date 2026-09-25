@@ -1,4 +1,3 @@
-using System.Text.Json;
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Application.Common;
 using TransportManagement.Domain.Tracking;
@@ -19,44 +18,13 @@ public sealed class TrackingService(
     IClock clock,
     TrackingPolicy policy,
     DispatchPolicy dispatchPolicy,
-    GeofenceEvaluationService geofences,
-    INotificationStore notifications)
+    TrackingIngestionService ingestion)
 {
     public async Task<IReadOnlyList<TruckPositionResponse>> CurrentAsync(CancellationToken cancellationToken)
     {
         var trucks = await fleetStore.ListTrucksAsync(null, true, null, null, cancellationToken);
         var trips = await tripStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var latest = await trackingStore.LatestPositionsAsync(cancellationToken);
-        var latestByTruck = latest.ToDictionary(position => position.TruckId);
-        var targets = BuildTargets(trucks.Select(x => x.Id), trips, latestByTruck);
-        var samples = provider.GetCurrent(currentUser.CompanyId, targets, clock.UtcNow);
-        if (samples.Count > 0)
-        {
-            var targetsByTruck = targets.ToDictionary(target => target.TruckId);
-            var changed = samples
-                .Where(sample => !latestByTruck.TryGetValue(sample.TruckId, out var previous)
-                    || ShouldPersist(sample, targetsByTruck[sample.TruckId], previous))
-                .Select(sample =>
-                {
-                    var target = targetsByTruck[sample.TruckId];
-                    return new TruckPosition(
-                        Guid.NewGuid(), currentUser.CompanyId, sample.TruckId, sample.Latitude,
-                        sample.Longitude, sample.Speed, sample.Heading, sample.IsOnline,
-                        sample.RecordedAt, sample.Source, target.TripId, target.RoutePlanId,
-                        sample.TrackingRunId, target.MovementPhase, target.RepositioningPlanId);
-                })
-                .ToArray();
-            if (changed.Length > 0)
-            {
-                trackingStore.AddPositions(changed);
-                await trackingStore.SaveChangesAsync(cancellationToken);
-                foreach (var position in changed.Where(x => x.TripId.HasValue))
-                    await geofences.EvaluateAsync(position, cancellationToken);
-                latest = await trackingStore.LatestPositionsAsync(cancellationToken);
-            }
-        }
-        await AddTrackingHealthNotificationsAsync(
-            latest, trucks, trips, cancellationToken);
         var drivers = await fleetStore.ListDriversAsync(null, null, null, cancellationToken);
         var photos = (await photoStore.ListAsync(cancellationToken)).ToDictionary(x => x.TruckId);
         return latest.Join(trucks, p => p.TruckId, t => t.Id,
@@ -68,7 +36,6 @@ public sealed class TrackingService(
     {
         var truck = await fleetStore.GetTruckAsync(truckId, cancellationToken)
             ?? throw new NotFoundException("Truck was not found in the current company.", "TRUCK_NOT_FOUND");
-        await CurrentAsync(cancellationToken);
         var position = await trackingStore.LatestPositionAsync(truckId, cancellationToken)
             ?? throw new NotFoundException("No tracking position is available.", "POSITION_NOT_FOUND");
         var trips = await tripStore.ListTripsAsync(null, null, truckId, null, null, null, cancellationToken);
@@ -169,6 +136,7 @@ public sealed class TrackingService(
         var state = provider.Control(currentUser.CompanyId, BuildTargets(
                 trucks.Select(x => x.Id), trips, latest.ToDictionary(x => x.TruckId)),
             new SimulatorCommand(request.Action, request.TruckId, request.SpeedMultiplier), clock.UtcNow);
+        await ingestion.TickAsync(cancellationToken);
         return new(state.Enabled, state.Running, state.SpeedMultiplier, state.Step);
     }
 
@@ -181,7 +149,6 @@ public sealed class TrackingService(
                 throw new ConflictException("The tracking simulator is disabled.", "SIMULATOR_DISABLED");
             return [];
         }
-        if (sampleProvider) await CurrentAsync(cancellationToken);
         var trucks = await fleetStore.ListTrucksAsync(null, true, null, null, cancellationToken);
         var trips = await tripStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var latest = (await trackingStore.LatestPositionsAsync(cancellationToken))
@@ -217,65 +184,6 @@ public sealed class TrackingService(
             position.MovementPhase, position.RepositioningPlanId,
             photo?.Version, photo is null ? null
                 : $"/api/trucks/{position.TruckId}/photo/thumbnail?v={photo.Version}");
-    }
-
-    private async Task AddTrackingHealthNotificationsAsync(
-        IReadOnlyList<TruckPosition> latest,
-        IReadOnlyList<Domain.Fleet.Truck> trucks,
-        IReadOnlyList<Trip> trips,
-        CancellationToken cancellationToken)
-    {
-        var latestByTruck = latest.ToDictionary(x => x.TruckId);
-        var trucksById = trucks.ToDictionary(x => x.Id);
-        var changed = false;
-        foreach (var trip in trips.Where(x => x.ReservesResources && x.TruckId.HasValue))
-        {
-            var truckId = trip.TruckId!.Value;
-            if (!latestByTruck.TryGetValue(truckId, out var position)) continue;
-            var stale = position.IsOnline
-                && clock.UtcNow - position.RecordedAt > policy.OfflineThreshold;
-            var offline = !position.IsOnline;
-            if (!stale && !offline) continue;
-
-            var type = offline ? "TruckBecameOffline" : "TruckPositionBecameStale";
-            var eventKey = $"{type}:{trip.Id:N}:{position.Id:N}";
-            if (await notifications.EventExistsAsync(eventKey, cancellationToken)) continue;
-            trucksById.TryGetValue(truckId, out var truck);
-            notifications.Add(new OperationNotification(
-                Guid.NewGuid(), currentUser.CompanyId, type,
-                offline ? "Critical" : "Warning", trip.Id, truckId, trip.DriverId,
-                eventKey,
-                JsonSerializer.Serialize(new
-                {
-                    trip.TripNumber,
-                    truck?.PlateNumber,
-                    position.RecordedAt
-                }),
-                clock.UtcNow));
-            changed = true;
-        }
-        if (changed) await notifications.SaveChangesAsync(cancellationToken);
-    }
-
-    private bool ShouldPersist(TrackingSample sample, TrackingTarget target, TruckPosition previous)
-    {
-        var headingDelta = Math.Abs(sample.Heading - previous.Heading);
-        headingDelta = Math.Min(headingDelta, 360 - headingDelta);
-        return Math.Abs(sample.Latitude - previous.Latitude) > policy.CoordinateTolerance
-            || Math.Abs(sample.Longitude - previous.Longitude) > policy.CoordinateTolerance
-            || Math.Abs(sample.Speed - previous.Speed) > policy.SpeedTolerance
-            || headingDelta > policy.HeadingTolerance
-            || sample.IsOnline != previous.IsOnline
-            || !string.Equals(sample.Source, previous.Source, StringComparison.Ordinal)
-            || target.TripId != previous.TripId
-            || target.RoutePlanId != previous.RoutePlanId
-            || sample.TrackingRunId != previous.TrackingRunId
-            || target.MovementPhase != previous.MovementPhase
-            || target.RepositioningPlanId != previous.RepositioningPlanId
-            || sample.RecordedAt - previous.RecordedAt >=
-                (provider.IsSimulator
-                    ? policy.SimulatorHeartbeat ?? policy.HistoryHeartbeat
-                    : policy.HistoryHeartbeat);
     }
 
     private TrackingTarget[] BuildTargets(

@@ -57,6 +57,16 @@ class SettingsScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         Card(
+          child: ListTile(
+            key: const Key('change-password'),
+            leading: const Icon(Icons.password),
+            title: Text(context.l10n.changePassword),
+            subtitle: Text(context.l10n.passwordMinimumLength),
+            onTap: user == null ? null : () => _changePassword(context, ref),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
           child: Padding(
             padding: const EdgeInsetsDirectional.all(20),
             child: DropdownButtonFormField<String>(
@@ -140,6 +150,84 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _changePassword(BuildContext context, WidgetRef ref) async {
+    final current = TextEditingController();
+    final next = TextEditingController();
+    final confirmation = TextEditingController();
+    String? validationError;
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(context.l10n.changePassword),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: current,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: context.l10n.currentPassword,
+                ),
+              ),
+              TextField(
+                controller: next,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: context.l10n.newPassword,
+                  helperText: context.l10n.passwordMinimumLength,
+                ),
+              ),
+              TextField(
+                controller: confirmation,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: context.l10n.confirmNewPassword,
+                ),
+              ),
+              if (validationError != null)
+                Text(
+                  validationError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (next.text.length < 12 || next.text != confirmation.text) {
+                  setDialogState(
+                    () => validationError = context.l10n.passwordMinimumLength,
+                  );
+                  return;
+                }
+                Navigator.pop(dialogContext, true);
+              },
+              child: Text(context.l10n.confirm),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (submitted == true) {
+      final ok = await ref
+          .read(authControllerProvider.notifier)
+          .changePassword(current.text, next.text, confirmation.text);
+      if (context.mounted && ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.passwordChangedLoginAgain)),
+        );
+      }
+    }
+    current.dispose();
+    next.dispose();
+    confirmation.dispose();
   }
 }
 

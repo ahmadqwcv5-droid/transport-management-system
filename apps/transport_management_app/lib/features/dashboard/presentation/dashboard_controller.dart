@@ -17,12 +17,13 @@ final dashboardControllerProvider =
 class DashboardController extends AsyncNotifier<DashboardData> {
   static const _pollingIntervalSeconds = int.fromEnvironment(
     'TRACKING_POLLING_INTERVAL_SECONDS',
-    defaultValue: 5,
+    defaultValue: 2,
   );
   static const _safePollingIntervalSeconds = _pollingIntervalSeconds > 0
       ? _pollingIntervalSeconds
-      : 5;
+      : 2;
   Timer? _timer;
+  bool _refreshing = false;
   DashboardRepository get _repository => ref.read(dashboardRepositoryProvider);
   @override
   FutureOr<DashboardData> build() {
@@ -35,9 +36,15 @@ class DashboardController extends AsyncNotifier<DashboardData> {
   }
 
   Future<void> refresh({bool silent = false}) async {
+    if (_refreshing) return;
+    _refreshing = true;
     if (!silent) state = const AsyncLoading();
-    final result = await AsyncValue.guard(_repository.load);
-    if (ref.mounted) state = result;
+    try {
+      final result = await AsyncValue.guard(_repository.load);
+      if (ref.mounted) state = result;
+    } finally {
+      _refreshing = false;
+    }
   }
 
   Future<bool> control(

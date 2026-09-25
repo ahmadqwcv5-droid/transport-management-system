@@ -160,7 +160,7 @@ void main() {
     );
     await ownerApi.post<void>(
       '/api/trips/$tripId/dispatch-to-pickup',
-      data: <String, dynamic>{},
+      data: {'reason': 'Browser acceptance manager override'},
     );
 
     var manualInputVerified = false;

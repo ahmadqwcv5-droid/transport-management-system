@@ -44,8 +44,10 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
         {
             action = "seed-position", truckId, latitude = 39.9208m, longitude = 32.8541m
         })).RequiredJsonAsync();
-        var dispatch = await (await manager.PostJsonAsync(
-            $"/api/trips/{tripId}/dispatch-to-pickup", new { })).RequiredJsonAsync();
+        using var driver = await OperationsTestClient.AuthenticatedClientAsync(factory,
+            $"driver-{suffix}@example.test");
+        var dispatch = await (await driver.PostEmptyAsync(
+            "/api/driver/my-trip/depart-to-pickup")).RequiredJsonAsync();
         Assert.Equal("EnRouteToPickup", dispatch.GetProperty("status").GetString());
 
         await manager.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
@@ -65,8 +67,6 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
             $"/api/trips/{tripId}")).GetProperty("status").GetString());
         Assert.Equal(1, await NotificationCountAsync(manager, tripId, "TruckArrivedAtPickup"));
 
-        using var driver = await OperationsTestClient.AuthenticatedClientAsync(factory,
-            $"driver-{suffix}@example.test");
         Assert.Equal(HttpStatusCode.Forbidden,
             (await driver.GetAsync("/api/trips", TestContext.Current.CancellationToken)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden,
@@ -99,6 +99,15 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
             $"/api/trucks/{truckId}")).GetProperty("status").GetString());
         Assert.Equal(1, await NotificationCountAsync(manager, tripId, "DriverConfirmedDeparture"));
         Assert.Equal(1, await NotificationCountAsync(manager, tripId, "DriverConfirmedDelivery"));
+
+        var postTrip = await driver.GetJsonAsync<JsonElement>("/api/driver/my-trip/workspace");
+        Assert.Equal("POST_TRIP_VEHICLE", postTrip.GetProperty("state").GetString());
+        Assert.Equal(truckId, postTrip.GetProperty("truck").GetProperty("id").GetGuid());
+        Assert.Equal(tripId, postTrip.GetProperty("vehicleSession").GetProperty("lastTripId").GetGuid());
+        Assert.Equal(HttpStatusCode.NoContent, (await driver.PostEmptyAsync(
+            "/api/driver/my-trip/end-vehicle-session")).StatusCode);
+        Assert.Equal("NO_ACTIVE_TRIP", (await driver.GetJsonAsync<JsonElement>(
+            "/api/driver/my-trip/workspace")).GetProperty("state").GetString());
 
         await ResetAndPollAsync(manager);
         Assert.Equal(1, await NotificationCountAsync(manager, tripId, "TruckArrivedAtDelivery"));
@@ -174,7 +183,7 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
             action = "seed-position", truckId, latitude = 39.9208m, longitude = 32.8541m
         })).RequiredJsonAsync();
         await (await manager.PostJsonAsync($"/api/trips/{tripId}/dispatch-to-pickup",
-            new { })).RequiredJsonAsync();
+            new { reason = "Test manager override" })).RequiredJsonAsync();
         await manager.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
         await ResetAndPollAsync(manager);
 
@@ -200,7 +209,7 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
         var overrideEvents = timeline.GetProperty("items").EnumerateArray()
             .Where(item => item.GetProperty("source").GetString() == "ManagerOverride")
             .ToArray();
-        Assert.Equal(2, overrideEvents.Length);
+        Assert.Equal(3, overrideEvents.Length);
         Assert.All(overrideEvents, item => Assert.NotNull(item.GetProperty("actorUserId").GetString()));
     }
 
@@ -222,7 +231,8 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
         await (await client.PostJsonAsync("/api/tracking/simulator/control",
             new { action = "reset" })).RequiredJsonAsync();
         await Task.Delay(25, TestContext.Current.CancellationToken);
-        await client.GetJsonAsync<JsonElement[]>("/api/tracking/positions");
+        await (await client.PostJsonAsync("/api/tracking/simulator/control",
+            new { action = "reset" })).RequiredJsonAsync();
     }
 
     private static async Task<int> NotificationCountAsync(

@@ -135,6 +135,7 @@ final class NotificationDeliveryTracker {
 
 class NotificationController extends AsyncNotifier<NotificationPage> {
   Timer? _timer;
+  bool _refreshing = false;
   final NotificationDeliveryTracker _delivery = NotificationDeliveryTracker();
   LiveOperationsRepository get _repository =>
       ref.read(liveOperationsRepositoryProvider);
@@ -151,11 +152,13 @@ class NotificationController extends AsyncNotifier<NotificationPage> {
     }
     final initial = await _repository.notifications();
     _delivery.hydrate(initial.items);
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) => refresh());
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) => refresh());
     return initial;
   }
 
   Future<void> refresh() async {
+    if (_refreshing) return;
+    _refreshing = true;
     try {
       final page = await _repository.notifications();
       final unseen = _delivery.takeUnseen(page.items);
@@ -174,6 +177,8 @@ class NotificationController extends AsyncNotifier<NotificationPage> {
       }
     } on Object {
       // Retain the last good notification projection during polling failures.
+    } finally {
+      _refreshing = false;
     }
   }
 
@@ -195,21 +200,26 @@ final driverTripControllerProvider =
 
 class DriverTripController extends AsyncNotifier<DriverWorkspace> {
   Timer? _timer;
+  bool _refreshing = false;
   LiveOperationsRepository get _repository =>
       ref.read(liveOperationsRepositoryProvider);
 
   @override
   Future<DriverWorkspace> build() async {
     ref.onDispose(() => _timer?.cancel());
-    _timer ??= Timer.periodic(const Duration(seconds: 5), (_) => refresh());
+    _timer ??= Timer.periodic(const Duration(seconds: 2), (_) => refresh());
     return _repository.workspace();
   }
 
   Future<void> refresh() async {
+    if (_refreshing) return;
+    _refreshing = true;
     try {
       state = AsyncData(await _repository.workspace());
     } on Object {
       // Keep the current operational card when a poll fails.
+    } finally {
+      _refreshing = false;
     }
   }
 
@@ -220,6 +230,20 @@ class DriverTripController extends AsyncNotifier<DriverWorkspace> {
       } else {
         await _repository.confirmLoaded();
       }
+      await refresh();
+      ref.read(notificationControllerProvider.notifier).refresh();
+      return true;
+    } on Object {
+      return false;
+    }
+  }
+
+  Future<bool> depart() => _action(_repository.departToPickup);
+  Future<bool> endVehicleSession() => _action(_repository.endVehicleSession);
+
+  Future<bool> _action(Future<void> Function() action) async {
+    try {
+      await action();
       await refresh();
       ref.read(notificationControllerProvider.notifier).refresh();
       return true;

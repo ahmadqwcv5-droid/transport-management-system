@@ -32,6 +32,12 @@ driver-workspace states and a scoped live map, circular versioned photo markers,
 input-first Follow pausing, restored saved-site states, and persisted
 foreground operational alerts with per-user notification sound settings.
 
+Sprint 4.1.2 makes tracking ingestion backend-owned and independent of browser
+polling, gives the Driver authority to depart to pickup, retains a scoped
+Driver–Truck session after delivery, adds self-service password change with
+refresh-token revocation, and standardizes responsive two-second live updates
+and shared map interaction behavior.
+
 ## Architecture
 
 The backend is a modular monolith using Clean Architecture with lightweight DDD and CQRS principles:
@@ -153,6 +159,12 @@ Sprint 4.1.1 is represented by
 default-enabled per-user notification-sound preference and tenant-owned Company
 User audit events. Existing users remain valid and the prior unique nullable
 Driver/User link index continues to enforce one-to-one linkage.
+
+Sprint 4.1.2 is represented by
+`20260925084826_Sprint412DriverOperationsTracking`. It adds tenant-owned
+Driver–Truck sessions with filtered unique active-session constraints. Existing
+trip, driver, truck, and telemetry rows remain unchanged; sessions are created
+only by a future Driver departure or audited manager handoff.
 
 ## Run Flutter Web
 
@@ -435,15 +447,14 @@ offline. Do not enable this provider in Production.
 
 Stationary simulator samples are generated centrally by the backend provider,
 not by a Flutter coordinate timer. `Tracking__SimulatorHeartbeatSeconds`
-defaults to 15 seconds and is clamped below both the offline threshold and
-`Dispatch__MaximumPositionAgeSeconds`. It therefore produces at most 240 idle
-rows per truck per hour at the default while sampled, rather than one row per
-dashboard poll. It preserves coordinate, heading, movement phase, tracking run,
-and route progress. Freshness validation remains enabled: genuine non-simulator
-or explicitly offline/stopped data can still produce `TRUCK_POSITION_STALE` or
-`TRUCK_OFFLINE`. Real GPS ingestion will eventually call this backend boundary
-independently; the current Development simulator is sampled by dashboard/API
-polling.
+defaults to 8 seconds and is clamped below both the offline threshold and
+`Dispatch__MaximumPositionAgeSeconds`. A backend hosted worker samples the
+Development/Testing simulator every two seconds; dashboard and Driver reads are
+strictly observational and cannot create movement. It preserves coordinate,
+heading, movement phase, tracking run, and route progress. Freshness validation
+remains enabled: genuine non-simulator or explicitly offline/stopped data can
+still produce `TRUCK_POSITION_STALE` or `TRUCK_OFFLINE`. Future GPS adapters use
+the same company-explicit ingestion boundary as the simulator worker.
 
 Reading current positions no longer inserts a duplicate row merely because the
 dashboard polled. History is appended when coordinates, online state, source,
@@ -452,7 +463,7 @@ speed (0.5 km/h tolerance), or heading (1 degree tolerance) changes, or when the
 remain tenant-filtered. Long-term retention and partitioning remain deferred.
 
 New writes correlate provider telemetry with the active trip and immutable route
-plan in `TrackingService`. Selected-trip trails use the bounded
+plan in the canonical ingestion service. Selected-trip trails use the bounded
 `/api/tracking/trips/{tripId}/history` endpoint, which returns oldest-to-newest
 segments. A run/route change, reset, excessive time gap, or Haversine-distance
 jump starts a new segment. Unassigned and legacy null-trip rows may still supply
@@ -498,10 +509,11 @@ pull-to-refresh remains available.
 | `API_BASE_URL` (`--dart-define`) | Flutter | Backend base URL |
 | `Tracking__Provider` | API | `Simulator` in local Development; unconfigured by default elsewhere |
 | `Tracking__SimulatorEnabled` | API | Explicit Development simulator gate |
-| `Tracking__PollingIntervalSeconds` | API/Compose | Documented polling default for clients |
+| `Tracking__PollingIntervalSeconds` | API/Compose | Documented client polling default, 2 seconds |
+| `Tracking__SimulatorTickSeconds` | API | Backend simulator-worker interval, default 2 seconds |
 | `Tracking__OfflineThresholdSeconds` | API | Age after which the latest sample is reported offline |
 | `Tracking__HistoryHeartbeatSeconds` | API | Maximum unchanged interval before a heartbeat history row, default 300 |
-| `Tracking__SimulatorHeartbeatSeconds` | API | Bounded stationary simulator heartbeat, Development default 60 seconds (at most 60 unchanged rows/hour); clamped below dispatch freshness |
+| `Tracking__SimulatorHeartbeatSeconds` | API | Bounded stationary simulator heartbeat, default 8 seconds; clamped below dispatch freshness |
 | `Tracking__TrailGapThresholdSeconds` | API | Time gap that starts a new trail segment, default 300 |
 | `Tracking__TrailJumpThresholdMeters` | API | Geographic jump that starts a new trail segment, default 5000 |
 | `Tracking__MaxTripHistoryPoints` | API | Maximum points returned by trip history, clamped to 10–2000, default 500 |
@@ -509,8 +521,10 @@ pull-to-refresh remains available.
 | `Dispatch__PickupArrivalRadiusMeters` | API | Geographic pickup-arrival radius, default 50 |
 | `Dispatch__ProposalOriginMovementToleranceMeters` | API | Allowed movement before a proposal becomes stale, default 100 |
 | `Dispatch__SimulatorRestoreProjectionToleranceMeters` | API | Maximum distance for simulator restart projection, default 500 |
+| `Geofence__MinimumSamples` | API | Consecutive qualifying persisted samples required for arrival, default 2 |
+| `Geofence__MinimumDwellSeconds` | API | Required qualifying dwell before arrival, default 8 seconds |
 | `MAP_STYLE_URL` (`--dart-define`) | Flutter | Optional MapLibre style URL; blank shows the intentional unconfigured state |
-| `TRACKING_POLLING_INTERVAL_SECONDS` (`--dart-define`) | Flutter | Dashboard refresh interval, default 5 seconds |
+| `TRACKING_POLLING_INTERVAL_SECONDS` (`--dart-define`) | Flutter | Live dashboard/workspace refresh interval, default 2 seconds |
 | `MAP_LOADING_TIMEOUT_SECONDS` (`--dart-define`) | Flutter | Time to await the genuine MapLibre style callback, default 12 seconds |
 | `ENABLE_SIMULATOR_CONTROLS` (`--dart-define`) | Flutter | Explicit development-only simulator panel gate, default false |
 | `Routing__Provider` / `Routing__BaseUrl` | API | Backend routing adapter and endpoint; `Osrm` in Development |
@@ -529,6 +543,7 @@ Never commit `.env`, signing keys, database passwords, or production credentials
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
 - `PUT /api/auth/me/preferences` — persist `en` or `ar`
+- `PUT /api/auth/me/password` — verify current password, change it, revoke all refresh tokens, and require fresh login
 - `GET /api/companies/me`
 - `GET /api/companies/{id}` (tenant-filtered; used to prove ID-tampering resistance)
 - `/api/clients` — list/get/create/update, plus `POST /{id}/deactivate`
@@ -542,7 +557,7 @@ Never commit `.env`, signing keys, database passwords, or production credentials
 - `/api/trips/{id}/cancel|archive|unarchive|duplicate` — reasoned cancellation, historical visibility, and duplicate-as-Draft
 - `GET /api/trips/{id}/timeline` — bounded newest-first immutable event history
 - `POST /api/trips/{id}/repositioning/preview` — persist a proposed approach from the latest trusted position
-- `POST /api/trips/{id}/dispatch-to-pickup` — revalidate and activate the approach leg
+- `POST /api/trips/{id}/dispatch-to-pickup` — audited manager exception with a mandatory reason
 - `POST /api/trips/{id}/arrive-pickup` — idempotently evaluate geographic arrival
 - `GET /api/trips/{id}/repositioning-progress` — approach progress, separate from cargo
 - `GET /api/trips/{id}/route-progress` — progress, remaining distance, ETA, phase, and off-route state
@@ -555,6 +570,9 @@ Never commit `.env`, signing keys, database passwords, or production credentials
 - `GET /api/tracking/trips/{id}/history?limit=500` — tenant-validated chronological trail segments
 - `GET /api/tracking/simulator/trucks` — Owner-only Development inventory with optional latest-position state
 - `POST /api/tracking/simulator/control` — Development simulator, Owner only
+- `GET /api/driver/my-trip` — linked Driver active/post-trip vehicle projection
+- `POST /api/driver/my-trip/depart-to-pickup` — Driver-authorized departure from Assigned
+- `POST /api/driver/my-trip/end-vehicle-session` — end post-trip vehicle access when no active trip reserves it
 - `GET /health`
 
 List endpoints support the Sprint 2 filters documented in OpenAPI. Enum values
@@ -874,8 +892,52 @@ the disposable environment afterward:
 ./scripts/sprint411-acceptance-environment.sh down
 ```
 
-Known Sprint 3.2 limitations: the simulator is process-local and
-development-only; polling is used instead of push; the current MapLibre Flutter
+## Sprint 4.1.2 driver operations and tracking responsiveness
+
+The simulator now advances in a backend hosted worker, not in response to a
+dashboard read. All sources enter a company-explicit ingestion use case that
+bounds unchanged position writes with an eight-second simulator heartbeat,
+evaluates two-sample/eight-second geofence evidence, and persists deduplicated
+operational notifications in the same backend flow. Dashboard, Driver
+Workspace, and notification polling default to two seconds and reject
+overlapping refreshes while retaining the last good projection.
+
+Assignment does not mean departure. A linked Driver starts the approach leg,
+confirms loading and departure at pickup, and confirms delivery after the
+backend detects stable delivery arrival. Manager equivalents are exceptional,
+require a reason, and are audited. A tenant-scoped Driver–Truck session starts
+at departure and survives commercial trip completion, allowing a post-trip map
+until the Driver explicitly ends the session; handoff removes the previous
+Driver's access. ETA prefers current movement and falls back to stored route or
+approach duration when speed is zero.
+
+Manager and Driver maps share Follow, Free, and one-shot Route Overview
+semantics. Pointer input pauses Follow before camera callbacks. Photo markers
+keep the same `truck + photo version + marker pipeline` image identity during
+coordinate/status updates, avoiding fallback-image swaps and symbol recreation.
+Foreground alerts remain persisted/deduplicated; faster polling does not replay
+hydrated alerts, and browser autoplay-blocked messaging remains explicit.
+
+Settings now supports authenticated password change for all roles. The backend
+verifies the current password, confirmation and policy, rejects reuse, hashes
+the replacement, writes a security event, revokes refresh tokens, and forces a
+fresh login. No password is logged or returned.
+
+Acceptance must use a distinct Compose project and named PostgreSQL/photo
+volumes—never `tms-smoke_postgres_data`. The 2026-09-25 implementation used
+`tms-s412`; retained counts matched before and after. Automated and isolated
+runtime checks pass, including background movement without a browser and
+8.002–10.001 second pickup dwell. The mandatory two-profile real-browser run
+did not complete because the existing Firefox/Flutter Drive harness failed with
+aggregated client exceptions, so Sprint 4.1.2 acceptance remains incomplete.
+See [`docs/evidence/sprint4_1_2/`](docs/evidence/sprint4_1_2/).
+
+Deferred work remains real GPS provider integration, WebSocket/push delivery,
+long-term telemetry retention/partitioning, visual non-headless marker-frame
+recording, and the Android run until an SDK plus device/emulator are installed.
+
+Known limitations: simulator state is process-local, backend-scheduled, and
+development-only; client refresh polling is used instead of push; the current MapLibre Flutter
 API exposes style readiness but no complete tile-rendered/error signal, so a
 timeout supplies deterministic recovery and visual tile rendering is checked
 separately; map availability belongs to the configured provider; stored
@@ -885,4 +947,4 @@ rerouting, optimization, proof of delivery, GPS vendors, and high-volume
 telemetry remain deferred. Android execution requires a local Android SDK and
 emulator/device.
 
-Deferred to later sprints: finance, expenses, payments, profitability, advanced maintenance, documents, reporting, real GPS providers, granular permissions, advanced dashboard analytics, route optimization, AI features, and a driver application.
+Deferred to later sprints: finance, expenses, payments, profitability, advanced maintenance, documents, reporting, real GPS providers, granular permissions, advanced dashboard analytics, route optimization, and AI features.
