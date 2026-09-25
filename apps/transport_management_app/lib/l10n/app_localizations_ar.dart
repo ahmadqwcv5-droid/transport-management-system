@@ -1609,4 +1609,59 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get passwordMinimumLength => 'استخدم 12 حرفاً على الأقل.';
+
+  @override
+  String get tripAssignedTitle => 'تم إسناد الرحلة إليك';
+
+  @override
+  String get departureRequiredMessage =>
+      'لن تبدأ الشاحنة بالحركة قبل تأكيد انطلاقك.';
+
+  @override
+  String get confirmDepartureToPickup => 'تأكيد الانطلاق إلى موقع الاستلام';
+
+  @override
+  String get preparingApproachRoute => 'جارٍ تجهيز المسار إلى موقع الاستلام…';
+
+  @override
+  String get openTrip => 'فتح الرحلة';
+
+  @override
+  String get assignmentRequiresDeparture =>
+      'افتح الرحلة وأكد الانطلاق قبل أن تبدأ الشاحنة بالحركة.';
+
+  @override
+  String get truckPositionRequiredGuidance =>
+      'لم يتم استلام موقع الشاحنة بعد. اطلب من المدير ضبط أو تحديث موقع المحاكي، أو انتظر إشارة GPS.';
+
+  @override
+  String get truckPositionStaleGuidance =>
+      'موقع الشاحنة قديم ولا يمكن بدء الرحلة بأمان. حدّث بيانات التتبع ثم أعد المحاولة.';
+
+  @override
+  String get truckOfflineGuidance =>
+      'نظام تتبع الشاحنة غير متصل. أعده إلى وضع الاتصال ثم حاول مجدداً.';
+
+  @override
+  String get pickupCoordinatesRequiredGuidance =>
+      'إحداثيات موقع الاستلام مفقودة. اطلب من فريق العمليات تصحيح الرحلة.';
+
+  @override
+  String get routePreparationFailed =>
+      'تعذر تجهيز المسار إلى موقع الاستلام. أعد المحاولة دون فقدان الإسناد.';
+
+  @override
+  String get departureAlreadyInProgress =>
+      'جارٍ تجهيز الانطلاق بالفعل. يرجى الانتظار.';
+
+  @override
+  String get workspaceConnectionWarning =>
+      'التحديثات المباشرة غير متاحة مؤقتاً. يتم عرض آخر حالة رحلة مستلمة.';
+
+  @override
+  String get mapUpdateWarning =>
+      'تعذر رسم آخر تحديث للخريطة. لا تزال بيانات الرحلة المباشرة متاحة.';
+
+  @override
+  String get mapLoading => 'جارٍ تحميل الخريطة…';
 }

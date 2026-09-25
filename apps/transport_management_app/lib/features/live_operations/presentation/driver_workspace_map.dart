@@ -7,7 +7,9 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import '../../dashboard/presentation/circular_marker_image.dart';
 import '../../dashboard/presentation/fleet_map_coordinator.dart';
 import '../../dashboard/presentation/maplibre_fleet_adapter.dart';
+import '../../../l10n/l10n_extensions.dart';
 import '../domain/live_operations_models.dart';
+import 'latest_wins_map_synchronizer.dart';
 
 typedef DriverPhotoLoader = Future<Uint8List> Function(String url);
 
@@ -36,28 +38,83 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
   final Set<String> _images = {};
   bool _styleLoaded = false;
   bool _failed = false;
+  bool _updateWarning = false;
+  int _mapGeneration = 0;
+  late final LatestWinsMapSynchronizer _synchronizer;
   FleetInteractionMode _cameraMode = FleetInteractionMode.followSelectedTruck;
+
+  @override
+  void initState() {
+    super.initState();
+    _synchronizer = LatestWinsMapSynchronizer(
+      onFailure: (_) {
+        if (mounted && !_updateWarning) {
+          setState(() => _updateWarning = true);
+        }
+      },
+      onRecovered: () {
+        if (mounted && _updateWarning) {
+          setState(() => _updateWarning = false);
+        }
+      },
+    );
+  }
 
   @override
   void didUpdateWidget(covariant DriverWorkspaceMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_styleLoaded) unawaited(_syncSafely());
+    if (_styleLoaded) _requestSync();
   }
 
   @override
   Widget build(BuildContext context) {
     final position = widget.workspace.currentPosition;
     final next = widget.workspace.nextStop;
-    if (_failed ||
-        widget.styleUrl.isEmpty ||
-        (position == null && next == null)) {
+    final nextHasCoordinates =
+        next?.latitude != null && next?.longitude != null;
+    if (widget.styleUrl.isEmpty || (position == null && !nextHasCoordinates)) {
       return DecoratedBox(
         key: const Key('driver-map-unavailable'),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Center(child: Icon(Icons.map_outlined, size: 52)),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              widget.styleUrl.isEmpty
+                  ? context.l10n.mapNotConfigured
+                  : context.l10n.truckPositionRequiredGuidance,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
+    if (_failed) {
+      return DecoratedBox(
+        key: const Key('driver-map-load-failed'),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.map_outlined, size: 52),
+              const SizedBox(height: 8),
+              Text(context.l10n.mapFailed, textAlign: TextAlign.center),
+              TextButton.icon(
+                key: const Key('driver-map-retry'),
+                onPressed: _retry,
+                icon: const Icon(Icons.refresh),
+                label: Text(context.l10n.retryMap),
+              ),
+            ],
+          ),
+        ),
       );
     }
     final target = position == null
@@ -77,7 +134,7 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
           children: [
             Positioned.fill(
               child: MapLibreMap(
-                key: const Key('driver-workspace-map'),
+                key: ValueKey('driver-workspace-map-$_mapGeneration'),
                 styleString: widget.styleUrl,
                 initialCameraPosition: CameraPosition(
                   target: target,
@@ -102,13 +159,45 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
                         fallback.lengthInBytes,
                       ),
                     );
-                    await _sync();
+                    if (mounted) setState(() {});
+                    _requestSync();
                   } on Object {
                     _markFailed();
                   }
                 },
               ),
             ),
+            if (!_styleLoaded)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surface.withValues(alpha: 0.82),
+                  child: Center(
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Text(context.l10n.mapLoading),
+                    ),
+                  ),
+                ),
+              ),
+            if (_updateWarning)
+              PositionedDirectional(
+                start: 12,
+                end: 12,
+                bottom: 12,
+                child: Material(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      context.l10n.mapUpdateWarning,
+                      key: const Key('driver-map-update-warning'),
+                    ),
+                  ),
+                ),
+              ),
             PositionedDirectional(
               top: 12,
               end: 12,
@@ -140,16 +229,27 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
     );
   }
 
-  Future<void> _syncSafely() async {
-    try {
-      await _sync();
-    } on Object {
-      _markFailed();
-    }
+  void _requestSync() {
+    _synchronizer.schedule(_sync);
   }
 
   void _markFailed() {
     if (mounted && !_failed) setState(() => _failed = true);
+  }
+
+  void _retry() {
+    setState(() {
+      _controller = null;
+      _truck = null;
+      _route = null;
+      _approach = null;
+      _stops.clear();
+      _images.clear();
+      _styleLoaded = false;
+      _failed = false;
+      _updateWarning = false;
+      _mapGeneration++;
+    });
   }
 
   Future<void> _sync() async {
@@ -202,7 +302,7 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
                   .map((p) => LatLng(p.latitude, p.longitude))
                   .toList() ??
               const [];
-    final approach = status == 'EnRouteToPickup'
+    final approach = status == 'Assigned' || status == 'EnRouteToPickup'
         ? widget.workspace.approachRoute?.route.coordinates
                   .map((p) => LatLng(p.latitude, p.longitude))
                   .toList() ??

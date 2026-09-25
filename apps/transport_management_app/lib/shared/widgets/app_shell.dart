@@ -294,6 +294,7 @@ class _OperationalAlertCard extends ConsumerWidget {
                         ?.user
                         .role;
                     if (role == 'Driver') {
+                      ref.invalidate(driverTripControllerProvider);
                       context.go('/my-trip');
                     } else if (notification.tripId != null) {
                       context.go('/trips/${notification.tripId}');
@@ -301,7 +302,11 @@ class _OperationalAlertCard extends ConsumerWidget {
                       context.go('/trucks/${notification.truckId}');
                     }
                   },
-                  child: Text(context.l10n.view),
+                  child: Text(
+                    notification.type == 'TripAssignedToDriver'
+                        ? context.l10n.openTrip
+                        : context.l10n.view,
+                  ),
                 ),
               ),
             ],
@@ -334,7 +339,9 @@ class _OperationalAlertCard extends ConsumerWidget {
   static String _message(
     BuildContext context,
     OperationNotification notification,
-  ) => notification.tripId == null
+  ) => notification.type == 'TripAssignedToDriver'
+      ? context.l10n.assignmentRequiresDeparture
+      : notification.tripId == null
       ? context.l10n.operationalAlertMessage
       : context.l10n.operationalTripAlertMessage;
 

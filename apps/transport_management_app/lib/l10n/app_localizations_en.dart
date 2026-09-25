@@ -1621,4 +1621,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passwordMinimumLength => 'Use at least 12 characters.';
+
+  @override
+  String get tripAssignedTitle => 'Trip assigned';
+
+  @override
+  String get departureRequiredMessage =>
+      'The truck will not start moving until you confirm departure.';
+
+  @override
+  String get confirmDepartureToPickup => 'Confirm departure to pickup';
+
+  @override
+  String get preparingApproachRoute => 'Preparing route to pickup…';
+
+  @override
+  String get openTrip => 'Open trip';
+
+  @override
+  String get assignmentRequiresDeparture =>
+      'Open the trip and confirm departure before the truck starts moving.';
+
+  @override
+  String get truckPositionRequiredGuidance =>
+      'Truck location has not been received yet. Ask the manager to set or refresh the simulator location, or wait for GPS.';
+
+  @override
+  String get truckPositionStaleGuidance =>
+      'Truck location is too old to start safely. Refresh telemetry and retry.';
+
+  @override
+  String get truckOfflineGuidance =>
+      'Truck tracking is offline. Bring tracking online and retry.';
+
+  @override
+  String get pickupCoordinatesRequiredGuidance =>
+      'Pickup coordinates are missing. Ask operations to correct the trip.';
+
+  @override
+  String get routePreparationFailed =>
+      'The route to pickup could not be prepared. Retry without losing the assignment.';
+
+  @override
+  String get departureAlreadyInProgress =>
+      'Departure is already being prepared. Please wait.';
+
+  @override
+  String get workspaceConnectionWarning =>
+      'Live updates are temporarily unavailable. Showing the last received trip state.';
+
+  @override
+  String get mapUpdateWarning =>
+      'The latest map update could not be drawn. Live trip data is still available.';
+
+  @override
+  String get mapLoading => 'Loading map…';
 }

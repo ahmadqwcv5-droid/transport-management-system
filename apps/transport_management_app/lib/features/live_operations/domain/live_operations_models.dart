@@ -102,11 +102,36 @@ final class DriverWorkspacePosition {
       );
 }
 
+final class DriverActionReadiness {
+  const DriverActionReadiness({
+    required this.code,
+    required this.visible,
+    required this.enabled,
+    required this.requiresConfirmation,
+    this.blockingReason,
+  });
+
+  final String code;
+  final bool visible, enabled, requiresConfirmation;
+  final String? blockingReason;
+
+  factory DriverActionReadiness.fromJson(Json json) => DriverActionReadiness(
+    code: json['code'] as String,
+    visible: json['visible'] as bool,
+    enabled: json['enabled'] as bool,
+    blockingReason: json['blockingReason'] as String?,
+    requiresConfirmation: json['requiresConfirmation'] as bool,
+  );
+}
+
 final class DriverWorkspace {
   const DriverWorkspace({
     required this.state,
     required this.trackingState,
     required this.allowedActions,
+    this.actions = const [],
+    this.connectionWarning = false,
+    this.actionInProgress = false,
     this.driverId,
     this.driverName,
     this.currentTrip,
@@ -128,6 +153,30 @@ final class DriverWorkspace {
   final TripStop? nextStop;
   final double? remainingDistanceMeters;
   final List<String> allowedActions;
+  final List<DriverActionReadiness> actions;
+  final bool connectionWarning, actionInProgress;
+
+  DriverWorkspace copyWithUiState({
+    bool? connectionWarning,
+    bool? actionInProgress,
+  }) => DriverWorkspace(
+    state: state,
+    trackingState: trackingState,
+    allowedActions: allowedActions,
+    actions: actions,
+    connectionWarning: connectionWarning ?? this.connectionWarning,
+    actionInProgress: actionInProgress ?? this.actionInProgress,
+    driverId: driverId,
+    driverName: driverName,
+    currentTrip: currentTrip,
+    truck: truck,
+    currentPosition: currentPosition,
+    activeRoute: activeRoute,
+    approachRoute: approachRoute,
+    nextStop: nextStop,
+    remainingDistanceMeters: remainingDistanceMeters,
+    estimatedArrivalAt: estimatedArrivalAt,
+  );
 
   factory DriverWorkspace.fromJson(Json json) {
     final driver = json['driver'] as Json?;
@@ -136,6 +185,12 @@ final class DriverWorkspace {
       trackingState: json['trackingState'] as String,
       allowedActions:
           (json['allowedActions'] as List<dynamic>?)?.cast<String>() ??
+          const [],
+      actions:
+          (json['actions'] as List<dynamic>?)
+              ?.cast<Json>()
+              .map(DriverActionReadiness.fromJson)
+              .toList() ??
           const [],
       driverId: driver?['id'] as String?,
       driverName: driver?['fullName'] as String?,

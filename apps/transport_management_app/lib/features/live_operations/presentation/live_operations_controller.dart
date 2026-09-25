@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/presentation/auth_controller.dart';
+import '../../../core/network/api_exception.dart';
 import '../data/live_operations_repository.dart';
 import '../domain/live_operations_models.dart';
 import '../audio/notification_audio.dart';
@@ -201,13 +202,17 @@ final driverTripControllerProvider =
 class DriverTripController extends AsyncNotifier<DriverWorkspace> {
   Timer? _timer;
   bool _refreshing = false;
+  bool _acting = false;
+  int _consecutiveFailures = 0;
   LiveOperationsRepository get _repository =>
       ref.read(liveOperationsRepositoryProvider);
 
   @override
   Future<DriverWorkspace> build() async {
+    ref.watch(authControllerProvider);
+    _timer?.cancel();
     ref.onDispose(() => _timer?.cancel());
-    _timer ??= Timer.periodic(const Duration(seconds: 2), (_) => refresh());
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) => refresh());
     return _repository.workspace();
   }
 
@@ -215,9 +220,15 @@ class DriverTripController extends AsyncNotifier<DriverWorkspace> {
     if (_refreshing) return;
     _refreshing = true;
     try {
-      state = AsyncData(await _repository.workspace());
+      final workspace = await _repository.workspace();
+      _consecutiveFailures = 0;
+      state = AsyncData(workspace);
     } on Object {
-      // Keep the current operational card when a poll fails.
+      _consecutiveFailures++;
+      final current = state.value;
+      if (current != null && _consecutiveFailures >= 2) {
+        state = AsyncData(current.copyWithUiState(connectionWarning: true));
+      }
     } finally {
       _refreshing = false;
     }
@@ -238,7 +249,37 @@ class DriverTripController extends AsyncNotifier<DriverWorkspace> {
     }
   }
 
-  Future<bool> depart() => _action(_repository.departToPickup);
+  Future<DriverActionResult> depart() async {
+    if (_acting) {
+      return const DriverActionResult.failure('DEPARTURE_ALREADY_IN_PROGRESS');
+    }
+    _acting = true;
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(current.copyWithUiState(actionInProgress: true));
+    }
+    try {
+      await _repository.departToPickup();
+      final workspace = await _repository.workspace();
+      _consecutiveFailures = 0;
+      state = AsyncData(workspace);
+      ref.read(notificationControllerProvider.notifier).refresh();
+      return const DriverActionResult.success();
+    } on ApiException catch (error) {
+      if (current != null) {
+        state = AsyncData(current.copyWithUiState(actionInProgress: false));
+      }
+      return DriverActionResult.failure(error.code);
+    } on Object {
+      if (current != null) {
+        state = AsyncData(current.copyWithUiState(actionInProgress: false));
+      }
+      return const DriverActionResult.failure(null);
+    } finally {
+      _acting = false;
+    }
+  }
+
   Future<bool> endVehicleSession() => _action(_repository.endVehicleSession);
 
   Future<bool> _action(Future<void> Function() action) async {
@@ -251,4 +292,11 @@ class DriverTripController extends AsyncNotifier<DriverWorkspace> {
       return false;
     }
   }
+}
+
+final class DriverActionResult {
+  const DriverActionResult.success() : succeeded = true, errorCode = null;
+  const DriverActionResult.failure(this.errorCode) : succeeded = false;
+  final bool succeeded;
+  final String? errorCode;
 }

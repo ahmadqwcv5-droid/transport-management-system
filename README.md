@@ -932,6 +932,23 @@ did not complete because the existing Firefox/Flutter Drive harness failed with
 aggregated client exceptions, so Sprint 4.1.2 acceptance remains incomplete.
 See [`docs/evidence/sprint4_1_2/`](docs/evidence/sprint4_1_2/).
 
+## Sprint 4.1.2.1 Driver activation repair
+
+Sprint 4.1.2.1 closes that acceptance gap. Driver departure is now one
+authoritative server operation: it validates linked identity and fresh trusted
+telemetry, reuses or prepares a valid approach route, revalidates concurrency,
+starts the Driver–Truck session, and transitions idempotently without requiring
+Owner preview. The workspace exposes server-owned readiness and actionable
+English/Arabic blocking guidance. The primary confirmation appears above the
+map, assignment alerts explicitly open and refresh the trip, polling retains
+the last good state, and map mutations are serialized/latest-wins.
+
+The mandatory isolated Firefox workflow passed from Owner UI assignment through
+Driver notification, Open trip, confirmation, persisted OSRM approach route,
+and background movement after the Owner profile was closed. Manager preview,
+override, direct departure calls, and simulator steps were not used. See
+[`docs/evidence/sprint4_1_2_1/`](docs/evidence/sprint4_1_2_1/).
+
 Deferred work remains real GPS provider integration, WebSocket/push delivery,
 long-term telemetry retention/partitioning, visual non-headless marker-frame
 recording, and the Android run until an SDK plus device/emulator are installed.

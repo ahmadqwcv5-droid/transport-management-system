@@ -48,6 +48,29 @@ class DriverMyTripScreen extends ConsumerWidget {
                   context.l10n.myTrip,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
+                if (workspace.connectionWarning) ...[
+                  const SizedBox(height: 12),
+                  MaterialBanner(
+                    key: const Key('driver-workspace-connection-warning'),
+                    content: Text(context.l10n.workspaceConnectionWarning),
+                    actions: [
+                      TextButton(
+                        onPressed: ref
+                            .read(driverTripControllerProvider.notifier)
+                            .refresh,
+                        child: Text(context.l10n.retry),
+                      ),
+                    ],
+                  ),
+                ],
+                if (_departureAction(workspace) case final action?) ...[
+                  const SizedBox(height: 12),
+                  _DeparturePanel(
+                    action: action,
+                    loading: workspace.actionInProgress,
+                    onConfirm: () => _depart(context, ref),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 SizedBox(
                   height: 360,
@@ -69,12 +92,6 @@ class DriverMyTripScreen extends ConsumerWidget {
                     label: context.l10n.confirmLoadedAndDepart,
                     message: context.l10n.confirmLoadedWarning,
                     onConfirm: () => _confirm(context, ref, delivery: false),
-                  ),
-                if (workspace.allowedActions.contains('depart-to-pickup'))
-                  _ActionButton(
-                    label: context.l10n.departToPickup,
-                    message: context.l10n.departToPickupWarning,
-                    onConfirm: () => _depart(context, ref),
                   ),
                 if (workspace.allowedActions.contains('confirm-delivery'))
                   _ActionButton(
@@ -113,8 +130,19 @@ class DriverMyTripScreen extends ConsumerWidget {
   }
 
   Future<void> _depart(BuildContext context, WidgetRef ref) async {
-    final ok = await ref.read(driverTripControllerProvider.notifier).depart();
-    if (context.mounted) _result(context, ok);
+    final result = await ref
+        .read(driverTripControllerProvider.notifier)
+        .depart();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result.succeeded
+              ? context.l10n.actionConfirmed
+              : localizedErrorCode(context.l10n, result.errorCode),
+        ),
+      ),
+    );
   }
 
   Future<void> _endSession(BuildContext context, WidgetRef ref) async {
@@ -132,6 +160,107 @@ class DriverMyTripScreen extends ConsumerWidget {
           ),
         ),
       );
+
+  DriverActionReadiness? _departureAction(DriverWorkspace workspace) {
+    for (final action in workspace.actions) {
+      if (action.code == 'DEPART_TO_PICKUP' && action.visible) return action;
+    }
+    return workspace.allowedActions.contains('depart-to-pickup')
+        ? const DriverActionReadiness(
+            code: 'DEPART_TO_PICKUP',
+            visible: true,
+            enabled: true,
+            requiresConfirmation: true,
+          )
+        : null;
+  }
+}
+
+class _DeparturePanel extends StatelessWidget {
+  const _DeparturePanel({
+    required this.action,
+    required this.loading,
+    required this.onConfirm,
+  });
+
+  final DriverActionReadiness action;
+  final bool loading;
+  final Future<void> Function() onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    final guidance = switch (action.blockingReason) {
+      'TRUCK_POSITION_REQUIRED' => context.l10n.truckPositionRequiredGuidance,
+      'TRUCK_POSITION_STALE' => context.l10n.truckPositionStaleGuidance,
+      'TRUCK_OFFLINE' => context.l10n.truckOfflineGuidance,
+      'PICKUP_COORDINATES_REQUIRED' =>
+        context.l10n.pickupCoordinatesRequiredGuidance,
+      final code? => localizedErrorCode(context.l10n, code),
+      null => context.l10n.departureRequiredMessage,
+    };
+    return Card(
+      key: const Key('driver-departure-panel'),
+      color: Theme.of(context).colorScheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.l10n.tripAssignedTitle,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 6),
+            Text(guidance),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton.icon(
+                key: const Key('confirm-departure-to-pickup'),
+                onPressed: action.enabled && !loading
+                    ? () => _confirm(context)
+                    : null,
+                icon: loading
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.route_outlined),
+                label: Text(
+                  loading
+                      ? context.l10n.preparingApproachRoute
+                      : context.l10n.confirmDepartureToPickup,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirm(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.confirmDepartureToPickup),
+        content: Text(context.l10n.departToPickupWarning),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            key: const Key('confirm-driver-departure-dialog'),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(context.l10n.confirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await onConfirm();
+  }
 }
 
 class _WorkspaceCard extends StatelessWidget {

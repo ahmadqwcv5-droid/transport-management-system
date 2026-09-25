@@ -90,9 +90,19 @@ class _NotificationTile extends ConsumerWidget {
           : Icons.notifications_none,
     ),
     title: Text(_title(context, notification.type)),
-    subtitle: Text(_formatTime(notification.createdAt)),
+    subtitle: Text(
+      notification.type == 'TripAssignedToDriver'
+          ? '${context.l10n.assignmentRequiresDeparture}\n${_formatTime(notification.createdAt)}'
+          : _formatTime(notification.createdAt),
+    ),
     selected: notification.isUnread,
-    trailing: notification.isUnread
+    trailing: notification.type == 'TripAssignedToDriver'
+        ? TextButton(
+            key: const Key('open-assigned-trip'),
+            onPressed: () => _open(context, ref),
+            child: Text(context.l10n.openTrip),
+          )
+        : notification.isUnread
         ? IconButton(
             tooltip: context.l10n.markRead,
             onPressed: () => ref
@@ -101,23 +111,26 @@ class _NotificationTile extends ConsumerWidget {
             icon: const Icon(Icons.done),
           )
         : null,
-    onTap: () async {
-      if (notification.isUnread) {
-        await ref
-            .read(notificationControllerProvider.notifier)
-            .markRead(notification.id);
-      }
-      if (!context.mounted) return;
-      final role = ref.read(authControllerProvider).value?.user.role;
-      if (role == 'Driver') {
-        context.go('/my-trip');
-      } else if (notification.tripId != null) {
-        context.go('/trips/${notification.tripId}');
-      } else if (notification.truckId != null) {
-        context.go('/trucks/${notification.truckId}');
-      }
-    },
+    onTap: () => _open(context, ref),
   );
+
+  Future<void> _open(BuildContext context, WidgetRef ref) async {
+    if (notification.isUnread) {
+      await ref
+          .read(notificationControllerProvider.notifier)
+          .markRead(notification.id);
+    }
+    if (!context.mounted) return;
+    final role = ref.read(authControllerProvider).value?.user.role;
+    if (role == 'Driver') {
+      ref.invalidate(driverTripControllerProvider);
+      context.go('/my-trip');
+    } else if (notification.tripId != null) {
+      context.go('/trips/${notification.tripId}');
+    } else if (notification.truckId != null) {
+      context.go('/trucks/${notification.truckId}');
+    }
+  }
 
   String _title(BuildContext context, String type) => switch (type) {
     'TruckArrivedAtPickup' => context.l10n.notificationArrivedPickup,

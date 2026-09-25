@@ -202,6 +202,12 @@ internal sealed class OperationsStore(AppDbContext dbContext) :
             .Include(x => x.RepositioningPlans).Include(x => x.Events)
             .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
 
+    public Task<Trip?> ReloadTripAsync(Guid id, CancellationToken cancellationToken)
+    {
+        dbContext.ChangeTracker.Clear();
+        return GetTripAsync(id, cancellationToken);
+    }
+
     public async Task<string> AllocateTripNumberAsync(
         Guid companyId, int year, CancellationToken cancellationToken)
     {

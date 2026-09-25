@@ -12,6 +12,9 @@ public sealed record DriverWorkspacePosition(decimal Latitude, decimal Longitude
     decimal Speed, decimal Heading, DateTimeOffset RecordedAt, bool IsOnline);
 public sealed record DriverTruckSessionResponse(Guid Id, Guid TruckId, Guid LastTripId,
     DateTimeOffset StartedAt);
+public sealed record DriverActionReadinessResponse(
+    string Code, bool Visible, bool Enabled, string? BlockingReason,
+    bool RequiresConfirmation);
 public sealed record DriverWorkspaceResponse(
     string State,
     DriverWorkspaceDriver? Driver,
@@ -25,4 +28,5 @@ public sealed record DriverWorkspaceResponse(
     decimal? RemainingDistanceMeters,
     DateTimeOffset? EstimatedArrivalAt,
     IReadOnlyList<string> AllowedActions,
+    IReadOnlyList<DriverActionReadinessResponse> Actions,
     DriverTruckSessionResponse? VehicleSession = null);

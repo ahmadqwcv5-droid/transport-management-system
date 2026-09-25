@@ -72,7 +72,7 @@ public sealed class TripAssignmentService(
         events.Append(trip, "Assigned", new { truckId = truck.Id, driverId = driver.Id });
         resourceEvents.Truck(truck.Id, "TruckAssignedToTrip",
             new { tripId = trip.Id, trip.TripNumber, driverId = driver.Id });
-        await AddAssignmentNotificationAsync(trip, driver, cancellationToken);
+        await AddAssignmentNotificationAsync(trip, driver, truck, cancellationToken);
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -94,7 +94,7 @@ public sealed class TripAssignmentService(
                 new { tripId = trip.Id, trip.TripNumber });
         resourceEvents.Truck(truck.Id, "TruckAssignedToTrip",
             new { tripId = trip.Id, trip.TripNumber, driverId = driver.Id });
-        await AddAssignmentNotificationAsync(trip, driver, cancellationToken);
+        await AddAssignmentNotificationAsync(trip, driver, truck, cancellationToken);
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -165,7 +165,7 @@ public sealed class TripAssignmentService(
             LinkedUserEmail: user?.Email);
     }
 
-    private async Task AddAssignmentNotificationAsync(Trip trip, Driver driver,
+    private async Task AddAssignmentNotificationAsync(Trip trip, Driver driver, Truck truck,
         CancellationToken cancellationToken)
     {
         if (!driver.UserId.HasValue) return;
@@ -173,6 +173,8 @@ public sealed class TripAssignmentService(
         if (await notifications.EventExistsAsync(eventKey, cancellationToken)) return;
         notifications.Add(new OperationNotification(Guid.NewGuid(), currentUser.CompanyId,
             "TripAssignedToDriver", "Information", trip.Id, trip.TruckId, driver.Id,
-            eventKey, JsonSerializer.Serialize(new { trip.TripNumber }), clock.UtcNow));
+            eventKey, JsonSerializer.Serialize(new
+                { trip.TripNumber, truck.PlateNumber, confirmationRequired = true }),
+            clock.UtcNow));
     }
 }

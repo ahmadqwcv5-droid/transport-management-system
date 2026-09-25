@@ -23,3 +23,4 @@ Sprint.
 | 4.1 | [Prompt](sprint-4.1/transport_management_sprint4_1_live_fleet_driver_workflow_codex_prompt.md) | [Plan](sprint-4.1/SPRINT4_1_IMPLEMENTATION_PLAN.md) |
 | 4.1.1 | [Prompt](sprint-4.1.1/transport_management_sprint4_1_1_driver_onboarding_map_notifications_codex_prompt.md) | [Plan](sprint-4.1.1/SPRINT4_1_1_IMPLEMENTATION_PLAN.md) |
 | 4.1.2 | [Prompt](sprint-4.1.2/transport_management_sprint4_1_2_driver_operations_tracking_responsiveness_codex_prompt.md) | [Plan](sprint-4.1.2/SPRINT4_1_2_IMPLEMENTATION_PLAN.md) |
+| 4.1.2.1 | [Prompt](sprint-4.1.2.1/transport_management_sprint4_1_2_1_driver_activation_repair_codex_prompt.md) | [Plan](sprint-4.1.2.1/SPRINT4_1_2_1_IMPLEMENTATION_PLAN.md) |

@@ -669,3 +669,30 @@ Route Overview performs one fit. Two-second polling is guarded against overlap.
 Authenticated users may change their own password only after current-password
 verification and policy checks; success appends a security event, revokes all
 refresh tokens, and returns the client to login.
+
+## ADR-029: Driver-owned approach-route activation
+
+**Status:** Accepted
+
+Normal departure is a single Driver-owned application command. It resolves the
+linked Driver and current tenant-scoped assignment from authenticated identity,
+validates telemetry freshness/online state, and either reuses a valid proposal
+or calculates the approach route. Provider I/O happens outside a database
+transaction; the command reloads and revalidates assignment, version, pickup,
+telemetry movement, and proposal validity before persisting one plan/session/
+event transition. Repeated submissions are idempotent. Owner route preview is
+optional and manager dispatch remains a reasoned audited exception.
+
+The Driver workspace publishes server-owned action readiness rather than
+inferring executable actions from status. Flutter preserves stable error codes,
+places primary confirmation before the map, refreshes immediately after a
+successful command, and retains its last good projection during transient poll
+failures. Map work is serialized with a latest-wins pending slot so poll-driven
+image, annotation, route, and camera mutations cannot overlap or permanently
+replace a usable map after one transient failure.
+
+Assignment notifications state that Driver confirmation is required and expose
+an explicit Open trip action. Mark-read, workspace invalidation, and navigation
+form one client operation. Real-browser acceptance uses distinct Owner/Driver
+storage profiles and forbids manager preview/override, direct departure API
+calls, and manual simulator steps for the normal path.

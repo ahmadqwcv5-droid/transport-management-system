@@ -3169,6 +3169,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use at least 12 characters.'**
   String get passwordMinimumLength;
+
+  /// No description provided for @tripAssignedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip assigned'**
+  String get tripAssignedTitle;
+
+  /// No description provided for @departureRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The truck will not start moving until you confirm departure.'**
+  String get departureRequiredMessage;
+
+  /// No description provided for @confirmDepartureToPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm departure to pickup'**
+  String get confirmDepartureToPickup;
+
+  /// No description provided for @preparingApproachRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing route to pickup…'**
+  String get preparingApproachRoute;
+
+  /// No description provided for @openTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Open trip'**
+  String get openTrip;
+
+  /// No description provided for @assignmentRequiresDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the trip and confirm departure before the truck starts moving.'**
+  String get assignmentRequiresDeparture;
+
+  /// No description provided for @truckPositionRequiredGuidance.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck location has not been received yet. Ask the manager to set or refresh the simulator location, or wait for GPS.'**
+  String get truckPositionRequiredGuidance;
+
+  /// No description provided for @truckPositionStaleGuidance.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck location is too old to start safely. Refresh telemetry and retry.'**
+  String get truckPositionStaleGuidance;
+
+  /// No description provided for @truckOfflineGuidance.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck tracking is offline. Bring tracking online and retry.'**
+  String get truckOfflineGuidance;
+
+  /// No description provided for @pickupCoordinatesRequiredGuidance.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup coordinates are missing. Ask operations to correct the trip.'**
+  String get pickupCoordinatesRequiredGuidance;
+
+  /// No description provided for @routePreparationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The route to pickup could not be prepared. Retry without losing the assignment.'**
+  String get routePreparationFailed;
+
+  /// No description provided for @departureAlreadyInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure is already being prepared. Please wait.'**
+  String get departureAlreadyInProgress;
+
+  /// No description provided for @workspaceConnectionWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Live updates are temporarily unavailable. Showing the last received trip state.'**
+  String get workspaceConnectionWarning;
+
+  /// No description provided for @mapUpdateWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'The latest map update could not be drawn. Live trip data is still available.'**
+  String get mapUpdateWarning;
+
+  /// No description provided for @mapLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading map…'**
+  String get mapLoading;
 }
 
 class _AppLocalizationsDelegate

@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "ownerSessionClosedBeforeDeparture": true,
+  "independentBrowserProfiles": 2,
+  "assignmentViaOwnerUi": true,
+  "notificationOpenTripViaDriverUi": true,
+  "departureViaDriverUi": true,
+  "managerPreviewUsed": false,
+  "managerOverrideUsed": false,
+  "directDepartureApiUsed": false,
+  "manualSimulatorStepUsed": false,
+  "departureClickedAt": "2026-09-25T12:54:22.720294+00:00",
+  "observedStatus": "EnRouteToPickup",
+  "approachRoutePersisted": true,
+  "approachRouteProvider": "OSRM",
+  "firstPointCount": 5,
+  "secondPointCount": 9,
+  "firstPosition": {
+    "latitude": 40.962686,
+    "longitude": 28.85354,
+    "recordedAt": "2026-09-25T12:54:33.085841+00:00"
+  },
+  "secondPosition": {
+    "latitude": 40.963372,
+    "longitude": 28.852079,
+    "recordedAt": "2026-09-25T12:54:41.08537+00:00"
+  },
+  "eventTypes": [
+    "DriverDepartedToPickup",
+    "Assigned",
+    "RouteCalculated",
+    "TripCreated"
+  ]
+}
