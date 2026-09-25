@@ -60,4 +60,19 @@ class AuthController extends AsyncNotifier<AuthSession?> {
       return false;
     }
   }
+
+  Future<bool> updateNotificationSounds(bool enabled) async {
+    final previous = state.value;
+    if (previous == null ||
+        previous.user.notificationSoundsEnabled == enabled) {
+      return true;
+    }
+    try {
+      state = AsyncData(await _repository.updateNotificationSounds(enabled));
+      return true;
+    } on Object catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      return false;
+    }
+  }
 }

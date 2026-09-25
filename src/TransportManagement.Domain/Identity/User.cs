@@ -25,6 +25,7 @@ public sealed class User : Entity, ITenantOwned
     public string PasswordHash { get; private set; } = string.Empty;
     public string Role { get; private set; } = string.Empty;
     public string PreferredLocale { get; private set; } = "en";
+    public bool NotificationSoundsEnabled { get; private set; } = true;
     public bool IsActive { get; private set; }
 
     public void ChangePreferredLocale(string locale, DateTimeOffset now)
@@ -32,6 +33,32 @@ public sealed class User : Entity, ITenantOwned
         if (locale is not ("en" or "ar"))
             throw new DomainRuleException("Only English and Arabic locales are supported.", "UNSUPPORTED_LOCALE");
         PreferredLocale = locale;
+        Touch(now);
+    }
+
+    public void ChangeNotificationSounds(bool enabled, DateTimeOffset now)
+    {
+        NotificationSoundsEnabled = enabled;
+        Touch(now);
+    }
+
+    public void Deactivate(DateTimeOffset now)
+    {
+        IsActive = false;
+        Touch(now);
+    }
+
+    public void Reactivate(DateTimeOffset now)
+    {
+        IsActive = true;
+        Touch(now);
+    }
+
+    public void ResetPassword(string passwordHash, DateTimeOffset now)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new DomainRuleException("A password hash is required.", "PASSWORD_HASH_REQUIRED");
+        PasswordHash = passwordHash;
         Touch(now);
     }
 }

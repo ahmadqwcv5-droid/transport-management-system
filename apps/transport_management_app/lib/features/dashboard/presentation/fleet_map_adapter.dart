@@ -1,5 +1,29 @@
 part of 'fleet_map.dart';
 
+/// Reports physical pointer intent before MapLibre emits camera callbacks.
+///
+/// Keeping this boundary independently testable prevents programmatic camera
+/// movement from being mistaken for a user gesture while still pausing follow
+/// immediately for mouse, touch, trackpad, and wheel input.
+class ManualMapInteractionListener extends StatelessWidget {
+  const ManualMapInteractionListener({
+    required this.child,
+    required this.onInteraction,
+    super.key,
+  });
+
+  final Widget child;
+  final VoidCallback onInteraction;
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    behavior: HitTestBehavior.translucent,
+    onPointerDown: (_) => onInteraction(),
+    onPointerSignal: (_) => onInteraction(),
+    child: child,
+  );
+}
+
 class _ConfiguredFleetMap extends StatefulWidget {
   const _ConfiguredFleetMap({
     required this.styleUrl,
@@ -68,59 +92,63 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
   }
 
   @override
-  Widget build(BuildContext context) => MapLibreMap(
-    key: const Key('real-maplibre-map'),
-    styleString: widget.styleUrl,
-    initialCameraPosition: CameraPosition(
-      target: widget.positions.isEmpty
-          ? const LatLng(39.0, 35.0)
-          : LatLng(
-              widget.positions.first.latitude,
-              widget.positions.first.longitude,
-            ),
-      zoom: widget.positions.isEmpty ? 4 : 11,
-    ),
-    annotationOrder: const [
-      AnnotationType.line,
-      AnnotationType.circle,
-      AnnotationType.symbol,
-    ],
-    onMapCreated: (controller) {
-      _controller = controller;
-      _coordinator = FleetMapAnnotationCoordinator(
-        MapLibreFleetAnnotationAdapter(controller, widget.thumbnailLoader),
-      );
-      void listener(Symbol symbol) {
-        final truckId = symbol.data?['truckId'] as String?;
-        final position = widget.positions
-            .where((item) => item.truckId == truckId)
-            .firstOrNull;
-        if (position != null && mounted) widget.onTruckSelected(position);
-      }
+  Widget build(BuildContext context) => ManualMapInteractionListener(
+    key: const Key('fleet-map-input-listener'),
+    onInteraction: () => widget.onManualCameraInteraction?.call(),
+    child: MapLibreMap(
+      key: const Key('real-maplibre-map'),
+      styleString: widget.styleUrl,
+      initialCameraPosition: CameraPosition(
+        target: widget.positions.isEmpty
+            ? const LatLng(39.0, 35.0)
+            : LatLng(
+                widget.positions.first.latitude,
+                widget.positions.first.longitude,
+              ),
+        zoom: widget.positions.isEmpty ? 4 : 11,
+      ),
+      annotationOrder: const [
+        AnnotationType.line,
+        AnnotationType.circle,
+        AnnotationType.symbol,
+      ],
+      onMapCreated: (controller) {
+        _controller = controller;
+        _coordinator = FleetMapAnnotationCoordinator(
+          MapLibreFleetAnnotationAdapter(controller, widget.thumbnailLoader),
+        );
+        void listener(Symbol symbol) {
+          final truckId = symbol.data?['truckId'] as String?;
+          final position = widget.positions
+              .where((item) => item.truckId == truckId)
+              .firstOrNull;
+          if (position != null && mounted) widget.onTruckSelected(position);
+        }
 
-      _symbolTapListener = listener;
-      controller.onSymbolTapped.add(listener);
-    },
-    onCameraMove: (_) {
-      if (_programmaticCamera) {
-        _scheduleProgrammaticRelease();
-      } else {
-        widget.onManualCameraInteraction?.call();
-      }
-    },
-    onCameraIdle: _scheduleProgrammaticRelease,
-    onStyleLoadedCallback: () async {
-      if (!mounted) return;
-      _styleLoaded = true;
-      widget.onStyleLoaded();
-      try {
-        _beginProgrammaticCamera();
-        await _coordinator?.onStyleLoaded(_snapshot(), panelWidth: 290);
-        if (mounted) widget.onAnnotationsReady();
-      } on Object {
-        if (mounted) widget.onFailure();
-      }
-    },
+        _symbolTapListener = listener;
+        controller.onSymbolTapped.add(listener);
+      },
+      onCameraMove: (_) {
+        if (_programmaticCamera) {
+          _scheduleProgrammaticRelease();
+        } else {
+          widget.onManualCameraInteraction?.call();
+        }
+      },
+      onCameraIdle: _scheduleProgrammaticRelease,
+      onStyleLoadedCallback: () async {
+        if (!mounted) return;
+        _styleLoaded = true;
+        widget.onStyleLoaded();
+        try {
+          _beginProgrammaticCamera();
+          await _coordinator?.onStyleLoaded(_snapshot(), panelWidth: 290);
+          if (mounted) widget.onAnnotationsReady();
+        } on Object {
+          if (mounted) widget.onFailure();
+        }
+      },
+    ),
   );
 
   Future<void> _synchronize({required FleetCameraRequest cameraRequest}) async {

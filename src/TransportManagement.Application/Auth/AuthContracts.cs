@@ -17,7 +17,11 @@ public sealed record AuthResponse(
     CurrentUserResponse User);
 
 public sealed record CurrentUserResponse(
-    Guid Id, Guid CompanyId, string Email, string DisplayName, string Role, string PreferredLocale);
+    Guid Id, Guid CompanyId, string CompanyName, string Email, string DisplayName,
+    string Role, string PreferredLocale, bool NotificationSoundsEnabled,
+    string EnvironmentName);
 
 public sealed record LocalePreferenceRequest(
     [param: Required, RegularExpression("^(en|ar)$")] string PreferredLocale);
+
+public sealed record NotificationSoundsPreferenceRequest(bool Enabled);

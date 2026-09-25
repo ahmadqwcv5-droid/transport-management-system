@@ -1370,4 +1370,207 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get backToTruck => 'العودة إلى الشاحنة';
+
+  @override
+  String get companyUsers => 'مستخدمو الشركة';
+
+  @override
+  String get allUsers => 'جميع المستخدمين';
+
+  @override
+  String get activeUsers => 'المستخدمون النشطون';
+
+  @override
+  String get inactiveUsers => 'المستخدمون غير النشطين';
+
+  @override
+  String get createDriverAccount => 'إنشاء حساب سائق';
+
+  @override
+  String get noCompanyUsers => 'لا يوجد مستخدمون يطابقون هذا الفلتر.';
+
+  @override
+  String get noDriverLinked => 'غير مرتبط بسجل سائق';
+
+  @override
+  String get resetTemporaryPassword => 'إعادة تعيين كلمة المرور المؤقتة';
+
+  @override
+  String get unlinkDriverAccount => 'إلغاء ربط حساب السائق';
+
+  @override
+  String get unlinkDriverAccountConfirmation =>
+      'هل تريد إلغاء ربط حساب التطبيق بسجل السائق؟ لن يتمكن السائق بعد ذلك من استلام الرحلات أو تأكيدها في وضع السائق.';
+
+  @override
+  String get displayName => 'اسم العرض';
+
+  @override
+  String get linkDriver => 'ربط سجل السائق (اختياري)';
+
+  @override
+  String get temporaryPassword => 'كلمة المرور المؤقتة';
+
+  @override
+  String get temporaryPasswordOnce =>
+      'تظهر كلمة المرور الآن فقط. انسخها وشاركها مع السائق بطريقة آمنة.';
+
+  @override
+  String get copy => 'نسخ';
+
+  @override
+  String get done => 'تم';
+
+  @override
+  String get create => 'إنشاء';
+
+  @override
+  String get noAppAccount => 'لا يوجد حساب تطبيق';
+
+  @override
+  String get appAccountLinked => 'حساب التطبيق مرتبط';
+
+  @override
+  String get accountInactive => 'الحساب غير نشط';
+
+  @override
+  String get accountInactiveWarning =>
+      'حساب التطبيق المرتبط غير نشط؛ لا يمكن لهذا السائق استخدام وضع السائق.';
+
+  @override
+  String get noAppAccountWarning =>
+      'لا يملك هذا السائق حساب تطبيق ولا يمكنه استلام الرحلة أو تأكيدها في وضع السائق.';
+
+  @override
+  String get driverAppAccountWarning => 'تحذير حساب تطبيق السائق';
+
+  @override
+  String get accountInactiveAssignmentConfirmation =>
+      'هل تريد إسناد الرحلة رغم أن حساب السائق المرتبط غير نشط؟';
+
+  @override
+  String get unlinkedAssignmentConfirmation =>
+      'هل تريد إسناد الرحلة رغم أن السائق لا يملك حساب تطبيق؟';
+
+  @override
+  String get continueLabel => 'متابعة';
+
+  @override
+  String get driverAppAccount => 'حساب تطبيق السائق';
+
+  @override
+  String get createAndLinkAccount => 'إنشاء الحساب وربطه';
+
+  @override
+  String get linkExistingAccount => 'ربط حساب موجود';
+
+  @override
+  String get noUnlinkedDriverAccounts =>
+      'لا توجد حسابات سائق نشطة وغير مرتبطة.';
+
+  @override
+  String get loadingSavedSites => 'جارٍ تحميل المواقع المحفوظة…';
+
+  @override
+  String get savedSitesLoadFailed => 'تعذر تحميل المواقع المحفوظة';
+
+  @override
+  String get noSavedSites => 'لا توجد مواقع محفوظة لهذا العميل';
+
+  @override
+  String get driverAccountNotLinked => 'حسابك غير مرتبط بسجل سائق';
+
+  @override
+  String get contactOwnerToLinkDriver =>
+      'تواصل مع مالك الشركة لربط تسجيل الدخول بسجل السائق الخاص بك.';
+
+  @override
+  String get noAssignedTripExplanation =>
+      'سيظهر أي إسناد جديد هنا تلقائياً. يمكنك السحب للتحديث في أي وقت.';
+
+  @override
+  String get nextStop => 'المحطة التالية';
+
+  @override
+  String get estimatedArrival => 'وقت الوصول المتوقع';
+
+  @override
+  String get lastPositionUpdate => 'آخر تحديث للموقع';
+
+  @override
+  String get allowedDriverAction => 'الإجراء المتاح للسائق';
+
+  @override
+  String get noActionAvailable => 'لا يوجد إجراء متاح حالياً';
+
+  @override
+  String get trackingNotStarted => 'لم يبدأ التتبع';
+
+  @override
+  String get trackingStale => 'الموقع قديم';
+
+  @override
+  String get trackingOffline => 'الشاحنة غير متصلة';
+
+  @override
+  String get trackingCurrent => 'الموقع محدّث';
+
+  @override
+  String nonProductionEnvironment(String environment) {
+    return 'بيئة غير إنتاجية: $environment';
+  }
+
+  @override
+  String get accountIdentity => 'الحساب والبيئة';
+
+  @override
+  String get signedInEmail => 'البريد المسجل';
+
+  @override
+  String get companyName => 'اسم الشركة';
+
+  @override
+  String get role => 'الدور';
+
+  @override
+  String get environment => 'البيئة';
+
+  @override
+  String get notificationSounds => 'أصوات الإشعارات';
+
+  @override
+  String get notificationSoundsDescription =>
+      'تشغيل صوت قصير واحد للتنبيهات التشغيلية الجديدة أثناء فتح التطبيق.';
+
+  @override
+  String get soundTestPlayed => 'تم طلب تشغيل صوت الاختبار.';
+
+  @override
+  String get testSound => 'اختبار الصوت';
+
+  @override
+  String get enableNotificationSound => 'تفعيل صوت الإشعارات';
+
+  @override
+  String get dismiss => 'إغلاق';
+
+  @override
+  String get view => 'عرض';
+
+  @override
+  String get notificationTripAssigned => 'تم إسناد رحلة جديدة';
+
+  @override
+  String get notificationTruckOffline => 'انقطع اتصال الشاحنة';
+
+  @override
+  String get notificationPositionStale => 'أصبح موقع الشاحنة قديماً';
+
+  @override
+  String get operationalAlertMessage =>
+      'يوجد حدث تشغيلي جديد يحتاج إلى انتباهك.';
+
+  @override
+  String get operationalTripAlertMessage =>
+      'يوجد حدث تشغيلي متعلق برحلة يحتاج إلى انتباهك.';
 }

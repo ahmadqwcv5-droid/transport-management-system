@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "environment": {
+    "composeProject": "tms-s411-acceptance",
+    "apiEnvironment": "Testing",
+    "databaseVolume": "tms-s411-acceptance_sprint411_postgres_data",
+    "retainedVolumeMounted": false
+  },
+  "result": "partial_failed",
+  "latestFailurePhase": "owner_driver_list",
+  "latestFailure": "multiple Flutter test-framework exceptions after viewport-aware lazy-list traversal",
+  "observedAcrossIsolatedAttempts": {
+    "ownerLogin": true,
+    "driverCreatedThroughUi": true,
+    "driverUserCreatedAndLinkedThroughUi": true,
+    "temporaryPasswordDisplayedOnce": true,
+    "tripRouteAssignedAndDispatched": true,
+    "driverLogin": true,
+    "driverWorkspaceRequested": true,
+    "driverScopedTruckPhotoRequested": true,
+    "notificationPollingObserved": true,
+    "offlineAlertPathObserved": true
+  },
+  "notProvenEndToEnd": {
+    "twoIndependentBrowserContexts": true,
+    "realMapStyleAndCircularMarker": true,
+    "realPanAndWheelAcrossThreePolls": true,
+    "savedSiteWorkflow": true,
+    "englishAndArabicScreenshots": true,
+    "physicalAudioPlayback": true,
+    "completeNotificationDeliveryCounts": true
+  },
+  "credentialsStored": false
+}

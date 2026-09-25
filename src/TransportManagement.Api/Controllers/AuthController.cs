@@ -43,4 +43,10 @@ public sealed class AuthController(AuthService authService) : ControllerBase
     public Task<CurrentUserResponse> UpdatePreferences(
         LocalePreferenceRequest request, CancellationToken cancellationToken) =>
         authService.UpdateLocaleAsync(request, cancellationToken);
+
+    [Authorize]
+    [HttpPut("me/notification-sounds")]
+    public Task<CurrentUserResponse> UpdateNotificationSounds(
+        NotificationSoundsPreferenceRequest request, CancellationToken cancellationToken) =>
+        authService.UpdateNotificationSoundsAsync(request, cancellationToken);
 }

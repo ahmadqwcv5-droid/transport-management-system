@@ -59,3 +59,107 @@ final class DriverMyTrip {
     trip: json['trip'] == null ? null : Trip.fromJson(json['trip'] as Json),
   );
 }
+
+final class DriverWorkspaceTruck {
+  const DriverWorkspaceTruck({
+    required this.id,
+    required this.plateNumber,
+    this.fleetCode,
+    this.photoVersion,
+    this.photoThumbnailUrl,
+  });
+  final String id, plateNumber;
+  final String? fleetCode, photoVersion, photoThumbnailUrl;
+  factory DriverWorkspaceTruck.fromJson(Json json) => DriverWorkspaceTruck(
+    id: json['id'] as String,
+    plateNumber: json['plateNumber'] as String,
+    fleetCode: json['fleetCode'] as String?,
+    photoVersion: json['photoVersion'] as String?,
+    photoThumbnailUrl: json['photoThumbnailUrl'] as String?,
+  );
+}
+
+final class DriverWorkspacePosition {
+  const DriverWorkspacePosition({
+    required this.latitude,
+    required this.longitude,
+    required this.speed,
+    required this.heading,
+    required this.recordedAt,
+    required this.isOnline,
+  });
+  final double latitude, longitude, speed, heading;
+  final String recordedAt;
+  final bool isOnline;
+  factory DriverWorkspacePosition.fromJson(Json json) =>
+      DriverWorkspacePosition(
+        latitude: (json['latitude'] as num).toDouble(),
+        longitude: (json['longitude'] as num).toDouble(),
+        speed: (json['speed'] as num).toDouble(),
+        heading: (json['heading'] as num).toDouble(),
+        recordedAt: json['recordedAt'] as String,
+        isOnline: json['isOnline'] as bool,
+      );
+}
+
+final class DriverWorkspace {
+  const DriverWorkspace({
+    required this.state,
+    required this.trackingState,
+    required this.allowedActions,
+    this.driverId,
+    this.driverName,
+    this.currentTrip,
+    this.truck,
+    this.currentPosition,
+    this.activeRoute,
+    this.approachRoute,
+    this.nextStop,
+    this.remainingDistanceMeters,
+    this.estimatedArrivalAt,
+  });
+  final String state, trackingState;
+  final String? driverId, driverName, estimatedArrivalAt;
+  final Trip? currentTrip;
+  final DriverWorkspaceTruck? truck;
+  final DriverWorkspacePosition? currentPosition;
+  final TripRoutePlan? activeRoute;
+  final TripRepositioningPlan? approachRoute;
+  final TripStop? nextStop;
+  final double? remainingDistanceMeters;
+  final List<String> allowedActions;
+
+  factory DriverWorkspace.fromJson(Json json) {
+    final driver = json['driver'] as Json?;
+    return DriverWorkspace(
+      state: json['state'] as String,
+      trackingState: json['trackingState'] as String,
+      allowedActions:
+          (json['allowedActions'] as List<dynamic>?)?.cast<String>() ??
+          const [],
+      driverId: driver?['id'] as String?,
+      driverName: driver?['fullName'] as String?,
+      currentTrip: json['currentTrip'] == null
+          ? null
+          : Trip.fromJson(json['currentTrip'] as Json),
+      truck: json['truck'] == null
+          ? null
+          : DriverWorkspaceTruck.fromJson(json['truck'] as Json),
+      currentPosition: json['currentPosition'] == null
+          ? null
+          : DriverWorkspacePosition.fromJson(json['currentPosition'] as Json),
+      activeRoute: json['activeRoute'] == null
+          ? null
+          : TripRoutePlan.fromJson(json['activeRoute'] as Json),
+      approachRoute: json['approachRoute'] == null
+          ? null
+          : TripRepositioningPlan.fromJson(json['approachRoute'] as Json),
+      nextStop: json['nextStop'] == null
+          ? null
+          : TripStop.fromJson(json['nextStop'] as Json),
+      remainingDistanceMeters: (json['remainingDistanceMeters'] as num?)
+          ?.toDouble(),
+      estimatedArrivalAt: json['estimatedArrivalAt'] as String?,
+    );
+  }
+}

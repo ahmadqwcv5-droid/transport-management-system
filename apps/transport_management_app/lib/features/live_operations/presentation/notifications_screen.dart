@@ -124,6 +124,9 @@ class _NotificationTile extends ConsumerWidget {
     'TruckArrivedAtDelivery' => context.l10n.notificationArrivedDelivery,
     'DriverConfirmedDeparture' => context.l10n.notificationDepartureConfirmed,
     'DriverConfirmedDelivery' => context.l10n.notificationDeliveryConfirmed,
+    'TripAssignedToDriver' => context.l10n.notificationTripAssigned,
+    'TruckBecameOffline' => context.l10n.notificationTruckOffline,
+    'TruckPositionBecameStale' => context.l10n.notificationPositionStale,
     _ => context.l10n.operationalUpdate,
   };
 

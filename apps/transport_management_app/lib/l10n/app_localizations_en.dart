@@ -1381,4 +1381,208 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backToTruck => 'Back to truck';
+
+  @override
+  String get companyUsers => 'Company users';
+
+  @override
+  String get allUsers => 'All users';
+
+  @override
+  String get activeUsers => 'Active users';
+
+  @override
+  String get inactiveUsers => 'Inactive users';
+
+  @override
+  String get createDriverAccount => 'Create Driver account';
+
+  @override
+  String get noCompanyUsers => 'No company users match this filter.';
+
+  @override
+  String get noDriverLinked => 'No Driver record linked';
+
+  @override
+  String get resetTemporaryPassword => 'Reset temporary password';
+
+  @override
+  String get unlinkDriverAccount => 'Unlink Driver account';
+
+  @override
+  String get unlinkDriverAccountConfirmation =>
+      'Unlink this app account from the Driver record? The Driver will no longer receive or confirm trips in Driver Mode.';
+
+  @override
+  String get displayName => 'Display name';
+
+  @override
+  String get linkDriver => 'Link Driver record (optional)';
+
+  @override
+  String get temporaryPassword => 'Temporary password';
+
+  @override
+  String get temporaryPasswordOnce =>
+      'This password is shown only now. Copy it and share it securely with the driver.';
+
+  @override
+  String get copy => 'Copy';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get create => 'Create';
+
+  @override
+  String get noAppAccount => 'No app account';
+
+  @override
+  String get appAccountLinked => 'App account linked';
+
+  @override
+  String get accountInactive => 'Account inactive';
+
+  @override
+  String get accountInactiveWarning =>
+      'The linked app account is inactive; this driver cannot use Driver Mode.';
+
+  @override
+  String get noAppAccountWarning =>
+      'This driver has no app account and cannot receive or confirm the trip in Driver Mode.';
+
+  @override
+  String get driverAppAccountWarning => 'Driver app account warning';
+
+  @override
+  String get accountInactiveAssignmentConfirmation =>
+      'Assign this trip even though the linked Driver account is inactive?';
+
+  @override
+  String get unlinkedAssignmentConfirmation =>
+      'Assign this trip even though the Driver has no app account?';
+
+  @override
+  String get continueLabel => 'Continue';
+
+  @override
+  String get driverAppAccount => 'Driver app account';
+
+  @override
+  String get createAndLinkAccount => 'Create and link account';
+
+  @override
+  String get linkExistingAccount => 'Link existing account';
+
+  @override
+  String get noUnlinkedDriverAccounts =>
+      'No active unlinked Driver accounts are available.';
+
+  @override
+  String get loadingSavedSites => 'Loading saved sites…';
+
+  @override
+  String get savedSitesLoadFailed => 'Failed to load saved sites';
+
+  @override
+  String get noSavedSites => 'No saved sites for this client';
+
+  @override
+  String get driverAccountNotLinked =>
+      'Your account is not linked to a Driver record';
+
+  @override
+  String get contactOwnerToLinkDriver =>
+      'Contact your company owner to link this login to your Driver record.';
+
+  @override
+  String get noAssignedTripExplanation =>
+      'A new assignment will appear here automatically. Pull to refresh at any time.';
+
+  @override
+  String get nextStop => 'Next stop';
+
+  @override
+  String get estimatedArrival => 'Estimated arrival';
+
+  @override
+  String get lastPositionUpdate => 'Last position update';
+
+  @override
+  String get allowedDriverAction => 'Allowed action';
+
+  @override
+  String get noActionAvailable => 'No action is currently available';
+
+  @override
+  String get trackingNotStarted => 'Tracking not started';
+
+  @override
+  String get trackingStale => 'Position stale';
+
+  @override
+  String get trackingOffline => 'Truck offline';
+
+  @override
+  String get trackingCurrent => 'Position current';
+
+  @override
+  String nonProductionEnvironment(String environment) {
+    return 'Non-production environment: $environment';
+  }
+
+  @override
+  String get accountIdentity => 'Account and environment';
+
+  @override
+  String get signedInEmail => 'Signed-in email';
+
+  @override
+  String get companyName => 'Company name';
+
+  @override
+  String get role => 'Role';
+
+  @override
+  String get environment => 'Environment';
+
+  @override
+  String get notificationSounds => 'Notification sounds';
+
+  @override
+  String get notificationSoundsDescription =>
+      'Play one short sound for new operational alerts while this app is open.';
+
+  @override
+  String get soundTestPlayed => 'Test sound requested.';
+
+  @override
+  String get testSound => 'Test sound';
+
+  @override
+  String get enableNotificationSound => 'Enable notification sound';
+
+  @override
+  String get dismiss => 'Dismiss';
+
+  @override
+  String get view => 'View';
+
+  @override
+  String get notificationTripAssigned => 'New trip assigned';
+
+  @override
+  String get notificationTruckOffline => 'Truck became offline';
+
+  @override
+  String get notificationPositionStale => 'Truck position became stale';
+
+  @override
+  String get operationalAlertMessage =>
+      'A new operational event needs your attention.';
+
+  @override
+  String get operationalTripAlertMessage =>
+      'A trip-related operational event needs your attention.';
 }

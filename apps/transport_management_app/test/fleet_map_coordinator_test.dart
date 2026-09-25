@@ -1,7 +1,12 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:transport_management_app/features/dashboard/presentation/circular_marker_image.dart';
+import 'package:transport_management_app/features/dashboard/presentation/fleet_map.dart';
 import 'package:transport_management_app/features/dashboard/presentation/fleet_map_coordinator.dart';
 import 'package:transport_management_app/features/dashboard/presentation/maplibre_fleet_adapter.dart';
 
@@ -36,7 +41,10 @@ void main() {
         photoThumbnailUrl: '/api/trucks/photo/photo/thumbnail?v=version-2',
       );
 
-      expect(photoTruck.photoImageName, 'truck-photo:photo:version-2');
+      expect(
+        photoTruck.photoImageName,
+        'truck-photo-marker-v2:photo:version-2',
+      );
       final options = truckSymbolOptions(photoTruck);
       expect(options.iconImage, photoTruck.photoImageName);
       expect(options.iconRotate, 0);
@@ -78,6 +86,89 @@ void main() {
         lessThan(1),
       );
     });
+  });
+
+  group('circular photo marker processing', () {
+    for (final dimensions in <(int, int)>[(160, 60), (60, 160), (96, 96)]) {
+      test(
+        '${dimensions.$1}x${dimensions.$2} becomes a circular PNG',
+        () async {
+          final input = await _solidPng(dimensions.$1, dimensions.$2);
+          final output = await const CircularMarkerImageProcessor().process(
+            input,
+          );
+          final image = await _decode(output);
+          expect((image.width, image.height), (96, 96));
+          final pixels = await image.toByteData(
+            format: ui.ImageByteFormat.rawRgba,
+          );
+          expect(pixels!.getUint8(3), 0, reason: 'corner stays transparent');
+          expect(
+            pixels.getUint8(((48 * 96 + 48) * 4) + 3),
+            255,
+            reason: 'center remains opaque',
+          );
+          image.dispose();
+        },
+      );
+    }
+
+    test('transparent source stays transparent inside the crop', () async {
+      final output = await const CircularMarkerImageProcessor().process(
+        await _solidPng(120, 80, color: const ui.Color(0x00000000)),
+      );
+      final image = await _decode(output);
+      final pixels = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      expect(pixels!.getUint8(((48 * 96 + 48) * 4) + 3), 0);
+      image.dispose();
+    });
+
+    test('invalid bytes fail safely', () async {
+      expect(
+        () => const CircularMarkerImageProcessor().process(
+          Uint8List.fromList([1, 2, 3]),
+        ),
+        throwsA(anything),
+      );
+    });
+
+    test('cache identity changes only with photo version or truck', () {
+      expect(
+        truck('one', photoVersion: 'v1').photoImageName,
+        truck('one', photoVersion: 'v1').photoImageName,
+      );
+      expect(
+        truck('one', photoVersion: 'v1').photoImageName,
+        isNot(truck('one', photoVersion: 'v2').photoImageName),
+      );
+      expect(
+        truck('one', photoVersion: 'v1').photoImageName,
+        isNot(truck('two', photoVersion: 'v1').photoImageName),
+      );
+    });
+  });
+
+  testWidgets('pointer down and wheel report manual map intent first', (
+    tester,
+  ) async {
+    var interactions = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ManualMapInteractionListener(
+          onInteraction: () => interactions++,
+          child: const SizedBox(width: 300, height: 300),
+        ),
+      ),
+    );
+    await tester.tapAt(tester.getCenter(find.byType(SizedBox)));
+    expect(interactions, 1);
+
+    final center = tester.getCenter(find.byType(SizedBox));
+    tester.binding.handlePointerEvent(
+      PointerScrollEvent(position: center, scrollDelta: const Offset(0, 20)),
+    );
+    await tester.pump();
+    expect(interactions, 2);
   });
 
   group('incremental annotation lifecycle', () {
@@ -425,6 +516,35 @@ void main() {
       );
     },
   );
+}
+
+Future<Uint8List> _solidPng(
+  int width,
+  int height, {
+  ui.Color color = const ui.Color(0xFF22C55E),
+}) async {
+  final recorder = ui.PictureRecorder();
+  final canvas = ui.Canvas(recorder);
+  canvas.drawRect(
+    ui.Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+    ui.Paint()..color = color,
+  );
+  final image = await recorder.endRecording().toImage(width, height);
+  try {
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    return bytes!.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
+  } finally {
+    image.dispose();
+  }
+}
+
+Future<ui.Image> _decode(Uint8List bytes) async {
+  final codec = await ui.instantiateImageCodec(bytes);
+  try {
+    return (await codec.getNextFrame()).image;
+  } finally {
+    codec.dispose();
+  }
 }
 
 TruckMarkerModel truck(

@@ -14,6 +14,19 @@ public sealed class DriverWorkflowController(DriverWorkflowService service) : Co
     public Task<DriverMyTripResponse> Get(CancellationToken cancellationToken) =>
         service.MyTripAsync(cancellationToken);
 
+    [HttpGet("workspace")]
+    public Task<DriverWorkspaceResponse> Workspace(CancellationToken cancellationToken) =>
+        service.WorkspaceAsync(cancellationToken);
+
+    [HttpGet("truck-photo/thumbnail")]
+    public async Task<IActionResult> TruckPhoto(CancellationToken cancellationToken)
+    {
+        var photo = await service.TruckPhotoAsync(cancellationToken);
+        Response.Headers.ETag = $"\"{photo.Version}\"";
+        Response.Headers.CacheControl = "private,max-age=86400";
+        return File(photo.Content, photo.ContentType);
+    }
+
     [HttpPost("confirm-loaded")]
     public Task<TripResponse> ConfirmLoaded(CancellationToken cancellationToken) =>
         service.ConfirmLoadedAsync(cancellationToken);

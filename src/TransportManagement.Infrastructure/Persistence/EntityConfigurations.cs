@@ -55,8 +55,24 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.PasswordHash).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Role).HasMaxLength(50).IsRequired();
         builder.Property(x => x.PreferredLocale).HasMaxLength(5).HasDefaultValue("en").IsRequired();
+        builder.Property(x => x.NotificationSoundsEnabled).HasDefaultValue(true).IsRequired();
         // Email is the login identifier and must therefore be globally unambiguous.
         builder.HasIndex(x => x.Email).IsUnique();
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class CompanyUserEventConfiguration : IEntityTypeConfiguration<CompanyUserEvent>
+{
+    public void Configure(EntityTypeBuilder<CompanyUserEvent> builder)
+    {
+        builder.ToTable("company_user_events");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.EventCode).HasMaxLength(80).IsRequired();
+        builder.Property(x => x.Metadata).HasColumnType("jsonb");
+        builder.HasIndex(x => new { x.CompanyId, x.SubjectUserId, x.CreatedAt });
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.SubjectUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.ActorUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
     }
 }

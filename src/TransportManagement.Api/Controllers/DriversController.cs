@@ -2,13 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransportManagement.Application.Fleet;
 using TransportManagement.Domain.Fleet;
+using TransportManagement.Application.CompanyUsers;
 
 namespace TransportManagement.Api.Controllers;
 
 [ApiController]
 [Authorize(Policy = "operations.read")]
 [Route("api/drivers")]
-public sealed class DriversController(DriverService service) : ControllerBase
+public sealed class DriversController(DriverService service, CompanyUserService companyUsers) : ControllerBase
 {
     [HttpGet]
     public async Task<IReadOnlyList<DriverResponse>> List(
@@ -48,11 +49,20 @@ public sealed class DriversController(DriverService service) : ControllerBase
 
     [HttpPut("{id:guid}/user-link")]
     [Authorize(Policy = "owner")]
-    public Task<DriverResponse> LinkUser(Guid id, LinkDriverUserRequest request,
-        CancellationToken cancellationToken) => service.LinkUserAsync(id, request, cancellationToken);
+    public async Task<DriverResponse> LinkUser(Guid id, LinkDriverUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        await companyUsers.LinkAsync(request.UserId, new LinkCompanyUserRequest(id), cancellationToken);
+        return await service.GetAsync(id, cancellationToken);
+    }
 
     [HttpDelete("{id:guid}/user-link")]
     [Authorize(Policy = "owner")]
-    public Task<DriverResponse> UnlinkUser(Guid id, CancellationToken cancellationToken) =>
-        service.UnlinkUserAsync(id, cancellationToken);
+    public async Task<DriverResponse> UnlinkUser(Guid id, CancellationToken cancellationToken)
+    {
+        var driver = await service.GetAsync(id, cancellationToken);
+        if (driver.UserId.HasValue)
+            await companyUsers.UnlinkAsync(driver.UserId.Value, cancellationToken);
+        return await service.GetAsync(id, cancellationToken);
+    }
 }

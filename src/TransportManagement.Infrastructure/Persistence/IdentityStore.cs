@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Domain.Identity;
+using TransportManagement.Domain.Companies;
 
 namespace TransportManagement.Infrastructure.Persistence;
 
@@ -13,6 +14,10 @@ internal sealed class IdentityStore(AppDbContext dbContext, ICurrentUser current
         currentUser.IsAuthenticated
             ? dbContext.Users.SingleOrDefaultAsync(x => x.Id == userId, cancellationToken)
             : dbContext.Users.IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Id == userId, cancellationToken);
+
+    public Task<Company?> FindCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken) =>
+        dbContext.Companies.IgnoreQueryFilters()
+            .SingleOrDefaultAsync(x => x.Id == companyId, cancellationToken);
 
     public Task<RefreshToken?> FindActiveRefreshTokenAsync(
         string tokenHash, DateTimeOffset now, CancellationToken cancellationToken) =>

@@ -41,9 +41,11 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<IRuntimeEnvironment, RuntimeEnvironment>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IIdentityStore, IdentityStore>();
+        services.AddScoped<ICompanyUserStore, CompanyUserStore>();
         services.AddScoped<ICompanyReader, CompanyReader>();
         services.AddScoped<OperationsStore>();
         services.AddScoped<IClientStore>(provider => provider.GetRequiredService<OperationsStore>());

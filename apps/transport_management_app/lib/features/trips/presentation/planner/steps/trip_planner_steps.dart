@@ -112,6 +112,9 @@ extension TripPlannerSteps on TripPlannerController {
                   fieldKey: 'pickup',
                   fields: _pickup,
                   savedSites: _clientSites,
+                  savedSitesLoading: _clientSitesLoading,
+                  savedSitesFailed: _clientSitesFailed,
+                  onRetrySavedSites: () => _loadClientSites(_clientId!),
                   onSearch: () => _search(_pickup),
                   onSelectMap: () => _mutate(() => _activeMapStop = _pickup),
                   selectingOnMap: identical(_activeMapStop, _pickup),
@@ -125,6 +128,9 @@ extension TripPlannerSteps on TripPlannerController {
                   fieldKey: 'delivery',
                   fields: _delivery,
                   savedSites: _clientSites,
+                  savedSitesLoading: _clientSitesLoading,
+                  savedSitesFailed: _clientSitesFailed,
+                  onRetrySavedSites: () => _loadClientSites(_clientId!),
                   onSearch: () => _search(_delivery),
                   onSelectMap: () => _mutate(() => _activeMapStop = _delivery),
                   selectingOnMap: identical(_activeMapStop, _delivery),
@@ -229,6 +235,28 @@ extension TripPlannerSteps on TripPlannerController {
             options: options.drivers,
             onChanged: _selectDriver,
           ),
+          if (_driverId != null) ...[
+            const SizedBox(height: 8),
+            Builder(
+              builder: (context) {
+                final driver = options.drivers
+                    .where((item) => item.id == _driverId)
+                    .firstOrNull;
+                final state = driver?.appAccountState ?? 'NoAppAccount';
+                return _Notice(
+                  icon: state == 'AppAccountLinked'
+                      ? Icons.verified_user_outlined
+                      : Icons.warning_amber,
+                  text: switch (state) {
+                    'AppAccountLinked' => context.l10n.appAccountLinked,
+                    'AccountInactive' => context.l10n.accountInactiveWarning,
+                    _ => context.l10n.noAppAccountWarning,
+                  },
+                  error: state != 'AppAccountLinked',
+                );
+              },
+            ),
+          ],
         ],
         if (!options.canAssign)
           _Notice(

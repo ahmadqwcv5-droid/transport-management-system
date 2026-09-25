@@ -2725,6 +2725,384 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to truck'**
   String get backToTruck;
+
+  /// No description provided for @companyUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Company users'**
+  String get companyUsers;
+
+  /// No description provided for @allUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'All users'**
+  String get allUsers;
+
+  /// No description provided for @activeUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Active users'**
+  String get activeUsers;
+
+  /// No description provided for @inactiveUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive users'**
+  String get inactiveUsers;
+
+  /// No description provided for @createDriverAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Driver account'**
+  String get createDriverAccount;
+
+  /// No description provided for @noCompanyUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'No company users match this filter.'**
+  String get noCompanyUsers;
+
+  /// No description provided for @noDriverLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'No Driver record linked'**
+  String get noDriverLinked;
+
+  /// No description provided for @resetTemporaryPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset temporary password'**
+  String get resetTemporaryPassword;
+
+  /// No description provided for @unlinkDriverAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink Driver account'**
+  String get unlinkDriverAccount;
+
+  /// No description provided for @unlinkDriverAccountConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink this app account from the Driver record? The Driver will no longer receive or confirm trips in Driver Mode.'**
+  String get unlinkDriverAccountConfirmation;
+
+  /// No description provided for @displayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get displayName;
+
+  /// No description provided for @linkDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'Link Driver record (optional)'**
+  String get linkDriver;
+
+  /// No description provided for @temporaryPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary password'**
+  String get temporaryPassword;
+
+  /// No description provided for @temporaryPasswordOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'This password is shown only now. Copy it and share it securely with the driver.'**
+  String get temporaryPasswordOnce;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// No description provided for @noAppAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'No app account'**
+  String get noAppAccount;
+
+  /// No description provided for @appAccountLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'App account linked'**
+  String get appAccountLinked;
+
+  /// No description provided for @accountInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Account inactive'**
+  String get accountInactive;
+
+  /// No description provided for @accountInactiveWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'The linked app account is inactive; this driver cannot use Driver Mode.'**
+  String get accountInactiveWarning;
+
+  /// No description provided for @noAppAccountWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This driver has no app account and cannot receive or confirm the trip in Driver Mode.'**
+  String get noAppAccountWarning;
+
+  /// No description provided for @driverAppAccountWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver app account warning'**
+  String get driverAppAccountWarning;
+
+  /// No description provided for @accountInactiveAssignmentConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign this trip even though the linked Driver account is inactive?'**
+  String get accountInactiveAssignmentConfirmation;
+
+  /// No description provided for @unlinkedAssignmentConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign this trip even though the Driver has no app account?'**
+  String get unlinkedAssignmentConfirmation;
+
+  /// No description provided for @continueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueLabel;
+
+  /// No description provided for @driverAppAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver app account'**
+  String get driverAppAccount;
+
+  /// No description provided for @createAndLinkAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and link account'**
+  String get createAndLinkAccount;
+
+  /// No description provided for @linkExistingAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Link existing account'**
+  String get linkExistingAccount;
+
+  /// No description provided for @noUnlinkedDriverAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'No active unlinked Driver accounts are available.'**
+  String get noUnlinkedDriverAccounts;
+
+  /// No description provided for @loadingSavedSites.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading saved sites…'**
+  String get loadingSavedSites;
+
+  /// No description provided for @savedSitesLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load saved sites'**
+  String get savedSitesLoadFailed;
+
+  /// No description provided for @noSavedSites.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved sites for this client'**
+  String get noSavedSites;
+
+  /// No description provided for @driverAccountNotLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is not linked to a Driver record'**
+  String get driverAccountNotLinked;
+
+  /// No description provided for @contactOwnerToLinkDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact your company owner to link this login to your Driver record.'**
+  String get contactOwnerToLinkDriver;
+
+  /// No description provided for @noAssignedTripExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'A new assignment will appear here automatically. Pull to refresh at any time.'**
+  String get noAssignedTripExplanation;
+
+  /// No description provided for @nextStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Next stop'**
+  String get nextStop;
+
+  /// No description provided for @estimatedArrival.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated arrival'**
+  String get estimatedArrival;
+
+  /// No description provided for @lastPositionUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Last position update'**
+  String get lastPositionUpdate;
+
+  /// No description provided for @allowedDriverAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed action'**
+  String get allowedDriverAction;
+
+  /// No description provided for @noActionAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No action is currently available'**
+  String get noActionAvailable;
+
+  /// No description provided for @trackingNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking not started'**
+  String get trackingNotStarted;
+
+  /// No description provided for @trackingStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Position stale'**
+  String get trackingStale;
+
+  /// No description provided for @trackingOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck offline'**
+  String get trackingOffline;
+
+  /// No description provided for @trackingCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Position current'**
+  String get trackingCurrent;
+
+  /// No description provided for @nonProductionEnvironment.
+  ///
+  /// In en, this message translates to:
+  /// **'Non-production environment: {environment}'**
+  String nonProductionEnvironment(String environment);
+
+  /// No description provided for @accountIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Account and environment'**
+  String get accountIdentity;
+
+  /// No description provided for @signedInEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed-in email'**
+  String get signedInEmail;
+
+  /// No description provided for @companyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Company name'**
+  String get companyName;
+
+  /// No description provided for @role.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get role;
+
+  /// No description provided for @environment.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment'**
+  String get environment;
+
+  /// No description provided for @notificationSounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification sounds'**
+  String get notificationSounds;
+
+  /// No description provided for @notificationSoundsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Play one short sound for new operational alerts while this app is open.'**
+  String get notificationSoundsDescription;
+
+  /// No description provided for @soundTestPlayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Test sound requested.'**
+  String get soundTestPlayed;
+
+  /// No description provided for @testSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Test sound'**
+  String get testSound;
+
+  /// No description provided for @enableNotificationSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable notification sound'**
+  String get enableNotificationSound;
+
+  /// No description provided for @dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get dismiss;
+
+  /// No description provided for @view.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get view;
+
+  /// No description provided for @notificationTripAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'New trip assigned'**
+  String get notificationTripAssigned;
+
+  /// No description provided for @notificationTruckOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck became offline'**
+  String get notificationTruckOffline;
+
+  /// No description provided for @notificationPositionStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck position became stale'**
+  String get notificationPositionStale;
+
+  /// No description provided for @operationalAlertMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A new operational event needs your attention.'**
+  String get operationalAlertMessage;
+
+  /// No description provided for @operationalTripAlertMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A trip-related operational event needs your attention.'**
+  String get operationalTripAlertMessage;
 }
 
 class _AppLocalizationsDelegate

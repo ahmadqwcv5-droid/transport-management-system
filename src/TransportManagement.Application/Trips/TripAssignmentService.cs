@@ -2,6 +2,7 @@ using TransportManagement.Application.Abstractions;
 using TransportManagement.Application.Common;
 using TransportManagement.Domain.Fleet;
 using TransportManagement.Domain.Trips;
+using System.Text.Json;
 
 namespace TransportManagement.Application.Trips;
 
@@ -12,7 +13,10 @@ public sealed class TripAssignmentService(
     IClock clock,
     TripEntityResolver resolver,
     TripEventWriter events,
-    ResourceEventWriter resourceEvents)
+    ResourceEventWriter resourceEvents,
+    IDriverIdentityStore identities,
+    INotificationStore notifications,
+    ICurrentUser currentUser)
 {
     public async Task<AssignmentOptionsResponse> OptionsAsync(
         Guid id, CancellationToken cancellationToken)
@@ -39,12 +43,19 @@ public sealed class TripAssignmentService(
             : defaultReservation is not null ? "DRIVER_ALREADY_ASSIGNED"
             : suggestedDriver.Status != DriverStatus.Available ? "DRIVER_NOT_AVAILABLE"
             : "AVAILABLE";
+        var driverOptions = new List<AssignmentResourceOptionResponse>(drivers.Count);
+        foreach (var driver in drivers)
+        {
+            var user = driver.UserId.HasValue
+                ? await identities.GetUserAsync(driver.UserId.Value, cancellationToken) : null;
+            driverOptions.Add(DriverOption(driver, canChoose,
+                driverReservations.GetValueOrDefault(driver.Id), user));
+        }
         return new(trip.Id, trip.TruckId, trip.DriverId, canChoose,
             trucks.Select(truck => TruckOption(truck, canChoose,
                 truckReservations.GetValueOrDefault(truck.Id),
                 photos.GetValueOrDefault(truck.Id))).ToArray(),
-            drivers.Select(driver => DriverOption(driver, canChoose,
-                driverReservations.GetValueOrDefault(driver.Id))).ToArray(),
+            driverOptions,
             suggestionReason == "AVAILABLE" ? suggestedDriver?.Id : null,
             suggestionReason);
     }
@@ -61,6 +72,7 @@ public sealed class TripAssignmentService(
         events.Append(trip, "Assigned", new { truckId = truck.Id, driverId = driver.Id });
         resourceEvents.Truck(truck.Id, "TruckAssignedToTrip",
             new { tripId = trip.Id, trip.TripNumber, driverId = driver.Id });
+        await AddAssignmentNotificationAsync(trip, driver, cancellationToken);
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -82,6 +94,7 @@ public sealed class TripAssignmentService(
                 new { tripId = trip.Id, trip.TripNumber });
         resourceEvents.Truck(truck.Id, "TruckAssignedToTrip",
             new { tripId = trip.Id, trip.TripNumber, driverId = driver.Id });
+        await AddAssignmentNotificationAsync(trip, driver, cancellationToken);
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -137,7 +150,8 @@ public sealed class TripAssignmentService(
     }
 
     private static AssignmentResourceOptionResponse DriverOption(
-        Driver driver, bool tripCanAssign, ResourceReservation? reservation)
+        Driver driver, bool tripCanAssign, ResourceReservation? reservation,
+        Domain.Identity.User? user)
     {
         var reason = !tripCanAssign ? "TRIP_NOT_READY_FOR_ASSIGNMENT"
             : !driver.IsActive ? "RESOURCE_INACTIVE"
@@ -145,6 +159,20 @@ public sealed class TripAssignmentService(
             : driver.Status == DriverStatus.OnTrip ? "DRIVER_ON_TRIP"
             : driver.Status != DriverStatus.Available ? "DRIVER_NOT_AVAILABLE" : "AVAILABLE";
         return new(driver.Id, driver.FullName, driver.Status.ToString(),
-            reason == "AVAILABLE", reason, reservation?.TripId, reservation?.TripNumber);
+            reason == "AVAILABLE", reason, reservation?.TripId, reservation?.TripNumber,
+            AppAccountState: user is null ? "NoAppAccount"
+                : user.IsActive ? "AppAccountLinked" : "AccountInactive",
+            LinkedUserEmail: user?.Email);
+    }
+
+    private async Task AddAssignmentNotificationAsync(Trip trip, Driver driver,
+        CancellationToken cancellationToken)
+    {
+        if (!driver.UserId.HasValue) return;
+        var eventKey = $"TripAssignedToDriver:{trip.Id}:{driver.Id}:{trip.Version}";
+        if (await notifications.EventExistsAsync(eventKey, cancellationToken)) return;
+        notifications.Add(new OperationNotification(Guid.NewGuid(), currentUser.CompanyId,
+            "TripAssignedToDriver", "Information", trip.Id, trip.TruckId, driver.Id,
+            eventKey, JsonSerializer.Serialize(new { trip.TripNumber }), clock.UtcNow));
     }
 }

@@ -61,6 +61,9 @@ class _StopEditor extends StatelessWidget {
     required this.fieldKey,
     required this.fields,
     required this.savedSites,
+    required this.savedSitesLoading,
+    required this.savedSitesFailed,
+    required this.onRetrySavedSites,
     required this.onSearch,
     required this.onSelectMap,
     required this.selectingOnMap,
@@ -72,6 +75,8 @@ class _StopEditor extends StatelessWidget {
   final String fieldKey;
   final _StopFields fields;
   final List<ClientSite> savedSites;
+  final bool savedSitesLoading, savedSitesFailed;
+  final VoidCallback onRetrySavedSites;
   final VoidCallback onSearch, onChanged, onSaveSite;
   final VoidCallback onSelectMap;
   final bool selectingOnMap;
@@ -87,8 +92,38 @@ class _StopEditor extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: Theme.of(context).textTheme.titleMedium),
-          if (savedSites.isNotEmpty) ...[
-            const SizedBox(height: 10),
+          const SizedBox(height: 10),
+          if (savedSitesLoading)
+            ListTile(
+              key: Key('trip-$fieldKey-sites-loading'),
+              leading: const SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              title: Text(context.l10n.loadingSavedSites),
+            )
+          else if (savedSitesFailed)
+            ListTile(
+              key: Key('trip-$fieldKey-sites-error'),
+              leading: const Icon(Icons.error_outline),
+              title: Text(context.l10n.savedSitesLoadFailed),
+              trailing: TextButton(
+                onPressed: onRetrySavedSites,
+                child: Text(context.l10n.retry),
+              ),
+            )
+          else if (savedSites.isEmpty)
+            ListTile(
+              key: Key('trip-$fieldKey-sites-empty'),
+              leading: const Icon(Icons.location_off_outlined),
+              title: Text(context.l10n.noSavedSites),
+              trailing: TextButton.icon(
+                onPressed: onSelectMap,
+                icon: const Icon(Icons.add_location_alt),
+                label: Text(context.l10n.addSite),
+              ),
+            )
+          else
             DropdownButtonFormField<String>(
               key: Key('trip-$fieldKey-saved-site'),
               decoration: InputDecoration(labelText: context.l10n.savedSite),
@@ -111,7 +146,6 @@ class _StopEditor extends StatelessWidget {
                 onChanged();
               },
             ),
-          ],
           const SizedBox(height: 10),
           Row(
             children: [

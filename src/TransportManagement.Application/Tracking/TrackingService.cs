@@ -1,3 +1,4 @@
+using System.Text.Json;
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Application.Common;
 using TransportManagement.Domain.Tracking;
@@ -18,7 +19,8 @@ public sealed class TrackingService(
     IClock clock,
     TrackingPolicy policy,
     DispatchPolicy dispatchPolicy,
-    GeofenceEvaluationService geofences)
+    GeofenceEvaluationService geofences,
+    INotificationStore notifications)
 {
     public async Task<IReadOnlyList<TruckPositionResponse>> CurrentAsync(CancellationToken cancellationToken)
     {
@@ -53,6 +55,8 @@ public sealed class TrackingService(
                 latest = await trackingStore.LatestPositionsAsync(cancellationToken);
             }
         }
+        await AddTrackingHealthNotificationsAsync(
+            latest, trucks, trips, cancellationToken);
         var drivers = await fleetStore.ListDriversAsync(null, null, null, cancellationToken);
         var photos = (await photoStore.ListAsync(cancellationToken)).ToDictionary(x => x.TruckId);
         return latest.Join(trucks, p => p.TruckId, t => t.Id,
@@ -213,6 +217,44 @@ public sealed class TrackingService(
             position.MovementPhase, position.RepositioningPlanId,
             photo?.Version, photo is null ? null
                 : $"/api/trucks/{position.TruckId}/photo/thumbnail?v={photo.Version}");
+    }
+
+    private async Task AddTrackingHealthNotificationsAsync(
+        IReadOnlyList<TruckPosition> latest,
+        IReadOnlyList<Domain.Fleet.Truck> trucks,
+        IReadOnlyList<Trip> trips,
+        CancellationToken cancellationToken)
+    {
+        var latestByTruck = latest.ToDictionary(x => x.TruckId);
+        var trucksById = trucks.ToDictionary(x => x.Id);
+        var changed = false;
+        foreach (var trip in trips.Where(x => x.ReservesResources && x.TruckId.HasValue))
+        {
+            var truckId = trip.TruckId!.Value;
+            if (!latestByTruck.TryGetValue(truckId, out var position)) continue;
+            var stale = position.IsOnline
+                && clock.UtcNow - position.RecordedAt > policy.OfflineThreshold;
+            var offline = !position.IsOnline;
+            if (!stale && !offline) continue;
+
+            var type = offline ? "TruckBecameOffline" : "TruckPositionBecameStale";
+            var eventKey = $"{type}:{trip.Id:N}:{position.Id:N}";
+            if (await notifications.EventExistsAsync(eventKey, cancellationToken)) continue;
+            trucksById.TryGetValue(truckId, out var truck);
+            notifications.Add(new OperationNotification(
+                Guid.NewGuid(), currentUser.CompanyId, type,
+                offline ? "Critical" : "Warning", trip.Id, truckId, trip.DriverId,
+                eventKey,
+                JsonSerializer.Serialize(new
+                {
+                    trip.TripNumber,
+                    truck?.PlateNumber,
+                    position.RecordedAt
+                }),
+                clock.UtcNow));
+            changed = true;
+        }
+        if (changed) await notifications.SaveChangesAsync(cancellationToken);
     }
 
     private bool ShouldPersist(TrackingSample sample, TrackingTarget target, TruckPosition previous)

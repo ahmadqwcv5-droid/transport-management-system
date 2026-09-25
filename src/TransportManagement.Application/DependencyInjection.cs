@@ -9,6 +9,7 @@ using TransportManagement.Application.Dashboard;
 using TransportManagement.Application.Routing;
 using TransportManagement.Application.Notifications;
 using TransportManagement.Application.Drivers;
+using TransportManagement.Application.CompanyUsers;
 
 namespace TransportManagement.Application;
 
@@ -37,5 +38,6 @@ public static class DependencyInjection
         .AddScoped<GeofenceEvaluationService>()
         .AddScoped<NotificationService>()
         .AddScoped<DriverWorkflowService>()
+        .AddScoped<CompanyUserService>()
         .AddScoped<DashboardService>();
 }

@@ -25,7 +25,8 @@ public sealed record AssignmentResourceOptionResponse(
     string? ConflictingTripNumber = null, string? FleetCode = null,
     string? ResourceType = null, decimal? PayloadCapacity = null,
     string? PayloadUnit = null, Guid? DefaultDriverId = null,
-    string? PhotoVersion = null, string? PhotoThumbnailUrl = null);
+    string? PhotoVersion = null, string? PhotoThumbnailUrl = null,
+    string? AppAccountState = null, string? LinkedUserEmail = null);
 public sealed record AssignmentOptionsResponse(
     Guid TripId, Guid? CurrentTruckId, Guid? CurrentDriverId,
     bool CanAssign, IReadOnlyList<AssignmentResourceOptionResponse> Trucks,

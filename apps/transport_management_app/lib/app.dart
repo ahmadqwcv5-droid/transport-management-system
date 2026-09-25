@@ -16,6 +16,7 @@ import 'features/trips/presentation/trips_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/live_operations/presentation/driver_my_trip_screen.dart';
 import 'features/live_operations/presentation/notifications_screen.dart';
+import 'features/company_users/presentation/company_users_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'shared/widgets/app_shell.dart';
 
@@ -48,6 +49,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/settings';
       if (driver && !driverRoute) return '/my-trip';
       if (!driver && state.matchedLocation == '/my-trip') return '/dashboard';
+      if (state.matchedLocation == '/company-users' &&
+          authRouteState.role != 'Owner') {
+        return '/dashboard';
+      }
       return null;
     },
     routes: [
@@ -104,6 +109,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/drivers',
         builder: (_, _) =>
             const AppShell(selectedIndex: 3, child: DriversScreen()),
+      ),
+      GoRoute(
+        path: '/company-users',
+        builder: (_, _) =>
+            const AppShell(selectedIndex: 6, child: CompanyUsersScreen()),
       ),
       GoRoute(
         path: '/trips',

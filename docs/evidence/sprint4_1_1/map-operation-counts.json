@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "source": "apps/transport_management_app/test/fleet_map_coordinator_test.dart",
+  "test": "ten moving polls produce stable operation-count evidence",
+  "result": "passed",
+  "polls": 10,
+  "counts": {
+    "imageRegistrations": 1,
+    "symbolAdditions": 1,
+    "symbolUpdates": 10,
+    "symbolRemovals": 0,
+    "plannedRouteAdditions": 1,
+    "plannedRouteUpdates": 0,
+    "plannedRouteRemovals": 0,
+    "trailAdditions": 1,
+    "trailUpdates": 10,
+    "trailRemovals": 0,
+    "stopMarkerAdditions": 2,
+    "stopMarkerRemovals": 0,
+    "globalSymbolClears": 0,
+    "globalLineClears": 0,
+    "globalCircleClears": 0,
+    "cameraMovesCausedByPolling": 0
+  },
+  "evidenceType": "deterministic_flutter_test_not_real_browser"
+}

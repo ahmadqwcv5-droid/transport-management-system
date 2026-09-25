@@ -32,6 +32,17 @@ final class LiveOperationsRepository {
     }
   }
 
+  Future<DriverWorkspace> workspace() async {
+    try {
+      final response = await _client.dio.get<Json>(
+        '/api/driver/my-trip/workspace',
+      );
+      return DriverWorkspace.fromJson(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
   Future<void> confirmLoaded() => _post('/api/driver/my-trip/confirm-loaded');
   Future<void> confirmDelivery() =>
       _post('/api/driver/my-trip/confirm-delivery');

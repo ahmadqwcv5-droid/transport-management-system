@@ -8,14 +8,15 @@ internal static class OperationsTestClient
 {
     public static async Task<HttpClient> AuthenticatedClientAsync(
         ApiFactory factory,
-        string email)
+        string email,
+        string password = ApiFactory.Password)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var client = factory.CreateClient();
         var response = await client.PostAsJsonAsync("/api/auth/login", new
         {
             email,
-            password = ApiFactory.Password
+            password
         }, cancellationToken);
         response.EnsureSuccessStatusCode();
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);

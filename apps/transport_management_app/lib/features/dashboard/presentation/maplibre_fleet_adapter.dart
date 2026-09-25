@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'fleet_map_coordinator.dart';
+import 'circular_marker_image.dart';
 
 const truckMarkerAsset = 'assets/map/truck_top_down.png';
 const truckMarkerImageName = 'tms-truck-top-down';
@@ -69,10 +70,16 @@ typedef AuthenticatedThumbnailLoader = Future<Uint8List> Function(String url);
 
 final class MapLibreFleetAnnotationAdapter
     implements FleetMapAnnotationAdapter {
-  MapLibreFleetAnnotationAdapter(this.controller, this.thumbnailLoader);
+  MapLibreFleetAnnotationAdapter(
+    this.controller,
+    this.thumbnailLoader, {
+    CircularMarkerImageProcessor markerProcessor =
+        const CircularMarkerImageProcessor(),
+  }) : _markerProcessor = markerProcessor;
 
   final MapLibreMapController controller;
   final AuthenticatedThumbnailLoader thumbnailLoader;
+  final CircularMarkerImageProcessor _markerProcessor;
   final Map<String, Symbol> _trucks = {};
   final Map<String, Circle> _statuses = {};
   final Map<String, Circle> _stops = {};
@@ -148,7 +155,8 @@ final class MapLibreFleetAnnotationAdapter
     }
     if (_failedPhotoImages.contains(name)) return false;
     try {
-      await controller.addImage(name, await thumbnailLoader(url));
+      final source = await thumbnailLoader(url);
+      await controller.addImage(name, await _markerProcessor.process(source));
       _registeredPhotoImages.add(name);
       return true;
     } on Object {

@@ -32,3 +32,4 @@ flutter:
   generate: true
   assets:
     - assets/map/truck_top_down.png
+    - assets/audio/notification_tone.wav.b64

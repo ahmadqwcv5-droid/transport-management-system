@@ -50,6 +50,11 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(options => options.WithTitle("Transport Management API"));
     await DevelopmentDataSeeder.SeedAsync(app.Services, app.Configuration, app.Lifetime.ApplicationStopping);
 }
+else if (app.Environment.IsEnvironment("Testing")
+    && app.Configuration.GetValue<bool>("AcceptanceEnvironment:Enabled"))
+{
+    await DevelopmentDataSeeder.SeedAsync(app.Services, app.Configuration, app.Lifetime.ApplicationStopping);
+}
 
 app.UseHttpsRedirection();
 app.UseCors("frontend");

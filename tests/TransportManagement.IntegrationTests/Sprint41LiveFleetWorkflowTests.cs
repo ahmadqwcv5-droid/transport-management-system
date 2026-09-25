@@ -73,6 +73,11 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
             (await driver.GetAsync("/api/tracking/positions", TestContext.Current.CancellationToken)).StatusCode);
         var mine = await driver.GetJsonAsync<JsonElement>("/api/driver/my-trip");
         Assert.Equal(tripId, mine.GetProperty("trip").GetProperty("id").GetGuid());
+        var workspace = await driver.GetJsonAsync<JsonElement>("/api/driver/my-trip/workspace");
+        Assert.Equal("ACTIVE_TRIP_READY", workspace.GetProperty("state").GetString());
+        Assert.Equal(tripId, workspace.GetProperty("currentTrip").GetProperty("id").GetGuid());
+        Assert.Equal(truckId, workspace.GetProperty("truck").GetProperty("id").GetGuid());
+        Assert.Equal("Pickup", workspace.GetProperty("nextStop").GetProperty("type").GetString());
         var inTransit = await (await driver.PostEmptyAsync(
             "/api/driver/my-trip/confirm-loaded")).RequiredJsonAsync();
         Assert.Equal("InTransit", inTransit.GetProperty("status").GetString());

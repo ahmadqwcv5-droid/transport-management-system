@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../l10n/l10n_extensions.dart';
 import '../../features/live_operations/presentation/live_operations_controller.dart';
+import '../../features/live_operations/domain/live_operations_models.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({required this.child, required this.selectedIndex, super.key});
@@ -18,6 +21,7 @@ class AppShell extends ConsumerWidget {
     '/drivers',
     '/trips',
     '/settings',
+    '/company-users',
   ];
   static const _driverPaths = ['/my-trip', '/notifications', '/settings'];
   List<NavigationDestination> _managerDestinations(BuildContext context) => [
@@ -51,6 +55,14 @@ class AppShell extends ConsumerWidget {
       selectedIcon: const Icon(Icons.settings),
       label: context.l10n.settings,
     ),
+    NavigationDestination(
+      icon: const Icon(
+        Icons.manage_accounts_outlined,
+        key: Key('nav-company-users'),
+      ),
+      selectedIcon: const Icon(Icons.manage_accounts),
+      label: context.l10n.companyUsers,
+    ),
   ];
 
   List<NavigationDestination> _driverDestinations(BuildContext context) => [
@@ -80,10 +92,17 @@ class AppShell extends ConsumerWidget {
       final wide = constraints.maxWidth >= 720;
       final authenticatedUser = ref.watch(authControllerProvider).value?.user;
       final isDriver = authenticatedUser?.role == 'Driver';
-      final paths = isDriver ? _driverPaths : _managerPaths;
+      final isOwner = authenticatedUser?.role == 'Owner';
+      final paths = isDriver
+          ? _driverPaths
+          : isOwner
+          ? _managerPaths
+          : _managerPaths.take(6).toList();
       final destinations = isDriver
           ? _driverDestinations(context)
-          : _managerDestinations(context);
+          : isOwner
+          ? _managerDestinations(context)
+          : _managerDestinations(context).take(6).toList();
       final inferredIndex = selectedIndex < 0
           ? paths.indexOf('/notifications')
           : selectedIndex;
@@ -102,59 +121,242 @@ class AppShell extends ConsumerWidget {
                     .where((item) => item.isUnread)
                     .length ??
                 0;
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(context.l10n.appTitle),
-          actions: [
-            Badge(
-              isLabelVisible: unread > 0,
-              label: Text(unread > 99 ? '99+' : '$unread'),
-              child: IconButton(
-                key: const Key('notifications-button'),
-                tooltip: context.l10n.notifications,
-                onPressed: () => context.go('/notifications'),
-                icon: const Icon(Icons.notifications_outlined),
+      final alert = ref.watch(operationalAlertControllerProvider);
+      return Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) {
+          if (authenticatedUser?.notificationSoundsEnabled == true) {
+            ref.read(operationalAlertControllerProvider.notifier).unlockSound();
+          }
+        },
+        child: Stack(
+          children: [
+            Scaffold(
+              appBar: AppBar(
+                title: Text(context.l10n.appTitle),
+                actions: [
+                  Badge(
+                    isLabelVisible: unread > 0,
+                    label: Text(unread > 99 ? '99+' : '$unread'),
+                    child: IconButton(
+                      key: const Key('notifications-button'),
+                      tooltip: context.l10n.notifications,
+                      onPressed: () => context.go('/notifications'),
+                      icon: const Icon(Icons.notifications_outlined),
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('logout-button'),
+                    tooltip: context.l10n.signOut,
+                    onPressed: () =>
+                        ref.read(authControllerProvider.notifier).logout(),
+                    icon: const Icon(Icons.logout),
+                  ),
+                ],
               ),
+              body: wide
+                  ? Row(
+                      children: [
+                        NavigationRail(
+                          selectedIndex: safeIndex,
+                          onDestinationSelected: (index) =>
+                              context.go(paths[index]),
+                          labelType: NavigationRailLabelType.all,
+                          destinations: destinations
+                              .map(
+                                (item) => NavigationRailDestination(
+                                  icon: item.icon,
+                                  selectedIcon: item.selectedIcon,
+                                  label: Text(item.label),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                        const VerticalDivider(width: 1),
+                        Expanded(child: child),
+                      ],
+                    )
+                  : child,
+              bottomNavigationBar: wide
+                  ? null
+                  : NavigationBar(
+                      selectedIndex: safeIndex,
+                      onDestinationSelected: (index) =>
+                          context.go(paths[index]),
+                      destinations: destinations,
+                    ),
             ),
-            IconButton(
-              key: const Key('logout-button'),
-              tooltip: context.l10n.signOut,
-              onPressed: () =>
-                  ref.read(authControllerProvider.notifier).logout(),
-              icon: const Icon(Icons.logout),
-            ),
+            if (alert.current != null)
+              PositionedDirectional(
+                key: const Key('operational-alert-overlay'),
+                top: 76,
+                end: 16,
+                width: constraints.maxWidth < 460
+                    ? constraints.maxWidth - 32
+                    : 400,
+                child: _OperationalAlertCard(alert.current!),
+              ),
           ],
         ),
-        body: wide
-            ? Row(
-                children: [
-                  NavigationRail(
-                    selectedIndex: safeIndex,
-                    onDestinationSelected: (index) => context.go(paths[index]),
-                    labelType: NavigationRailLabelType.all,
-                    destinations: destinations
-                        .map(
-                          (item) => NavigationRailDestination(
-                            icon: item.icon,
-                            selectedIcon: item.selectedIcon,
-                            label: Text(item.label),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                  const VerticalDivider(width: 1),
-                  Expanded(child: child),
-                ],
-              )
-            : child,
-        bottomNavigationBar: wide
-            ? null
-            : NavigationBar(
-                selectedIndex: safeIndex,
-                onDestinationSelected: (index) => context.go(paths[index]),
-                destinations: destinations,
-              ),
       );
     },
   );
+}
+
+class _OperationalAlertCard extends ConsumerWidget {
+  const _OperationalAlertCard(this.notification);
+  final OperationNotification notification;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final severity = notification.severity.toLowerCase();
+    final color = switch (severity) {
+      'critical' => Theme.of(context).colorScheme.error,
+      'warning' => Colors.orange.shade800,
+      'success' => Colors.green.shade700,
+      _ => Theme.of(context).colorScheme.primary,
+    };
+    final blocked = ref.watch(operationalAlertControllerProvider).soundBlocked;
+    return Material(
+      elevation: 10,
+      borderRadius: BorderRadius.circular(12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: BorderDirectional(start: BorderSide(color: color, width: 5)),
+          color: Theme.of(context).colorScheme.surface,
+        ),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 8, 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(_icon(notification.type), color: color),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _title(context, notification.type),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('dismiss-operational-alert'),
+                    tooltip: context.l10n.dismiss,
+                    onPressed: ref
+                        .read(operationalAlertControllerProvider.notifier)
+                        .dismiss,
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              Text(_message(context, notification)),
+              if (_identity(notification).isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _identity(notification),
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ],
+              const SizedBox(height: 4),
+              Text(
+                _time(notification.createdAt),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              if (blocked)
+                TextButton.icon(
+                  key: const Key('enable-notification-sound'),
+                  onPressed: ref
+                      .read(operationalAlertControllerProvider.notifier)
+                      .unlockSound,
+                  icon: const Icon(Icons.volume_up_outlined),
+                  label: Text(context.l10n.enableNotificationSound),
+                ),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
+                  key: const Key('view-operational-alert'),
+                  onPressed: () async {
+                    if (notification.isUnread) {
+                      await ref
+                          .read(notificationControllerProvider.notifier)
+                          .markRead(notification.id);
+                    }
+                    ref
+                        .read(operationalAlertControllerProvider.notifier)
+                        .dismiss();
+                    if (!context.mounted) return;
+                    final role = ref
+                        .read(authControllerProvider)
+                        .value
+                        ?.user
+                        .role;
+                    if (role == 'Driver') {
+                      context.go('/my-trip');
+                    } else if (notification.tripId != null) {
+                      context.go('/trips/${notification.tripId}');
+                    } else if (notification.truckId != null) {
+                      context.go('/trucks/${notification.truckId}');
+                    }
+                  },
+                  child: Text(context.l10n.view),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static IconData _icon(String type) => switch (type) {
+    'TruckArrivedAtPickup' || 'TruckArrivedAtDelivery' => Icons.location_on,
+    'DriverConfirmedDelivery' => Icons.task_alt,
+    'TripAssignedToDriver' => Icons.assignment_ind_outlined,
+    'TruckBecameOffline' => Icons.signal_wifi_connected_no_internet_4,
+    'TruckPositionBecameStale' => Icons.update_disabled,
+    _ => Icons.notifications_active,
+  };
+
+  static String _title(BuildContext context, String type) => switch (type) {
+    'TruckArrivedAtPickup' => context.l10n.notificationArrivedPickup,
+    'TruckArrivedAtDelivery' => context.l10n.notificationArrivedDelivery,
+    'DriverConfirmedDeparture' => context.l10n.notificationDepartureConfirmed,
+    'DriverConfirmedDelivery' => context.l10n.notificationDeliveryConfirmed,
+    'TripAssignedToDriver' => context.l10n.notificationTripAssigned,
+    'TruckBecameOffline' => context.l10n.notificationTruckOffline,
+    'TruckPositionBecameStale' => context.l10n.notificationPositionStale,
+    _ => context.l10n.operationalUpdate,
+  };
+
+  static String _message(
+    BuildContext context,
+    OperationNotification notification,
+  ) => notification.tripId == null
+      ? context.l10n.operationalAlertMessage
+      : context.l10n.operationalTripAlertMessage;
+
+  static String _identity(OperationNotification notification) {
+    if (notification.dataJson == null) return '';
+    try {
+      final data = jsonDecode(notification.dataJson!) as Map<String, dynamic>;
+      final trip = data['TripNumber'] ?? data['tripNumber'];
+      final plate = data['PlateNumber'] ?? data['plateNumber'];
+      return [
+        trip,
+        plate,
+      ].whereType<String>().where((value) => value.isNotEmpty).join(' · ');
+    } on Object {
+      return '';
+    }
+  }
+
+  static String _time(String value) {
+    final date = DateTime.tryParse(value)?.toLocal();
+    if (date == null) return value;
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
 }

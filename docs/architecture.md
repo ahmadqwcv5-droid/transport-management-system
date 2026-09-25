@@ -597,3 +597,46 @@ pauses Follow, Resume restores it, and Route Overview fits exactly once.
 Photo markers remain upright while a separate cue represents heading. The
 accessible fleet selector is available once the map style loads and is not
 gated on an optional annotation-completion callback.
+
+## ADR-027: Owner-managed driver identity and foreground alert delivery
+
+**Status:** Accepted
+
+A `Driver` remains an operational fleet record; a `User` remains an
+authentication identity. Owners create Driver-role users, link or unlink the
+two records, deactivate/reactivate accounts, and issue one-time temporary
+passwords through a tenant-scoped Company User use case. Create-and-link uses
+one scoped `AppDbContext` transaction. The existing unique nullable
+`Driver.UserId` index is the concurrency backstop, and lifecycle changes append
+tenant-owned `CompanyUserEvent` audit records. Password reset and deactivation
+revoke refresh tokens. Identity/bootstrap query-filter bypass remains isolated
+inside the reviewed `IdentityStore`.
+
+The linked driver's workspace is one server-composed projection. It resolves
+identity server-side and returns an explicit state (`ACCOUNT_NOT_LINKED`,
+`NO_ACTIVE_TRIP`, telemetry unavailable/stale/offline, or ready), the driver's
+own active trip, assigned truck, current position, active route, next stop,
+ETA, and server-allowed actions. It never exposes the fleet-wide tracking feed.
+
+Operational notifications are persisted first and addressed by stable event
+keys. Assignment, geofence arrival, driver confirmation, tracking offline, and
+tracking stale events are visible only within the existing manager/linked-
+driver scope. Flutter hydrates historical IDs silently and alerts only on IDs
+first observed by later polls. The shell queues at most ten foreground alerts;
+sound is per-user, non-looping, rate-limited, injectable in tests, and honestly
+reports browser autoplay blocking. Dismiss leaves persisted read state intact;
+View marks the notification read.
+
+Authenticated truck thumbnail bytes are transformed in Flutter into a
+center-cropped, transparent circular PNG with neutral borders. Cache identity
+includes truck ID, photo version, and the marker-pipeline version. Map pointer
+down and wheel signals pause Follow before MapLibre camera callbacks, while
+polling never changes a paused camera; Resume Follow and one-shot Route
+Overview remain explicit commands.
+
+Acceptance data is isolated under the `tms-s411-acceptance` Compose project,
+Testing environment, ports 5180/55432, and dedicated named volumes. The helper
+script fails closed if the retained `tms-smoke_postgres_data` volume appears in
+the resolved configuration or mounted container. Current and legacy Compose
+clients use an explicit project argument or `COMPOSE_PROJECT_NAME`, avoiding
+implicit directory-derived volume selection.

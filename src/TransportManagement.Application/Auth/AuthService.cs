@@ -8,7 +8,8 @@ public sealed class AuthService(
     IPasswordHasher passwordHasher,
     ITokenService tokenService,
     IClock clock,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IRuntimeEnvironment runtimeEnvironment)
 {
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
@@ -55,7 +56,7 @@ public sealed class AuthService(
     public async Task<CurrentUserResponse?> GetCurrentAsync(CancellationToken cancellationToken)
     {
         var user = await store.FindUserByIdAsync(currentUser.UserId, cancellationToken);
-        return user is null ? null : Map(user);
+        return user is null ? null : await MapAsync(user, cancellationToken);
     }
 
     public async Task<CurrentUserResponse> UpdateLocaleAsync(
@@ -65,7 +66,17 @@ public sealed class AuthService(
             ?? throw new Common.NotFoundException("User was not found.", "USER_NOT_FOUND");
         user.ChangePreferredLocale(request.PreferredLocale, clock.UtcNow);
         await store.SaveChangesAsync(cancellationToken);
-        return Map(user);
+        return await MapAsync(user, cancellationToken);
+    }
+
+    public async Task<CurrentUserResponse> UpdateNotificationSoundsAsync(
+        NotificationSoundsPreferenceRequest request, CancellationToken cancellationToken)
+    {
+        var user = await store.FindUserByIdAsync(currentUser.UserId, cancellationToken)
+            ?? throw new Common.NotFoundException("User was not found.", "USER_NOT_FOUND");
+        user.ChangeNotificationSounds(request.Enabled, clock.UtcNow);
+        await store.SaveChangesAsync(cancellationToken);
+        return await MapAsync(user, cancellationToken);
     }
 
     private async Task<AuthResponse> IssueTokensAsync(
@@ -84,9 +95,15 @@ public sealed class AuthService(
         await store.SaveChangesAsync(cancellationToken);
 
         return new AuthResponse(
-            access.Token, access.ExpiresAt, generatedRefresh.PlainText, generatedRefresh.ExpiresAt, Map(user));
+            access.Token, access.ExpiresAt, generatedRefresh.PlainText, generatedRefresh.ExpiresAt,
+            await MapAsync(user, cancellationToken));
     }
 
-    private static CurrentUserResponse Map(User user) =>
-        new(user.Id, user.CompanyId, user.Email, user.DisplayName, user.Role, user.PreferredLocale);
+    private async Task<CurrentUserResponse> MapAsync(User user, CancellationToken cancellationToken)
+    {
+        var company = await store.FindCompanyByIdAsync(user.CompanyId, cancellationToken);
+        return new(user.Id, user.CompanyId, company?.Name ?? string.Empty, user.Email,
+            user.DisplayName, user.Role, user.PreferredLocale,
+            user.NotificationSoundsEnabled, runtimeEnvironment.Name);
+    }
 }

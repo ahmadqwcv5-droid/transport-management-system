@@ -51,7 +51,7 @@ final class TruckMarkerModel {
   final bool selected;
   final String? photoVersion, photoThumbnailUrl;
   String? get photoImageName =>
-      photoVersion == null ? null : 'truck-photo:$id:$photoVersion';
+      photoVersion == null ? null : 'truck-photo-marker-v2:$id:$photoVersion';
 
   static TruckMarkerState stateFor(TrackedTruck truck) {
     final status = truck.truckStatus.toLowerCase();

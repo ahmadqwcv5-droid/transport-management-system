@@ -114,6 +114,8 @@ final class AssignmentResourceOption {
     this.defaultDriverId,
     this.photoVersion,
     this.photoThumbnailUrl,
+    this.appAccountState,
+    this.linkedUserEmail,
   });
   final String id, displayName, status, reasonCode;
   final bool isEligible;
@@ -123,7 +125,10 @@ final class AssignmentResourceOption {
       resourceType,
       payloadUnit,
       defaultDriverId;
-  final String? photoVersion, photoThumbnailUrl;
+  final String? photoVersion,
+      photoThumbnailUrl,
+      appAccountState,
+      linkedUserEmail;
   final double? payloadCapacity;
   factory AssignmentResourceOption.fromJson(Json json) =>
       AssignmentResourceOption(
@@ -141,6 +146,8 @@ final class AssignmentResourceOption {
         defaultDriverId: json['defaultDriverId'] as String?,
         photoVersion: json['photoVersion'] as String?,
         photoThumbnailUrl: json['photoThumbnailUrl'] as String?,
+        appAccountState: json['appAccountState'] as String?,
+        linkedUserEmail: json['linkedUserEmail'] as String?,
       );
 }
 

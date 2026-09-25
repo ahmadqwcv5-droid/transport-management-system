@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "source": "apps/transport_management_app/test/notification_alert_test.dart",
+  "result": "passed",
+  "assertions": {
+    "historicalHydration": {
+      "historicalIds": 1,
+      "overlaysEnqueued": 0,
+      "soundPlayRequests": 0
+    },
+    "singleNewNotificationRepeatedTwice": {
+      "uniqueIds": 1,
+      "overlaysEnqueued": 1,
+      "soundPlayRequests": 1,
+      "audioPlayCalls": 1
+    },
+    "threeNotificationBurst": {
+      "uniqueIds": 3,
+      "overlaysEnqueued": 3,
+      "audioPlayCalls": 1,
+      "thirdNotificationSoundEnabled": false
+    },
+    "blockedPlayback": {
+      "blockedStateExposed": true,
+      "unlockActionInvoked": 1
+    }
+  },
+  "evidenceType": "injectable_audio_flutter_test_not_physical_speaker"
+}

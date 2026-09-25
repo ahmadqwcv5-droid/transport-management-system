@@ -65,6 +65,8 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
   String? _persistedStopsSignature;
   String? _persistedRouteSignature;
   List<ClientSite> _clientSites = const [];
+  bool _clientSitesLoading = false;
+  bool _clientSitesFailed = false;
 
   TripPlannerState get plannerState => TripPlannerState(
     currentStep: _step,
@@ -181,17 +183,26 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
   }
 
   Future<void> _loadClientSites(String clientId) async {
+    if (mounted && _clientId == clientId) {
+      setState(() {
+        _clientSitesLoading = true;
+        _clientSitesFailed = false;
+      });
+    }
     try {
       final details = await ref.read(clientDetailsProvider(clientId).future);
       if (!mounted || _clientId != clientId) return;
-      setState(
-        () => _clientSites = details.sites
-            .where((site) => site.isActive)
-            .toList(),
-      );
+      setState(() {
+        _clientSites = details.sites.where((site) => site.isActive).toList();
+        _clientSitesLoading = false;
+        _clientSitesFailed = false;
+      });
     } catch (_) {
       if (mounted && _clientId == clientId) {
-        setState(() => _clientSites = const []);
+        setState(() {
+          _clientSitesLoading = false;
+          _clientSitesFailed = true;
+        });
       }
     }
   }
@@ -200,6 +211,8 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
     _mutate(() {
       _clientId = value;
       _clientSites = const [];
+      _clientSitesLoading = value != null;
+      _clientSitesFailed = false;
     });
     if (value != null) unawaited(_loadClientSites(value));
   }
@@ -578,6 +591,35 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
           () => _error = StateError(context.l10n.assignmentSelectionRequired),
         );
         return;
+      }
+      final selectedDriver = _options?.drivers
+          .where((item) => item.id == _driverId)
+          .firstOrNull;
+      if (!_skipAssignment &&
+          selectedDriver?.appAccountState != 'AppAccountLinked') {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(context.l10n.driverAppAccountWarning),
+            content: Text(
+              selectedDriver?.appAccountState == 'AccountInactive'
+                  ? context.l10n.accountInactiveAssignmentConfirmation
+                  : context.l10n.unlinkedAssignmentConfirmation,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(context.l10n.cancel),
+              ),
+              FilledButton(
+                key: const Key('confirm-unlinked-driver-assignment'),
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(context.l10n.continueLabel),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true || !mounted) return;
       }
       setState(() {
         _step = 3;

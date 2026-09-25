@@ -27,6 +27,11 @@ and persistence ports, a controller-backed four-step planner, separated fleet
 map/model boundaries, executable architecture rules, and a deterministic CI
 quality gate. It introduces no API, lifecycle, or database-schema change.
 
+Sprint 4.1.1 adds owner-managed Driver app-account onboarding, explicit
+driver-workspace states and a scoped live map, circular versioned photo markers,
+input-first Follow pausing, restored saved-site states, and persisted
+foreground operational alerts with per-user notification sound settings.
+
 ## Architecture
 
 The backend is a modular monolith using Clean Architecture with lightweight DDD and CQRS principles:
@@ -142,6 +147,12 @@ Sprint 3.3 is represented by `20260921083330_Sprint33DispatchToPickup`. It adds
 tenant-owned immutable repositioning snapshots and nullable movement-phase /
 repositioning-plan context to telemetry. Existing trip, route, and position rows
 remain unchanged; reservation indexes are extended for the new active states.
+
+Sprint 4.1.1 is represented by
+`20260924232116_Sprint411DriverOnboardingMapNotifications`. It adds the
+default-enabled per-user notification-sound preference and tenant-owned Company
+User audit events. Existing users remain valid and the prior unique nullable
+Driver/User link index continues to enforce one-to-one linkage.
 
 ## Run Flutter Web
 
@@ -814,6 +825,54 @@ For the repeatable Firefox workflow, start `geckodriver --port 4444`, then run:
 The three accounts must belong to one disposable Development/Testing tenant;
 the two driver users must have the `Driver` role. Evidence and exact coverage are documented in
 [`docs/evidence/sprint4_1/`](docs/evidence/sprint4_1/).
+
+## Sprint 4.1.1 isolated acceptance
+
+Sprint 4.1.1 browser data must not be written to the retained development
+database. Start its fail-closed Testing stack with runtime-only values:
+
+```bash
+export ACCEPTANCE_POSTGRES_PASSWORD='choose-a-disposable-password'
+export ACCEPTANCE_JWT_SIGNING_KEY='choose-at-least-32-random-characters'
+export ACCEPTANCE_OWNER_PASSWORD='choose-at-least-12-characters'
+./scripts/sprint411-acceptance-environment.sh up
+```
+
+This uses API `http://localhost:5180`, PostgreSQL port `55432`, Compose project
+`tms-s411-acceptance`, and dedicated disposable volumes. It refuses a resolved
+configuration that references `tms-smoke_postgres_data`. Diagnose either stack
+without printing secrets:
+
+```bash
+./scripts/sprint411-acceptance-environment.sh diagnose
+./scripts/diagnose-local-environment.sh
+```
+
+Start `geckodriver --port 4444`, then from
+`apps/transport_management_app` run:
+
+```bash
+../../.tooling/flutter/bin/flutter drive \
+  --driver=test_driver/integration_test.dart \
+  --target=integration_test/sprint4_1_1_smoke_test.dart \
+  -d web-server --browser-name=firefox --driver-port=4444 --headless \
+  --web-port=3100 \
+  --dart-define=API_BASE_URL=http://localhost:5180 \
+  --dart-define=E2E_EMAIL=owner@sprint411.local \
+  --dart-define=E2E_PASSWORD="$ACCEPTANCE_OWNER_PASSWORD" \
+  --dart-define=MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty \
+  --dart-define=ENABLE_SIMULATOR_CONTROLS=true
+```
+
+The workflow creates and links the Driver account through product UI, uses a
+non-square authenticated truck photo, exercises the scoped driver map, sends
+real pointer/wheel input to pause Follow across three polls, and verifies that a
+new persisted alert is shown and its sound request is not replayed. Remove only
+the disposable environment afterward:
+
+```bash
+./scripts/sprint411-acceptance-environment.sh down
+```
 
 Known Sprint 3.2 limitations: the simulator is process-local and
 development-only; polling is used instead of push; the current MapLibre Flutter
