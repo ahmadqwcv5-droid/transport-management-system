@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../l10n/l10n_extensions.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../domain/dashboard_models.dart';
 import 'dashboard_controller.dart';
+import 'active_operation_card.dart';
 import 'fleet_map.dart';
 import 'simulator_controls.dart';
 
@@ -20,6 +22,14 @@ class DashboardScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (ref.read(dashboardControllerProvider.notifier).isStale)
+                const MaterialBanner(
+                  key: Key('dashboard-stale-warning'),
+                  content: Text(
+                    'Live refresh is temporarily unavailable. Showing the last update.',
+                  ),
+                  actions: [SizedBox.shrink()],
+                ),
               Text(
                 error is ApiException
                     ? localizedErrorCode(context.l10n, error.code)
@@ -47,6 +57,34 @@ class DashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               _Summary(data),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Active operations',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  TextButton(
+                    key: const Key('view-all-active-operations'),
+                    onPressed: () => context.go('/trips'),
+                    child: const Text('View all'),
+                  ),
+                ],
+              ),
+              if (data.activeTrips.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text('No active operations.'),
+                )
+              else
+                ...data.activeTrips.map(
+                  (operation) => ActiveOperationCard(
+                    operation: operation,
+                    onTap: () => context.go('/trips/${operation.tripId}'),
+                  ),
+                ),
               const SizedBox(height: 16),
               if (ref.watch(authControllerProvider).value?.user.role ==
                       'Owner' &&

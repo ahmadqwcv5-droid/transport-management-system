@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,32 +19,87 @@ final tripDetailsProvider = FutureProvider.autoDispose.family<Trip, String>(
   (ref, id) => ref.watch(operationsRepositoryProvider).getTrip(id),
 );
 
-class TripDetailsScreen extends ConsumerWidget {
+const _terminalTripStatuses = {'Completed', 'Cancelled', 'Archived'};
+
+class TripDetailsScreen extends ConsumerStatefulWidget {
   const TripDetailsScreen({required this.tripId, super.key});
   final String tripId;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) => ref
-      .watch(tripDetailsProvider(tripId))
-      .when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                error is ApiException
-                    ? localizedApiError(context, error)
-                    : context.l10n.genericError,
-              ),
-              TextButton(
-                onPressed: () => ref.invalidate(tripDetailsProvider(tripId)),
-                child: Text(context.l10n.retry),
-              ),
-            ],
-          ),
-        ),
-        data: (trip) => _TripDetailsContent(trip: trip),
+  ConsumerState<TripDetailsScreen> createState() => _TripDetailsScreenState();
+}
+
+class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
+  Timer? _poller;
+  Trip? _lastGood;
+
+  @override
+  void initState() {
+    super.initState();
+    _poller = Timer.periodic(const Duration(seconds: 3), (_) {
+      final provider = tripDetailsProvider(widget.tripId);
+      final state = ref.read(provider);
+      if (state.isLoading) return;
+      final current = state.value;
+      if (current != null && _terminalTripStatuses.contains(current.status)) {
+        _poller?.cancel();
+        return;
+      }
+      ref.invalidate(provider);
+    });
+  }
+
+  @override
+  void dispose() {
+    _poller?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final value = ref.watch(tripDetailsProvider(widget.tripId));
+    if (value.value case final trip?) _lastGood = trip;
+    if (_lastGood case final trip?) {
+      return Column(
+        children: [
+          if (value.hasError)
+            MaterialBanner(
+              key: const Key('trip-detail-stale-warning'),
+              content: Text(context.l10n.genericError),
+              actions: [
+                TextButton(
+                  onPressed: () =>
+                      ref.invalidate(tripDetailsProvider(widget.tripId)),
+                  child: Text(context.l10n.retry),
+                ),
+              ],
+            ),
+          Expanded(child: _TripDetailsContent(trip: trip)),
+        ],
       );
+    }
+    return value.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              error is ApiException
+                  ? localizedApiError(context, error)
+                  : context.l10n.genericError,
+            ),
+            TextButton(
+              onPressed: () =>
+                  ref.invalidate(tripDetailsProvider(widget.tripId)),
+              child: Text(context.l10n.retry),
+            ),
+          ],
+        ),
+      ),
+      data: (trip) => _TripDetailsContent(trip: trip),
+    );
+  }
 }
 
 class _TripDetailsContent extends ConsumerWidget {

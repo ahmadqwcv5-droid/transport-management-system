@@ -1,4 +1,5 @@
 import '../../trips/domain/trip_models.dart' as ops;
+import 'active_operation.dart';
 
 typedef Json = Map<String, dynamic>;
 
@@ -158,11 +159,13 @@ final class DashboardData {
     required this.positions,
     required this.simulatorTrucks,
     required this.recentTrips,
+    this.activeTrips = const [],
   });
   final Json fleet, trips, tracking;
   final List<TrackedTruck> positions;
   final List<SimulatorTruck> simulatorTrucks;
   final List<RecentTrip> recentTrips;
+  final List<ActiveOperation> activeTrips;
   factory DashboardData.fromJson(Json json) => DashboardData(
     fleet: json['fleet'] as Json,
     trips: json['trips'] as Json,
@@ -178,6 +181,10 @@ final class DashboardData {
     recentTrips: (json['recentTrips'] as List<dynamic>)
         .cast<Json>()
         .map(RecentTrip.fromJson)
+        .toList(),
+    activeTrips: (json['activeTrips'] as List<dynamic>? ?? const [])
+        .cast<Json>()
+        .map(ActiveOperation.fromJson)
         .toList(),
   );
 }

@@ -41,5 +41,6 @@ public static class DependencyInjection
         .AddScoped<DriverDepartureService>()
         .AddScoped<DriverWorkflowService>()
         .AddScoped<CompanyUserService>()
-        .AddScoped<DashboardService>();
+        .AddScoped<DashboardService>()
+        .AddScoped<ActiveOperationsService>();
 }

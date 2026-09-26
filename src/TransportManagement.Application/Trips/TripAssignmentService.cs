@@ -174,7 +174,9 @@ public sealed class TripAssignmentService(
         notifications.Add(new OperationNotification(Guid.NewGuid(), currentUser.CompanyId,
             "TripAssignedToDriver", "Information", trip.Id, trip.TruckId, driver.Id,
             eventKey, JsonSerializer.Serialize(new
-                { trip.TripNumber, truck.PlateNumber, confirmationRequired = true }),
+                { trip.TripNumber, truck.PlateNumber, truck.FleetCode, driverName = driver.FullName,
+                    pickupName = trip.Stops.OrderBy(x => x.Sequence).FirstOrDefault()?.Name,
+                    confirmationRequired = true }),
             clock.UtcNow));
     }
 }

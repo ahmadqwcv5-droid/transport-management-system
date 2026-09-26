@@ -9,6 +9,7 @@ public sealed class DashboardService(
     IFleetStore fleetStore,
     ITripQueryStore tripStore,
     TrackingService trackingService,
+    ActiveOperationsService activeOperations,
     IClock clock)
 {
     public async Task<DashboardResponse> GetAsync(CancellationToken cancellationToken)
@@ -17,6 +18,7 @@ public sealed class DashboardService(
         var trips = await tripStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);
         var positions = await trackingService.CurrentAsync(cancellationToken);
         var simulatorTrucks = await trackingService.SimulatorInventoryAsync(false, cancellationToken);
+        var operational = await activeOperations.QueryAsync(new(8), cancellationToken);
         var activeStatuses = new[] { TripStatus.Assigned, TripStatus.EnRouteToPickup,
             TripStatus.AtPickup, TripStatus.Started, TripStatus.InTransit,
             TripStatus.AtDelivery, TripStatus.Delivered };
@@ -37,6 +39,7 @@ public sealed class DashboardService(
             simulatorTrucks,
             trips.OrderByDescending(x => x.UpdatedAt).Take(8)
                 .Select(x => new RecentTripResponse(x.Id, x.TripNumber, x.Origin,
-                    x.Destination, x.Status.ToString(), x.PlannedStartAt)).ToArray());
+                    x.Destination, x.Status.ToString(), x.PlannedStartAt)).ToArray(),
+            operational.Items);
     }
 }

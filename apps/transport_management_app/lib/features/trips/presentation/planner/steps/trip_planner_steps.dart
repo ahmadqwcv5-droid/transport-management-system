@@ -235,6 +235,12 @@ extension TripPlannerSteps on TripPlannerController {
             options: options.drivers,
             onChanged: _selectDriver,
           ),
+          const SizedBox(height: 8),
+          _Notice(
+            icon: _driverId == null ? Icons.info_outline : Icons.link,
+            text: _driverSelectionExplanation,
+            error: _truckId != null && _driverId == null,
+          ),
           if (_driverId != null) ...[
             const SizedBox(height: 8),
             Builder(
@@ -402,6 +408,17 @@ extension TripPlannerSteps on TripPlannerController {
               ? context.l10n.notAssigned
               : driver?.displayName ?? context.l10n.notAssigned,
         ),
+        if (!_skipAssignment)
+          _ReviewRow('Driver selection', _driverSelectionExplanation),
+        if (!_skipAssignment && driver != null)
+          _ReviewRow(
+            context.l10n.driverAppAccount,
+            driver.appAccountState == 'AppAccountLinked'
+                ? context.l10n.appAccountLinked
+                : driver.appAccountState == 'AccountInactive'
+                ? context.l10n.accountInactive
+                : context.l10n.noAppAccount,
+          ),
         _ReviewRow(
           context.l10n.readiness,
           trip?.readiness.canAssign == true

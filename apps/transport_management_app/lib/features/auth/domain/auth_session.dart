@@ -9,6 +9,8 @@ final class CurrentUser {
     required this.preferredLocale,
     this.notificationSoundsEnabled = true,
     this.environmentName = 'Production',
+    this.driverId,
+    this.driverName,
   });
 
   final String id;
@@ -20,6 +22,13 @@ final class CurrentUser {
   final String preferredLocale;
   final bool notificationSoundsEnabled;
   final String environmentName;
+  final String? driverId;
+  final String? driverName;
+
+  String get operationalDisplayName =>
+      role == 'Driver' && driverName?.isNotEmpty == true
+      ? driverName!
+      : displayName;
 
   factory CurrentUser.fromJson(Map<String, dynamic> json) => CurrentUser(
     id: json['id'] as String,
@@ -32,6 +41,8 @@ final class CurrentUser {
     notificationSoundsEnabled:
         json['notificationSoundsEnabled'] as bool? ?? true,
     environmentName: json['environmentName'] as String? ?? 'Production',
+    driverId: json['driverId'] as String?,
+    driverName: json['driverName'] as String?,
   );
 }
 

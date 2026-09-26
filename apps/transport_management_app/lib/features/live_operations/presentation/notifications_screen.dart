@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'notification_snapshot_text.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -91,9 +93,12 @@ class _NotificationTile extends ConsumerWidget {
     ),
     title: Text(_title(context, notification.type)),
     subtitle: Text(
-      notification.type == 'TripAssignedToDriver'
-          ? '${context.l10n.assignmentRequiresDeparture}\n${_formatTime(notification.createdAt)}'
-          : _formatTime(notification.createdAt),
+      [
+        if (notification.type == 'TripAssignedToDriver')
+          context.l10n.assignmentRequiresDeparture,
+        notificationSnapshotDetail(context, notification),
+        _formatTime(notification.createdAt),
+      ].where((value) => value.isNotEmpty).join('\n'),
     ),
     selected: notification.isUnread,
     trailing: notification.type == 'TripAssignedToDriver'

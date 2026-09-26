@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import '../domain/dashboard_models.dart';
+import '../domain/active_operation.dart';
 import '../../trips/domain/trip_models.dart' as ops;
 
 final class DashboardRepository {
@@ -27,6 +28,31 @@ final class DashboardRepository {
     try {
       final response = await _client.dio.get<Json>('/api/dashboard');
       return DashboardData.fromJson(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<ActiveOperationsPage> activeOperations({
+    String? search,
+    String? clientId,
+    String? truckId,
+    String? driverId,
+    bool attentionOnly = false,
+  }) async {
+    try {
+      final response = await _client.dio.get<Json>(
+        '/api/dashboard/active-trips',
+        queryParameters: {
+          'limit': 100,
+          if (search?.trim().isNotEmpty == true) 'search': search!.trim(),
+          'clientId': ?clientId,
+          'truckId': ?truckId,
+          'driverId': ?driverId,
+          if (attentionOnly) 'attentionOnly': true,
+        },
+      );
+      return ActiveOperationsPage.fromJson(response.data!);
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }

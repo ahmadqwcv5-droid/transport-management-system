@@ -9,7 +9,8 @@ public sealed class AuthService(
     ITokenService tokenService,
     IClock clock,
     ICurrentUser currentUser,
-    IRuntimeEnvironment runtimeEnvironment)
+    IRuntimeEnvironment runtimeEnvironment,
+    IDriverIdentityStore driverIdentities)
 {
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
@@ -127,8 +128,10 @@ public sealed class AuthService(
     private async Task<CurrentUserResponse> MapAsync(User user, CancellationToken cancellationToken)
     {
         var company = await store.FindCompanyByIdAsync(user.CompanyId, cancellationToken);
+        var driver = await driverIdentities.GetDriverByUserAsync(user.Id, cancellationToken);
         return new(user.Id, user.CompanyId, company?.Name ?? string.Empty, user.Email,
             user.DisplayName, user.Role, user.PreferredLocale,
-            user.NotificationSoundsEnabled, runtimeEnvironment.Name);
+            user.NotificationSoundsEnabled, runtimeEnvironment.Name,
+            driver?.Id, driver?.FullName);
     }
 }

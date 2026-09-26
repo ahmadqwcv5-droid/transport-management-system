@@ -498,10 +498,17 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
         _options = options;
         _truckId =
             options.currentTruckId ??
-            _eligibleSelection(options.trucks, _truckId);
-        _driverId =
-            options.currentDriverId ??
-            _eligibleSelection(options.drivers, _driverId);
+            _eligibleSelection(options.trucks, _truckId) ??
+            options.trucks.where((item) => item.isEligible).firstOrNull?.id;
+        _driverId = _eligibleSelection(
+          options.drivers,
+          options.currentDriverId ??
+              (_driverExplicitlySelected ? _driverId : null),
+        );
+        if (_driverId == null) {
+          _driverExplicitlySelected = false;
+          _driverId = _eligibleDefaultDriver(options, _truckId);
+        }
         _loadingOptions = false;
       });
     } catch (error) {
@@ -517,19 +524,21 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
   void _selectTruck(String? value) {
     _mutate(() {
       _truckId = value;
-      if (_driverExplicitlySelected || value == null || _options == null) {
+      final options = _options;
+      if (options == null || value == null) {
+        _driverId = null;
+        _driverExplicitlySelected = false;
         return;
       }
-      final truck = _options!.trucks
-          .where((item) => item.id == value)
-          .firstOrNull;
-      final suggested = truck?.defaultDriverId;
-      if (suggested != null &&
-          _options!.drivers.any(
-            (driver) => driver.id == suggested && driver.isEligible,
-          )) {
-        _driverId = suggested;
-      }
+      final manualStillEligible =
+          _driverExplicitlySelected &&
+          _driverId != null &&
+          options.drivers.any(
+            (driver) => driver.id == _driverId && driver.isEligible,
+          );
+      if (manualStillEligible) return;
+      _driverExplicitlySelected = false;
+      _driverId = _eligibleDefaultDriver(options, value);
     });
   }
 
@@ -546,7 +555,40 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
         options.any((item) => item.id == current && item.isEligible)) {
       return current;
     }
-    return options.where((item) => item.isEligible).firstOrNull?.id;
+    return null;
+  }
+
+  String? _eligibleDefaultDriver(AssignmentOptions options, String? truckId) {
+    final defaultId = options.trucks
+        .where((truck) => truck.id == truckId)
+        .firstOrNull
+        ?.defaultDriverId;
+    if (defaultId == null) return null;
+    return options.drivers.any(
+          (driver) => driver.id == defaultId && driver.isEligible,
+        )
+        ? defaultId
+        : null;
+  }
+
+  String get _driverSelectionSource {
+    if (_driverId == null) return 'None';
+    if (_driverExplicitlySelected) return 'Manual';
+    return _eligibleDefaultDriver(_options!, _truckId) == _driverId
+        ? 'Truck default'
+        : 'Existing assignment';
+  }
+
+  String get _driverSelectionExplanation {
+    if (_driverId != null) return _driverSelectionSource;
+    final truck = _options?.trucks
+        .where((item) => item.id == _truckId)
+        .firstOrNull;
+    if (truck == null) return 'Select a truck first.';
+    if (truck.defaultDriverId == null) {
+      return 'This truck has no default Driver. Choose one manually.';
+    }
+    return 'The truck default Driver is unavailable. Choose an eligible Driver manually.';
   }
 
   Future<void> _continue() async {

@@ -24,6 +24,9 @@ class DashboardController extends AsyncNotifier<DashboardData> {
       : 2;
   Timer? _timer;
   bool _refreshing = false;
+  int _failures = 0;
+  int _generation = 0;
+  bool get isStale => _failures >= 2;
   DashboardRepository get _repository => ref.read(dashboardRepositoryProvider);
   @override
   FutureOr<DashboardData> build() {
@@ -38,10 +41,19 @@ class DashboardController extends AsyncNotifier<DashboardData> {
   Future<void> refresh({bool silent = false}) async {
     if (_refreshing) return;
     _refreshing = true;
-    if (!silent) state = const AsyncLoading();
+    final generation = ++_generation;
+    if (!silent && !state.hasValue) state = const AsyncLoading();
     try {
-      final result = await AsyncValue.guard(_repository.load);
-      if (ref.mounted) state = result;
+      final result = await _repository.load();
+      if (ref.mounted && generation == _generation) {
+        _failures = 0;
+        state = AsyncData(result);
+      }
+    } catch (error, stack) {
+      if (ref.mounted && generation == _generation) {
+        _failures++;
+        if (!silent || !state.hasValue) state = AsyncError(error, stack);
+      }
     } finally {
       _refreshing = false;
     }

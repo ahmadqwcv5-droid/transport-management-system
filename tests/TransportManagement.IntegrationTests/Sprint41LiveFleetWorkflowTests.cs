@@ -89,6 +89,25 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
         Assert.Equal("AtDelivery", (await manager.GetJsonAsync<JsonElement>(
             $"/api/trips/{tripId}")).GetProperty("status").GetString());
         Assert.Equal(1, await NotificationCountAsync(manager, tripId, "TruckArrivedAtDelivery"));
+        var deliveryNotification = await NotificationAsync(
+            manager, tripId, "TruckArrivedAtDelivery");
+        using (var snapshot = JsonDocument.Parse(
+            deliveryNotification.GetProperty("dataJson").GetString()!))
+        {
+            Assert.Equal($"LIVE-{suffix}".ToUpperInvariant(),
+                snapshot.RootElement.GetProperty("PlateNumber").GetString());
+            Assert.Equal($"Live Driver {suffix}",
+                snapshot.RootElement.GetProperty("driverName").GetString());
+            Assert.False(string.IsNullOrWhiteSpace(
+                snapshot.RootElement.GetProperty("stopName").GetString()));
+        }
+        var beforeCompletion = await manager.GetJsonAsync<JsonElement>(
+            "/api/dashboard/active-trips");
+        var waiting = beforeCompletion.GetProperty("items").EnumerateArray()
+            .Single(x => x.GetProperty("tripId").GetGuid() == tripId);
+        Assert.Equal("AwaitingDeliveryConfirmation",
+            waiting.GetProperty("operationalPhase").GetString());
+        Assert.Equal(JsonValueKind.Null, waiting.GetProperty("progressPercent").ValueKind);
 
         var completed = await (await driver.PostEmptyAsync(
             "/api/driver/my-trip/confirm-delivery")).RequiredJsonAsync();
@@ -97,6 +116,15 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
             $"/api/drivers/{driverId}")).GetProperty("status").GetString());
         Assert.Equal("Available", (await manager.GetJsonAsync<JsonElement>(
             $"/api/trucks/{truckId}")).GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.String, completed.GetProperty("completedAt").ValueKind);
+        var afterCompletion = await manager.GetJsonAsync<JsonElement>(
+            "/api/dashboard/active-trips");
+        Assert.DoesNotContain(afterCompletion.GetProperty("items").EnumerateArray(),
+            x => x.GetProperty("tripId").GetGuid() == tripId);
+        var completedTrips = await manager.GetJsonAsync<JsonElement>(
+            "/api/trips?operationalGroup=completed&pageSize=100");
+        Assert.Contains(completedTrips.GetProperty("items").EnumerateArray(),
+            x => x.GetProperty("id").GetGuid() == tripId);
         Assert.Equal(1, await NotificationCountAsync(manager, tripId, "DriverConfirmedDeparture"));
         Assert.Equal(1, await NotificationCountAsync(manager, tripId, "DriverConfirmedDelivery"));
 
@@ -233,6 +261,15 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
         await Task.Delay(25, TestContext.Current.CancellationToken);
         await (await client.PostJsonAsync("/api/tracking/simulator/control",
             new { action = "reset" })).RequiredJsonAsync();
+    }
+
+    private static async Task<JsonElement> NotificationAsync(
+        HttpClient client, Guid tripId, string type)
+    {
+        var page = await client.GetJsonAsync<JsonElement>("/api/notifications?pageSize=100");
+        return page.GetProperty("items").EnumerateArray()
+            .Single(x => x.GetProperty("tripId").GetGuid() == tripId
+                && x.GetProperty("type").GetString() == type);
     }
 
     private static async Task<int> NotificationCountAsync(

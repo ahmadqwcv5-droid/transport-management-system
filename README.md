@@ -965,3 +965,14 @@ telemetry remain deferred. Android execution requires a local Android SDK and
 emulator/device.
 
 Deferred to later sprints: finance, expenses, payments, profitability, advanced maintenance, documents, reporting, real GPS providers, granular permissions, advanced dashboard analytics, route optimization, and AI features.
+
+
+## Sprint 4.2 operational control center
+
+Sprint 4.2 adds a server-owned, tenant-scoped `GET /api/dashboard/active-trips` projection. It returns operational phase, next milestone/stop, segment-specific progress, remaining distance, ETA, tracking health, attention priority, truck photo identity, and linked Driver context without route geometry or history. Assigned, approach, pickup waiting, cargo movement, and delivery-confirmation waiting are explicit phases; waiting states never fabricate progress.
+
+Dashboard polling remains configurable through `TRACKING_POLLING_INTERVAL_SECONDS` (default 2 seconds). Active Trips and active trip detail use sequential, non-overlapping 3-second refresh. Repeated transient failures retain the last good projection and show stale feedback. Detail polling stops for Completed, Cancelled, and Archived trips. Active filters survive silent refresh.
+
+The shell now displays account/Driver identity, localized role, company, and email. Operational notification JSON stores language-neutral trip/truck/fleet/Driver/stop snapshots and the client localizes presentation. Truck defaults are suggestions only: an eligible default is selected and explained; an unavailable or missing default leaves Driver empty; manual selection remains explicit and assignment never mutates the truck default.
+
+The Sprint 4.2 implementation plan and validation boundary are under `docs/sprints/sprint-4.2` and `docs/evidence/sprint4_2`. Automated checks pass, but the mandatory browser workflow is recorded as incomplete and must not be treated as accepted.

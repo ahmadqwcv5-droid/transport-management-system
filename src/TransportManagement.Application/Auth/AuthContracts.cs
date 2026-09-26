@@ -19,7 +19,7 @@ public sealed record AuthResponse(
 public sealed record CurrentUserResponse(
     Guid Id, Guid CompanyId, string CompanyName, string Email, string DisplayName,
     string Role, string PreferredLocale, bool NotificationSoundsEnabled,
-    string EnvironmentName);
+    string EnvironmentName, Guid? DriverId = null, string? DriverName = null);
 
 public sealed record LocalePreferenceRequest(
     [param: Required, RegularExpression("^(en|ar)$")] string PreferredLocale);

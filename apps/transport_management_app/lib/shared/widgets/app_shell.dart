@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +6,8 @@ import '../../features/auth/presentation/auth_controller.dart';
 import '../../l10n/l10n_extensions.dart';
 import '../../features/live_operations/presentation/live_operations_controller.dart';
 import '../../features/live_operations/domain/live_operations_models.dart';
+import '../../features/live_operations/presentation/notification_snapshot_text.dart';
+import 'account_identity_control.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({required this.child, required this.selectedIndex, super.key});
@@ -145,13 +145,8 @@ class AppShell extends ConsumerWidget {
                       icon: const Icon(Icons.notifications_outlined),
                     ),
                   ),
-                  IconButton(
-                    key: const Key('logout-button'),
-                    tooltip: context.l10n.signOut,
-                    onPressed: () =>
-                        ref.read(authControllerProvider.notifier).logout(),
-                    icon: const Icon(Icons.logout),
-                  ),
+                  if (authenticatedUser != null)
+                    AccountIdentityControl(user: authenticatedUser, wide: wide),
                 ],
               ),
               body: wide
@@ -345,20 +340,8 @@ class _OperationalAlertCard extends ConsumerWidget {
       ? context.l10n.operationalAlertMessage
       : context.l10n.operationalTripAlertMessage;
 
-  static String _identity(OperationNotification notification) {
-    if (notification.dataJson == null) return '';
-    try {
-      final data = jsonDecode(notification.dataJson!) as Map<String, dynamic>;
-      final trip = data['TripNumber'] ?? data['tripNumber'];
-      final plate = data['PlateNumber'] ?? data['plateNumber'];
-      return [
-        trip,
-        plate,
-      ].whereType<String>().where((value) => value.isNotEmpty).join(' · ');
-    } on Object {
-      return '';
-    }
-  }
+  static String _identity(OperationNotification notification) =>
+      notificationSnapshotIdentity(notification);
 
   static String _time(String value) {
     final date = DateTime.tryParse(value)?.toLocal();

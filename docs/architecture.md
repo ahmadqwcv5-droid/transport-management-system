@@ -696,3 +696,14 @@ an explicit Open trip action. Mark-read, workspace invalidation, and navigation
 form one client operation. Real-browser acceptance uses distinct Owner/Driver
 storage profiles and forbids manager preview/override, direct departure API
 calls, and manual simulator steps for the normal path.
+
+
+## ADR-030: Focused operational projections and cross-session convergence
+
+**Status:** Accepted
+
+Owner fleet awareness uses a tenant-scoped Application projection exposed at `GET /api/dashboard/active-trips`. The server owns phase, milestone, truthful segment progress, tracking health, and attention ordering; Flutter does not reconstruct operational semantics from generic trip rows. The projection is bounded and omits route geometry and position history.
+
+Dashboard and Active Trips refresh sequentially with non-overlap guards and generation checks. Active trip detail polls only while non-terminal. Silent failures preserve the last good data and repeated failures surface stale state. Completion remains Driver-owned and transactional; polling is read-only and converges already-open Owner views without coupling lifecycle writes to a browser session.
+
+The authenticated bootstrap additively resolves same-tenant linked Driver identity for the global shell. Notifications persist language-neutral snapshot fields for trip, truck, fleet code, Driver, stop, and event time, while Flutter owns localized sentences. A truck default Driver is a preference: only an eligible default may be proposed, no arbitrary Driver is selected, manual choices are preserved while eligible, and trip assignment never changes the truck default.

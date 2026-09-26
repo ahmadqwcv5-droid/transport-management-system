@@ -30,7 +30,7 @@ public sealed class TripLifecycleService(
         }, source);
         resourceEvents.Truck(truck.Id, "TruckCargoDepartureConfirmed",
             new { tripId = trip.Id, trip.TripNumber }, source);
-        AddNotification(trip, "DriverConfirmedDeparture", source, reason, now);
+        AddNotification(trip, truck, driver, "DriverConfirmedDeparture", source, reason, now);
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -50,7 +50,7 @@ public sealed class TripLifecycleService(
         }, source);
         resourceEvents.Truck(truck.Id, "TruckDeliveryConfirmed",
             new { tripId = trip.Id, trip.TripNumber }, source);
-        AddNotification(trip, "DriverConfirmedDelivery", source, reason, now);
+        AddNotification(trip, truck, driver, "DriverConfirmedDelivery", source, reason, now);
         await tripStore.SaveChangesAsync(cancellationToken);
         return TripResponseMapper.Map(trip);
     }
@@ -134,12 +134,18 @@ public sealed class TripLifecycleService(
                 "MANAGER_OVERRIDE_REASON_REQUIRED");
     }
 
-    private void AddNotification(Trip trip, string type, string source,
+    private void AddNotification(Trip trip, Truck truck, Driver driver, string type, string source,
         string? reason, DateTimeOffset now)
     {
         var eventKey = $"{type}:{trip.Id:N}:{trip.Version}";
+        var stop = type == "DriverConfirmedDeparture"
+            ? trip.Stops.OrderBy(x => x.Sequence).FirstOrDefault()
+            : trip.Stops.OrderBy(x => x.Sequence).LastOrDefault();
         notifications.Add(new OperationNotification(Guid.NewGuid(), currentUser.CompanyId,
             type, "Info", trip.Id, trip.TruckId, trip.DriverId, eventKey,
-            JsonSerializer.Serialize(new { trip.TripNumber, source, reason }), now));
+            JsonSerializer.Serialize(new { trip.TripNumber, truck.PlateNumber, truck.FleetCode,
+                driverName = driver.FullName, stopType = stop?.Type.ToString(),
+                stopName = stop?.Name, stopAddress = stop?.Address,
+                confirmedAt = now, source, reason }), now));
     }
 }

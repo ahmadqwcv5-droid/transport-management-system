@@ -12,7 +12,7 @@ public sealed record GeofencePolicy(decimal ArrivalRadiusMeters, decimal ExitRad
 
 public sealed class GeofenceEvaluationService(
     ITripStore trips, IGeofenceStore observations, INotificationStore notifications,
-    ICurrentUser currentUser, IClock clock, GeofencePolicy policy,
+    ICurrentUser currentUser, IClock clock, GeofencePolicy policy, IFleetStore fleet,
     TripEventWriter events, ResourceEventWriter resourceEvents)
 {
     public async Task<bool> EvaluateAsync(TruckPosition position,
@@ -62,6 +62,10 @@ public sealed class GeofenceEvaluationService(
 
         var type = stage == GeofenceStage.Pickup
             ? "TruckArrivedAtPickup" : "TruckArrivedAtDelivery";
+        var truck = trip.TruckId is Guid truckId
+            ? await fleet.GetTruckAsync(truckId, cancellationToken) : null;
+        var driver = trip.DriverId is Guid driverId
+            ? await fleet.GetDriverAsync(driverId, cancellationToken) : null;
         if (stage == GeofenceStage.Pickup) trip.MarkAtPickup(position.RecordedAt);
         else trip.MarkAtDelivery(position.RecordedAt);
         events.Append(trip, stage == GeofenceStage.Pickup
@@ -73,7 +77,10 @@ public sealed class GeofenceEvaluationService(
         if (!await notifications.EventExistsAsync(eventKey, cancellationToken))
             notifications.Add(new OperationNotification(Guid.NewGuid(), currentUser.CompanyId,
                 type, "Info", trip.Id, trip.TruckId, trip.DriverId, eventKey,
-                JsonSerializer.Serialize(new { trip.TripNumber, distanceMeters = distance }),
+                JsonSerializer.Serialize(new { trip.TripNumber, truck?.PlateNumber, truck?.FleetCode,
+                    driverName = driver?.FullName, stopType = stage.Value.ToString(),
+                    stopName = stop.Name, stopAddress = stop.Address,
+                    reachedAt = position.RecordedAt, distanceMeters = distance }),
                 clock.UtcNow));
         await notifications.SaveChangesAsync(cancellationToken);
         return true;
