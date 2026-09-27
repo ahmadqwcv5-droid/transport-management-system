@@ -31,6 +31,8 @@ class _ConfiguredFleetMap extends StatefulWidget {
     required this.onStyleLoaded,
     required this.onAnnotationsReady,
     required this.onFailure,
+    required this.onAnnotationFailure,
+    required this.onAnnotationsRecovered,
     required this.onTruckSelected,
     this.tripDetail,
     required this.showTrail,
@@ -38,6 +40,7 @@ class _ConfiguredFleetMap extends StatefulWidget {
     required this.cameraRevision,
     required this.cameraRequest,
     required this.thumbnailLoader,
+    this.telemetry,
     this.onManualCameraInteraction,
     super.key,
   });
@@ -47,6 +50,8 @@ class _ConfiguredFleetMap extends StatefulWidget {
   final VoidCallback onStyleLoaded;
   final VoidCallback onAnnotationsReady;
   final VoidCallback onFailure;
+  final void Function(Object error, String operation) onAnnotationFailure;
+  final VoidCallback onAnnotationsRecovered;
   final ValueChanged<TrackedTruck> onTruckSelected;
   final FleetTripDetail? tripDetail;
   final bool showTrail;
@@ -55,6 +60,7 @@ class _ConfiguredFleetMap extends StatefulWidget {
   final FleetCameraRequest cameraRequest;
   final VoidCallback? onManualCameraInteraction;
   final AuthenticatedThumbnailLoader thumbnailLoader;
+  final MapOperationTelemetry? telemetry;
 
   @override
   State<_ConfiguredFleetMap> createState() => _ConfiguredFleetMapState();
@@ -69,6 +75,12 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
   Timer? _programmaticCameraRelease;
 
   @override
+  void initState() {
+    super.initState();
+    widget.telemetry?.mapInstancesCreated++;
+  }
+
+  @override
   void didUpdateWidget(covariant _ConfiguredFleetMap oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!_styleLoaded) return;
@@ -81,6 +93,7 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
 
   @override
   void dispose() {
+    widget.telemetry?.mapInstancesDisposed++;
     _programmaticCameraRelease?.cancel();
     _coordinator?.dispose();
     final controller = _controller;
@@ -116,6 +129,7 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
         _controller = controller;
         _coordinator = FleetMapAnnotationCoordinator(
           MapLibreFleetAnnotationAdapter(controller, widget.thumbnailLoader),
+          telemetry: widget.telemetry,
         );
         void listener(Symbol symbol) {
           final truckId = symbol.data?['truckId'] as String?;
@@ -139,13 +153,16 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
       onStyleLoadedCallback: () async {
         if (!mounted) return;
         _styleLoaded = true;
+        widget.telemetry?.styleLoads++;
         widget.onStyleLoaded();
         try {
           _beginProgrammaticCamera();
           await _coordinator?.onStyleLoaded(_snapshot(), panelWidth: 290);
           if (mounted) widget.onAnnotationsReady();
-        } on Object {
-          if (mounted) widget.onFailure();
+        } on Object catch (error) {
+          if (mounted) {
+            widget.onAnnotationFailure(error, 'initial-style-overlay');
+          }
         }
       },
     ),
@@ -161,10 +178,11 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
         cameraRequest: cameraRequest,
         panelWidth: 290,
       );
-    } on Object {
+      if (mounted) widget.onAnnotationsRecovered();
+    } on Object catch (error) {
       _programmaticCameraRelease?.cancel();
       _programmaticCamera = false;
-      if (mounted) widget.onFailure();
+      if (mounted) widget.onAnnotationFailure(error, 'incremental-sync');
     }
   }
 

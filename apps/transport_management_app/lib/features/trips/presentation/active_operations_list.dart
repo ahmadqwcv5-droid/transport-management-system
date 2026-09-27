@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../dashboard/presentation/active_operation_card.dart';
+import '../../../l10n/l10n_extensions.dart';
 import 'active_operations_controller.dart';
 
 class ActiveOperationsList extends ConsumerWidget {
@@ -18,7 +19,7 @@ class ActiveOperationsList extends ConsumerWidget {
         child: FilledButton.icon(
           onPressed: controller.refresh,
           icon: const Icon(Icons.refresh),
-          label: const Text('Retry active operations'),
+          label: Text(context.l10n.activeOperationsRetry),
         ),
       ),
       data: (page) => RefreshIndicator(
@@ -28,21 +29,19 @@ class ActiveOperationsList extends ConsumerWidget {
           padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 24),
           children: [
             if (controller.isStale)
-              const MaterialBanner(
+              MaterialBanner(
                 key: Key('active-operations-stale-warning'),
-                content: Text(
-                  'Live refresh is temporarily unavailable. Showing the last update.',
-                ),
-                actions: [SizedBox.shrink()],
+                content: Text(context.l10n.activeOperationsStale),
+                actions: const [SizedBox.shrink()],
               ),
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(4, 4, 4, 8),
-              child: Text('${page.totalCount} active operations'),
+              child: Text(context.l10n.activeOperationsCount(page.totalCount)),
             ),
             if (page.items.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 80),
-                child: Center(child: Text('No active operations.')),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 80),
+                child: Center(child: Text(context.l10n.noActiveOperations)),
               )
             else
               ...page.items.map(

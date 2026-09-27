@@ -50,7 +50,11 @@ final class ApiClient {
     if (!canRetry || refreshSession == null) return handler.next(error);
 
     try {
-      final refreshed = await _refreshOnce();
+      final currentToken = _tokenStore.accessToken;
+      final requestUsedCurrentToken =
+          currentToken == null ||
+          request.headers['Authorization'] == 'Bearer $currentToken';
+      final refreshed = !requestUsedCurrentToken || await _refreshOnce();
       if (!refreshed) {
         await sessionExpired?.call();
         return handler.next(error);

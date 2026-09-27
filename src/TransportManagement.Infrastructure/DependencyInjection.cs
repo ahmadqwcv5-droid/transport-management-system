@@ -53,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IFleetStore>(provider => provider.GetRequiredService<OperationsStore>());
         services.AddScoped<ITripStore>(provider => provider.GetRequiredService<OperationsStore>());
         services.AddScoped<ITripQueryStore>(provider => provider.GetRequiredService<OperationsStore>());
+        services.AddScoped<IActiveOperationsStore>(provider => provider.GetRequiredService<OperationsStore>());
         services.AddScoped<ITrackingStore, TrackingStore>();
         services.AddScoped<ITruckPhotoStore, TruckPhotoStore>();
         services.AddSingleton<ITruckPhotoProcessor, SkiaTruckPhotoProcessor>();

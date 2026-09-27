@@ -134,6 +134,7 @@ final class DriverWorkspace {
     this.actionInProgress = false,
     this.driverId,
     this.driverName,
+    this.clientName,
     this.currentTrip,
     this.truck,
     this.currentPosition,
@@ -144,7 +145,7 @@ final class DriverWorkspace {
     this.estimatedArrivalAt,
   });
   final String state, trackingState;
-  final String? driverId, driverName, estimatedArrivalAt;
+  final String? driverId, driverName, clientName, estimatedArrivalAt;
   final Trip? currentTrip;
   final DriverWorkspaceTruck? truck;
   final DriverWorkspacePosition? currentPosition;
@@ -168,6 +169,7 @@ final class DriverWorkspace {
     actionInProgress: actionInProgress ?? this.actionInProgress,
     driverId: driverId,
     driverName: driverName,
+    clientName: clientName,
     currentTrip: currentTrip,
     truck: truck,
     currentPosition: currentPosition,
@@ -194,6 +196,7 @@ final class DriverWorkspace {
           const [],
       driverId: driver?['id'] as String?,
       driverName: driver?['fullName'] as String?,
+      clientName: json['clientName'] as String?,
       currentTrip: json['currentTrip'] == null
           ? null
           : Trip.fromJson(json['currentTrip'] as Json),

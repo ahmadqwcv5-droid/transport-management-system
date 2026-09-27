@@ -101,7 +101,13 @@ public sealed class TrackingIngestionService(
             notifications.Add(new OperationNotification(Guid.NewGuid(), currentUser.CompanyId,
                 type, position.IsOnline ? "Warning" : "Critical", trip.Id, truckId,
                 trip.DriverId, eventKey, JsonSerializer.Serialize(new
-                { trip.TripNumber, truck?.PlateNumber, position.RecordedAt }), clock.UtcNow));
+                { eventCode = type, tripId = trip.Id, trip.TripNumber,
+                    truckId, truck?.PlateNumber, truck?.FleetCode,
+                    cargoSummary = trip.CargoDescription,
+                    operationalPhase = trip.Status.ToString(),
+                    position.Latitude, position.Longitude,
+                    eventAt = position.RecordedAt,
+                    navigationTarget = $"/trips/{trip.Id}" }), clock.UtcNow));
             changed = true;
         }
         if (changed) await notifications.SaveChangesAsync(cancellationToken);

@@ -80,8 +80,8 @@ void main() {
 
       expect(find.text('Open trip'), findsOneWidget);
       expect(
-        find.text(
-          'Open the trip and confirm departure before the truck starts moving.',
+        find.textContaining(
+          'Truck 06 TEST 01 was assigned to trip TRP-2026-000001.',
         ),
         findsOneWidget,
       );

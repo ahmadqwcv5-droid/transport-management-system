@@ -1,12 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transport_management_app/features/auth/domain/auth_session.dart';
 import 'package:transport_management_app/features/dashboard/domain/active_operation.dart';
 import 'package:transport_management_app/features/dashboard/presentation/active_operation_card.dart';
 import 'package:transport_management_app/features/live_operations/domain/live_operations_models.dart';
 import 'package:transport_management_app/features/live_operations/presentation/notification_snapshot_text.dart';
+import 'package:transport_management_app/l10n/app_localizations.dart';
 
 void main() {
   test(
@@ -38,6 +40,13 @@ void main() {
   testWidgets('waiting operation never fabricates progress', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: ActiveOperationCard(operation: _operation())),
       ),
     );
@@ -50,6 +59,13 @@ void main() {
   testWidgets('moving operation shows server-owned progress', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: ActiveOperationCard(
             operation: _operation(
@@ -88,6 +104,13 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
           builder: (context) {
             detail = notificationSnapshotDetail(context, notification);
@@ -97,9 +120,11 @@ void main() {
       ),
     );
 
-    expect(detail, contains('TRIP-42 · 06 ABC 42 · F-42'));
+    expect(
+      detail,
+      contains('Truck 06 ABC 42 on trip TRIP-42 reached delivery'),
+    );
     expect(detail, contains('Driver: Ada Driver'));
-    expect(detail, contains('Stop: Ankara Depot'));
     expect(detail, contains('Depot Street'));
   });
 }

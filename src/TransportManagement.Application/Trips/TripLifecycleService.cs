@@ -143,9 +143,15 @@ public sealed class TripLifecycleService(
             : trip.Stops.OrderBy(x => x.Sequence).LastOrDefault();
         notifications.Add(new OperationNotification(Guid.NewGuid(), currentUser.CompanyId,
             type, "Info", trip.Id, trip.TruckId, trip.DriverId, eventKey,
-            JsonSerializer.Serialize(new { trip.TripNumber, truck.PlateNumber, truck.FleetCode,
+            JsonSerializer.Serialize(new { eventCode = type, tripId = trip.Id,
+                trip.TripNumber, truckId = truck.Id, truck.PlateNumber, truck.FleetCode,
                 driverName = driver.FullName, stopType = stop?.Type.ToString(),
                 stopName = stop?.Name, stopAddress = stop?.Address,
-                confirmedAt = now, source, reason }), now));
+                stopLatitude = stop?.Latitude, stopLongitude = stop?.Longitude,
+                pickupName = trip.Stops.OrderBy(x => x.Sequence).FirstOrDefault()?.Name,
+                deliveryName = trip.Stops.OrderBy(x => x.Sequence).LastOrDefault()?.Name,
+                cargoSummary = trip.CargoDescription, operationalPhase = trip.Status.ToString(),
+                confirmedAt = now, eventAt = now, navigationTarget = $"/trips/{trip.Id}",
+                source, reason }), now));
     }
 }

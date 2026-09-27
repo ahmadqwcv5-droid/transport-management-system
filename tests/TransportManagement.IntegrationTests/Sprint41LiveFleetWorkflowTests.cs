@@ -29,7 +29,8 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
             new { plateNumber = $"LIVE-{suffix}" })).RequiredJsonAsync()).GetProperty("id").GetGuid();
         var driverId = (await (await manager.PostJsonAsync("/api/drivers", new
         {
-            fullName = $"Live Driver {suffix}", licenseNumber = $"LIVE-L-{suffix}"
+            fullName = $"Live Driver {suffix}",
+            licenseNumber = $"LIVE-L-{suffix}"
         })).RequiredJsonAsync()).GetProperty("id").GetGuid();
         var linked = await manager.PutAsJsonAsync($"/api/drivers/{driverId}/user-link",
             new { userId = driverUserId }, TestContext.Current.CancellationToken);
@@ -40,12 +41,37 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
         var tripId = trip.GetProperty("id").GetGuid();
         await (await manager.PostJsonAsync($"/api/trips/{tripId}/assign",
             new { truckId, driverId })).RequiredJsonAsync();
-        await (await manager.PostJsonAsync("/api/tracking/simulator/control", new
-        {
-            action = "seed-position", truckId, latitude = 39.9208m, longitude = 32.8541m
-        })).RequiredJsonAsync();
         using var driver = await OperationsTestClient.AuthenticatedClientAsync(factory,
             $"driver-{suffix}@example.test");
+        var assignmentNotification = await NotificationAsync(
+            driver, tripId, "TripAssignedToDriver");
+        using (var snapshot = JsonDocument.Parse(
+            assignmentNotification.GetProperty("dataJson").GetString()!))
+        {
+            Assert.Equal("TRIP_ASSIGNED",
+                snapshot.RootElement.GetProperty("eventCode").GetString());
+            Assert.Equal(tripId, snapshot.RootElement.GetProperty("tripId").GetGuid());
+            Assert.Equal($"LIVE-{suffix}".ToUpperInvariant(),
+                snapshot.RootElement.GetProperty("PlateNumber").GetString());
+            Assert.Equal($"Live {suffix}",
+                snapshot.RootElement.GetProperty("clientName").GetString());
+            Assert.False(string.IsNullOrWhiteSpace(
+                snapshot.RootElement.GetProperty("pickupName").GetString()));
+            Assert.False(string.IsNullOrWhiteSpace(
+                snapshot.RootElement.GetProperty("deliveryName").GetString()));
+            Assert.True(snapshot.RootElement.GetProperty("eventAt").GetDateTimeOffset() >
+                DateTimeOffset.MinValue);
+            Assert.Equal($"/trips/{tripId}",
+                snapshot.RootElement.GetProperty("navigationTarget").GetString());
+            Assert.True(snapshot.RootElement.GetProperty("confirmationRequired").GetBoolean());
+        }
+        await (await manager.PostJsonAsync("/api/tracking/simulator/control", new
+        {
+            action = "seed-position",
+            truckId,
+            latitude = 39.9208m,
+            longitude = 32.8541m
+        })).RequiredJsonAsync();
         var dispatch = await (await driver.PostEmptyAsync(
             "/api/driver/my-trip/depart-to-pickup")).RequiredJsonAsync();
         Assert.Equal("EnRouteToPickup", dispatch.GetProperty("status").GetString());
@@ -75,6 +101,7 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
         Assert.Equal(tripId, mine.GetProperty("trip").GetProperty("id").GetGuid());
         var workspace = await driver.GetJsonAsync<JsonElement>("/api/driver/my-trip/workspace");
         Assert.Equal("ACTIVE_TRIP_READY", workspace.GetProperty("state").GetString());
+        Assert.Equal($"Live {suffix}", workspace.GetProperty("clientName").GetString());
         Assert.Equal(tripId, workspace.GetProperty("currentTrip").GetProperty("id").GetGuid());
         Assert.Equal(truckId, workspace.GetProperty("truck").GetProperty("id").GetGuid());
         Assert.Equal("Pickup", workspace.GetProperty("nextStop").GetProperty("type").GetString());
@@ -199,7 +226,8 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
             new { plateNumber = $"OVR-{suffix}" })).RequiredJsonAsync()).GetProperty("id").GetGuid();
         var driverId = (await (await manager.PostJsonAsync("/api/drivers", new
         {
-            fullName = $"Override Driver {suffix}", licenseNumber = $"OVR-L-{suffix}"
+            fullName = $"Override Driver {suffix}",
+            licenseNumber = $"OVR-L-{suffix}"
         })).RequiredJsonAsync()).GetProperty("id").GetGuid();
         var trip = await RouteTestData.CreateReadyTripAsync(manager, clientId,
             39.9208m, 32.8541m, 39.9215m, 32.8550m);
@@ -208,7 +236,10 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
             new { truckId, driverId })).RequiredJsonAsync();
         await (await manager.PostJsonAsync("/api/tracking/simulator/control", new
         {
-            action = "seed-position", truckId, latitude = 39.9208m, longitude = 32.8541m
+            action = "seed-position",
+            truckId,
+            latitude = 39.9208m,
+            longitude = 32.8541m
         })).RequiredJsonAsync();
         await (await manager.PostJsonAsync($"/api/trips/{tripId}/dispatch-to-pickup",
             new { reason = "Test manager override" })).RequiredJsonAsync();

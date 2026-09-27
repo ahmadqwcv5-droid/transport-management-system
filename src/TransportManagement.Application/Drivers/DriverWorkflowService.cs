@@ -12,7 +12,7 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
     ICurrentUser currentUser, TripLifecycleService lifecycle,
     IFleetStore fleet, ITrackingStore tracking, TruckPhotoService photos,
     IClock clock, TrackingPolicy trackingPolicy, DispatchPolicy dispatchPolicy,
-    DriverDepartureService departure)
+    DriverDepartureService departure, IClientStore clients)
 {
     public async Task<DriverMyTripResponse> MyTripAsync(CancellationToken cancellationToken)
     {
@@ -55,11 +55,13 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
         }
 
         var mappedTrip = TripResponseMapper.Map(trip);
+        var clientName = (await clients.GetClientAsync(trip.ClientId, cancellationToken))?.Name;
         if (trip.TruckId is null)
             return new("TRIP_ASSIGNED_NO_TELEMETRY", driverProjection, mappedTrip,
                 null, null, "NoTelemetry", mappedTrip.RoutePlan,
                 mappedTrip.RepositioningPlan, NextStop(mappedTrip), null, null,
-                DriverActions(trip.Status), Readiness(trip, null));
+                DriverActions(trip.Status), Readiness(trip, null),
+                ClientName: clientName);
 
         var truck = await fleet.GetTruckAsync(trip.TruckId.Value, cancellationToken);
         var photo = await photos.MetadataAsync(trip.TruckId.Value, cancellationToken);
@@ -71,7 +73,8 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
             return new("TRIP_ASSIGNED_NO_TELEMETRY", driverProjection, mappedTrip,
                 truckProjection, null, "NoTelemetry", mappedTrip.RoutePlan,
                 mappedTrip.RepositioningPlan, NextStop(mappedTrip), null, null,
-                DriverActions(trip.Status), Readiness(trip, null));
+                DriverActions(trip.Status), Readiness(trip, null),
+                ClientName: clientName);
 
         var age = clock.UtcNow - position.RecordedAt;
         var state = !position.IsOnline ? "TRUCK_OFFLINE"
@@ -91,7 +94,8 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
         return new(state, driverProjection, mappedTrip, truckProjection,
             positionProjection, trackingState, mappedTrip.RoutePlan,
             mappedTrip.RepositioningPlan, NextStop(mappedTrip), remaining, eta,
-            DriverActions(trip.Status), Readiness(trip, position));
+            DriverActions(trip.Status), Readiness(trip, position),
+            ClientName: clientName);
     }
 
     public async Task<TripResponse> ConfirmLoadedAsync(CancellationToken cancellationToken)

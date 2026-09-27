@@ -707,3 +707,34 @@ Owner fleet awareness uses a tenant-scoped Application projection exposed at `GE
 Dashboard and Active Trips refresh sequentially with non-overlap guards and generation checks. Active trip detail polls only while non-terminal. Silent failures preserve the last good data and repeated failures surface stale state. Completion remains Driver-owned and transactional; polling is read-only and converges already-open Owner views without coupling lifecycle writes to a browser session.
 
 The authenticated bootstrap additively resolves same-tenant linked Driver identity for the global shell. Notifications persist language-neutral snapshot fields for trip, truck, fleet code, Driver, stop, and event time, while Flutter owns localized sentences. A truck default Driver is a preference: only an eligible default may be proposed, no arbitrary Driver is selected, manual choices are preserved while eligible, and trip assignment never changes the truck default.
+
+## ADR-031: Stable map boundary, immutable operational context, and bounded active queries
+
+**Status:** Accepted
+
+MapLibre platform-view ownership is independent from annotation synchronization.
+A style/renderer failure may replace a map attempt, but an image, symbol, line,
+or overlay update failure is recoverable and leaves the usable map mounted. The
+coordinator serializes updates with a latest-wins slot, diffs annotations by
+stable identity, never globally clears annotations, and moves the camera only
+for initial framing or an explicit user command. Telemetry counts create,
+dispose, style-load, recoverable/fatal error, and camera operations.
+
+The Web wrapper currently injects MapLibre GL JS 6.4.1. OpenFreeMap Liberty is
+selected by the configurable style URL and supplies its own glyph endpoint and
+bilingual Latin/non-Latin label expressions. MapLibre 4+ has built-in Arabic
+shaping and bidirectional handling, so no deprecated RTL plugin or manual text
+reversal is installed.
+
+Assignment recommendation is one shared client policy: preserve an eligible
+manual choice, otherwise propose only the selected truck's eligible linked
+Driver, otherwise leave Driver empty. Submission-time server validation and
+reservation indexes remain authoritative. Notification snapshots persist
+language-neutral truck, trip, stop/location, and event-time values; Flutter
+localizes those immutable values and uses a safe fallback for legacy payloads.
+
+Active operations are read through a dedicated store projection. Tenant and
+active-status filters, search, count, deterministic attention ordering, and the
+candidate bound execute in PostgreSQL with no tracking; fixed follow-up queries
+hydrate only the bounded result set. Application code derives presentation and
+attention state without loading complete tenant tables or issuing per-row reads.

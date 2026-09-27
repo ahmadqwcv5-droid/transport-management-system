@@ -77,10 +77,18 @@ public sealed class GeofenceEvaluationService(
         if (!await notifications.EventExistsAsync(eventKey, cancellationToken))
             notifications.Add(new OperationNotification(Guid.NewGuid(), currentUser.CompanyId,
                 type, "Info", trip.Id, trip.TruckId, trip.DriverId, eventKey,
-                JsonSerializer.Serialize(new { trip.TripNumber, truck?.PlateNumber, truck?.FleetCode,
+                JsonSerializer.Serialize(new { eventCode = type, tripId = trip.Id,
+                    trip.TripNumber, truckId = trip.TruckId,
+                    truck?.PlateNumber, truck?.FleetCode,
                     driverName = driver?.FullName, stopType = stage.Value.ToString(),
                     stopName = stop.Name, stopAddress = stop.Address,
-                    reachedAt = position.RecordedAt, distanceMeters = distance }),
+                    stopLatitude = stop.Latitude, stopLongitude = stop.Longitude,
+                    pickupName = trip.Stops.OrderBy(x => x.Sequence).FirstOrDefault()?.Name,
+                    deliveryName = trip.Stops.OrderBy(x => x.Sequence).LastOrDefault()?.Name,
+                    cargoSummary = trip.CargoDescription,
+                    operationalPhase = trip.Status.ToString(),
+                    reachedAt = position.RecordedAt, eventAt = position.RecordedAt,
+                    navigationTarget = $"/trips/{trip.Id}", distanceMeters = distance }),
                 clock.UtcNow));
         await notifications.SaveChangesAsync(cancellationToken);
         return true;

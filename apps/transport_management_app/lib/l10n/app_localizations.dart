@@ -3259,6 +3259,288 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading map…'**
   String get mapLoading;
+
+  /// No description provided for @activeOperationsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry active operations'**
+  String get activeOperationsRetry;
+
+  /// No description provided for @activeOperationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Active operations'**
+  String get activeOperationsTitle;
+
+  /// No description provided for @viewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get viewAll;
+
+  /// No description provided for @activeOperationsStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Live refresh is temporarily unavailable. Showing the last update.'**
+  String get activeOperationsStale;
+
+  /// No description provided for @activeOperationsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} active operations'**
+  String activeOperationsCount(int count);
+
+  /// No description provided for @noActiveOperations.
+  ///
+  /// In en, this message translates to:
+  /// **'No active operations.'**
+  String get noActiveOperations;
+
+  /// No description provided for @phaseAwaitingDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting departure'**
+  String get phaseAwaitingDeparture;
+
+  /// No description provided for @phaseToPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'To pickup'**
+  String get phaseToPickup;
+
+  /// No description provided for @phaseAwaitingLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting loading'**
+  String get phaseAwaitingLoading;
+
+  /// No description provided for @phaseToDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'To delivery'**
+  String get phaseToDelivery;
+
+  /// No description provided for @phaseAwaitingDeliveryConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting delivery confirmation'**
+  String get phaseAwaitingDeliveryConfirmation;
+
+  /// No description provided for @phaseAwaitingCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting completion'**
+  String get phaseAwaitingCompletion;
+
+  /// No description provided for @waitingDriverDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Driver departure'**
+  String get waitingDriverDeparture;
+
+  /// No description provided for @waitingLoadingConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for loading confirmation'**
+  String get waitingLoadingConfirmation;
+
+  /// No description provided for @waitingDeliveryConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for delivery confirmation'**
+  String get waitingDeliveryConfirmation;
+
+  /// No description provided for @progressUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress is unavailable'**
+  String get progressUnavailable;
+
+  /// No description provided for @trackingMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking missing'**
+  String get trackingMissing;
+
+  /// No description provided for @actionDriverDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'Action: Driver departure'**
+  String get actionDriverDeparture;
+
+  /// No description provided for @actionLoadingConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Action: loading confirmation'**
+  String get actionLoadingConfirmation;
+
+  /// No description provided for @actionDeliveryConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Action: delivery confirmation'**
+  String get actionDeliveryConfirmation;
+
+  /// No description provided for @remainingKilometers.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} km remaining'**
+  String remainingKilometers(String value);
+
+  /// No description provided for @remainingMeters.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} m remaining'**
+  String remainingMeters(String value);
+
+  /// No description provided for @etaShort.
+  ///
+  /// In en, this message translates to:
+  /// **'ETA {time}'**
+  String etaShort(String time);
+
+  /// No description provided for @driverSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver selection'**
+  String get driverSelection;
+
+  /// No description provided for @selectionNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get selectionNone;
+
+  /// No description provided for @selectionManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get selectionManual;
+
+  /// No description provided for @selectionTruckDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck default'**
+  String get selectionTruckDefault;
+
+  /// No description provided for @selectionExistingAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing assignment'**
+  String get selectionExistingAssignment;
+
+  /// No description provided for @selectTruckFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a truck first.'**
+  String get selectTruckFirst;
+
+  /// No description provided for @truckHasNoDefaultDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'This truck has no default Driver. Choose one manually.'**
+  String get truckHasNoDefaultDriver;
+
+  /// No description provided for @truckDefaultDriverUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The truck default Driver is unavailable. Choose an eligible Driver manually.'**
+  String get truckDefaultDriverUnavailable;
+
+  /// No description provided for @driverSelectedFromTruckDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected because this Driver is linked to the truck.'**
+  String get driverSelectedFromTruckDefault;
+
+  /// No description provided for @notificationAssignedSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck {truck} was assigned to trip {trip}. Pickup: {location}. Time: {time}.'**
+  String notificationAssignedSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  );
+
+  /// No description provided for @notificationPickupSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck {truck} on trip {trip} reached pickup: {location}. Time: {time}.'**
+  String notificationPickupSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  );
+
+  /// No description provided for @notificationDepartureSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading was confirmed for truck {truck}, trip {trip}; it departed toward {location}. Time: {time}.'**
+  String notificationDepartureSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  );
+
+  /// No description provided for @notificationDeliverySnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck {truck} on trip {trip} reached delivery: {location}. Time: {time}.'**
+  String notificationDeliverySnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  );
+
+  /// No description provided for @notificationCompletedSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery was confirmed and trip {trip} was completed by truck {truck} at {location}. Time: {time}.'**
+  String notificationCompletedSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  );
+
+  /// No description provided for @notificationHealthSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck {truck} on trip {trip} needs tracking attention near {location}. Time: {time}.'**
+  String notificationHealthSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  );
+
+  /// No description provided for @legacyNotificationFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Operational update details are unavailable for this older notification.'**
+  String get legacyNotificationFallback;
+
+  /// No description provided for @notificationClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Client: {value}'**
+  String notificationClient(String value);
+
+  /// No description provided for @notificationDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver: {value}'**
+  String notificationDriver(String value);
+
+  /// No description provided for @notificationCargo.
+  ///
+  /// In en, this message translates to:
+  /// **'Cargo: {value}'**
+  String notificationCargo(String value);
 }
 
 class _AppLocalizationsDelegate

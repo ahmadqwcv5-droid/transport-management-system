@@ -533,4 +533,59 @@
   ,"workspaceConnectionWarning": "التحديثات المباشرة غير متاحة مؤقتاً. يتم عرض آخر حالة رحلة مستلمة."
   ,"mapUpdateWarning": "تعذر رسم آخر تحديث للخريطة. لا تزال بيانات الرحلة المباشرة متاحة."
   ,"mapLoading": "جارٍ تحميل الخريطة…"
+  ,"activeOperationsRetry": "إعادة محاولة تحميل العمليات النشطة"
+  ,"activeOperationsTitle": "العمليات النشطة"
+  ,"viewAll": "عرض الكل"
+  ,"activeOperationsStale": "التحديث المباشر غير متاح مؤقتاً. يتم عرض آخر تحديث."
+  ,"activeOperationsCount": "العمليات النشطة: {count}"
+  ,"@activeOperationsCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"noActiveOperations": "لا توجد عمليات نشطة."
+  ,"phaseAwaitingDeparture": "بانتظار الانطلاق"
+  ,"phaseToPickup": "في الطريق إلى الاستلام"
+  ,"phaseAwaitingLoading": "بانتظار التحميل"
+  ,"phaseToDelivery": "في الطريق إلى التسليم"
+  ,"phaseAwaitingDeliveryConfirmation": "بانتظار تأكيد التسليم"
+  ,"phaseAwaitingCompletion": "بانتظار الإكمال"
+  ,"waitingDriverDeparture": "بانتظار انطلاق السائق"
+  ,"waitingLoadingConfirmation": "بانتظار تأكيد التحميل"
+  ,"waitingDeliveryConfirmation": "بانتظار تأكيد التسليم"
+  ,"progressUnavailable": "بيانات التقدم غير متاحة"
+  ,"trackingMissing": "بيانات التتبع مفقودة"
+  ,"actionDriverDeparture": "إجراء مطلوب: انطلاق السائق"
+  ,"actionLoadingConfirmation": "إجراء مطلوب: تأكيد التحميل"
+  ,"actionDeliveryConfirmation": "إجراء مطلوب: تأكيد التسليم"
+  ,"remainingKilometers": "متبقي {value} كم"
+  ,"@remainingKilometers": {"placeholders": {"value": {"type": "String"}}}
+  ,"remainingMeters": "متبقي {value} م"
+  ,"@remainingMeters": {"placeholders": {"value": {"type": "String"}}}
+  ,"etaShort": "الوصول المتوقع {time}"
+  ,"@etaShort": {"placeholders": {"time": {"type": "String"}}}
+  ,"driverSelection": "اختيار السائق"
+  ,"selectionNone": "لا يوجد"
+  ,"selectionManual": "يدوي"
+  ,"selectionTruckDefault": "السائق الافتراضي للشاحنة"
+  ,"selectionExistingAssignment": "الإسناد الحالي"
+  ,"selectTruckFirst": "اختر شاحنة أولاً."
+  ,"truckHasNoDefaultDriver": "لا يوجد سائق افتراضي لهذه الشاحنة. اختر سائقاً يدوياً."
+  ,"truckDefaultDriverUnavailable": "السائق الافتراضي للشاحنة غير متاح. اختر سائقاً مؤهلاً يدوياً."
+  ,"driverSelectedFromTruckDefault": "تم اختيار السائق لأنه مرتبط بهذه الشاحنة."
+  ,"notificationAssignedSnapshot": "تم إسناد الشاحنة {truck} إلى الرحلة {trip}. الاستلام: {location}. الوقت: {time}."
+  ,"@notificationAssignedSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"notificationPickupSnapshot": "وصلت الشاحنة {truck} للرحلة {trip} إلى موقع الاستلام: {location}. الوقت: {time}."
+  ,"@notificationPickupSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"notificationDepartureSnapshot": "تم تأكيد تحميل الشاحنة {truck} للرحلة {trip} وانطلقت نحو {location}. الوقت: {time}."
+  ,"@notificationDepartureSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"notificationDeliverySnapshot": "وصلت الشاحنة {truck} للرحلة {trip} إلى موقع التسليم: {location}. الوقت: {time}."
+  ,"@notificationDeliverySnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"notificationCompletedSnapshot": "تم تأكيد التسليم وإكمال الرحلة {trip} بالشاحنة {truck} في {location}. الوقت: {time}."
+  ,"@notificationCompletedSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"notificationHealthSnapshot": "تحتاج الشاحنة {truck} في الرحلة {trip} إلى متابعة التتبع قرب {location}. الوقت: {time}."
+  ,"@notificationHealthSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"legacyNotificationFallback": "تفاصيل التحديث التشغيلي غير متاحة لهذا الإشعار القديم."
+  ,"notificationClient": "العميل: {value}"
+  ,"@notificationClient": {"placeholders": {"value": {"type": "String"}}}
+  ,"notificationDriver": "السائق: {value}"
+  ,"@notificationDriver": {"placeholders": {"value": {"type": "String"}}}
+  ,"notificationCargo": "الحمولة: {value}"
+  ,"@notificationCargo": {"placeholders": {"value": {"type": "String"}}}
 }

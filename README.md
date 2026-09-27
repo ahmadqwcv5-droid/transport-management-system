@@ -976,3 +976,39 @@ Dashboard polling remains configurable through `TRACKING_POLLING_INTERVAL_SECOND
 The shell now displays account/Driver identity, localized role, company, and email. Operational notification JSON stores language-neutral trip/truck/fleet/Driver/stop snapshots and the client localizes presentation. Truck defaults are suggestions only: an eligible default is selected and explained; an unavailable or missing default leaves Driver empty; manual selection remains explicit and assignment never mutates the truck default.
 
 The Sprint 4.2 implementation plan and validation boundary are under `docs/sprints/sprint-4.2` and `docs/evidence/sprint4_2`. Automated checks pass, but the mandatory browser workflow is recorded as incomplete and must not be treated as accepted.
+
+## Sprint 4.2.1 operational reliability
+
+Sprint 4.2.1 keeps one fleet-map platform view alive across polling and trip
+phase changes. Annotation synchronization failures are recoverable and do not
+replace a healthy renderer; route, trail, stop, and truck annotations are
+incrementally diffed, while camera movement remains user-driven after initial
+framing. The active-operations query is now a bounded, tenant-filtered,
+database projection rather than broad in-memory aggregation.
+
+Flutter Web uses `maplibre_gl 0.27.1`, whose Web implementation injects
+MapLibre GL JS 6.4.1. The recommended development style remains configurable:
+
+```bash
+../../.tooling/flutter/bin/flutter run -d web-server --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty \
+  --dart-define=ENABLE_SIMULATOR_CONTROLS=true
+```
+
+OpenFreeMap Liberty uses its hosted glyph endpoint and bilingual
+`name:latin,name:nonlatin` labels. MapLibre GL JS 6.4.1 provides Arabic shaping
+and bidirectional text internally; do not add the deprecated RTL plugin or
+reverse Arabic strings. OpenFreeMap attribution remains enabled.
+
+Operational notifications now render immutable truck, trip, location, and
+event-time snapshots in English or Arabic, with a localized legacy fallback.
+Driver assignment details include client, truck, cargo, stops, schedule,
+distance, duration, notes, and status. Planner and existing-trip assignment use
+the same linked/default-Driver selection policy. Concurrent expired requests
+also share token rotation: a late 401 produced with the previous access token
+retries with the already-rotated token instead of invalidating the session.
+
+The implementation plan is in `docs/sprints/sprint-4.2.1`; automated, Docker,
+Firefox manager/Driver, map-transition, Arabic/English map, and data-safety
+evidence is in `docs/evidence/sprint4_2_1`.

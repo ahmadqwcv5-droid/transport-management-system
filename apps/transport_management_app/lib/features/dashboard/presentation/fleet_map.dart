@@ -33,6 +33,7 @@ class FleetMap extends ConsumerStatefulWidget {
     this.styleUrlOverride,
     this.loadingTimeoutOverride,
     this.mapBuilder,
+    this.telemetry,
     super.key,
   });
 
@@ -46,6 +47,7 @@ class FleetMap extends ConsumerStatefulWidget {
   final String? styleUrlOverride;
   final Duration? loadingTimeoutOverride;
   final FleetMapBuilder? mapBuilder;
+  final MapOperationTelemetry? telemetry;
 
   @override
   ConsumerState<FleetMap> createState() => _FleetMapState();
@@ -66,6 +68,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   FleetInteractionMode _cameraMode = FleetInteractionMode.free;
   ({TrackedTruck truck, bool fitCamera})? _pendingDetailRefresh;
   bool _detailRefreshRunning = false;
+  bool _annotationWarning = false;
 
   List<TrackedTruck> get _visiblePositions => widget.positions.where((item) {
     if (_onlineOnly && !item.isOnline) return false;
@@ -242,6 +245,8 @@ class _FleetMapState extends ConsumerState<FleetMap> {
             onStyleLoaded: () => _onStyleLoaded(attempt),
             onAnnotationsReady: () => _onAnnotationsReady(attempt),
             onFailure: () => _onFailure(attempt),
+            onAnnotationFailure: _onAnnotationFailure,
+            onAnnotationsRecovered: _onAnnotationsRecovered,
             onTruckSelected: _selectTruck,
             tripDetail: _tripDetail,
             showTrail: _showTrail,
@@ -252,6 +257,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
             thumbnailLoader: ref
                 .read(dashboardRepositoryProvider)
                 .authenticatedImage,
+            telemetry: widget.telemetry,
           )
         : widget.mapBuilder!(
             key: ValueKey('maplibre-attempt-$_attempt'),
@@ -305,6 +311,22 @@ class _FleetMapState extends ConsumerState<FleetMap> {
               positions: _visiblePositions,
               selectedTruckId: _selectedTruckId,
               onTruckSelected: _selectTruck,
+            ),
+          ),
+        if (_mode == FleetMapMode.loaded && _annotationWarning)
+          PositionedDirectional(
+            start: 12,
+            end: 12,
+            top: 58,
+            child: MaterialBanner(
+              key: const Key('fleet-map-annotation-warning'),
+              content: Text(context.l10n.mapUpdateWarning),
+              actions: [
+                TextButton(
+                  onPressed: () => setState(() => _annotationWarning = false),
+                  child: Text(context.l10n.dismiss),
+                ),
+              ],
             ),
           ),
         if (_mode == FleetMapMode.loaded && _tripDetail != null)
@@ -488,7 +510,26 @@ class _FleetMapState extends ConsumerState<FleetMap> {
       return;
     }
     _loadingTimer?.cancel();
+    widget.telemetry?.fatalRendererErrors++;
     setState(() => _mode = FleetMapMode.failed);
+  }
+
+  void _onAnnotationFailure(Object error, String operation) {
+    widget.telemetry?.recoverableAnnotationErrors++;
+    debugPrint(
+      'FleetMap recoverable annotation error: operation=$operation '
+      'tripId=${_selected?.currentTripId} mode=$_mode '
+      'exception=${error.runtimeType}: $error',
+    );
+    if (mounted && !_annotationWarning) {
+      setState(() => _annotationWarning = true);
+    }
+  }
+
+  void _onAnnotationsRecovered() {
+    if (mounted && _annotationWarning) {
+      setState(() => _annotationWarning = false);
+    }
   }
 }
 
@@ -499,6 +540,8 @@ Widget _productionMapBuilder({
   required VoidCallback onStyleLoaded,
   required VoidCallback onAnnotationsReady,
   required VoidCallback onFailure,
+  required void Function(Object error, String operation) onAnnotationFailure,
+  required VoidCallback onAnnotationsRecovered,
   required ValueChanged<TrackedTruck> onTruckSelected,
   FleetTripDetail? tripDetail,
   bool showTrail = true,
@@ -507,6 +550,7 @@ Widget _productionMapBuilder({
   FleetCameraRequest cameraRequest = FleetCameraRequest.none,
   VoidCallback? onManualCameraInteraction,
   required AuthenticatedThumbnailLoader thumbnailLoader,
+  MapOperationTelemetry? telemetry,
 }) => _ConfiguredFleetMap(
   key: key,
   styleUrl: styleUrl,
@@ -514,6 +558,8 @@ Widget _productionMapBuilder({
   onStyleLoaded: onStyleLoaded,
   onAnnotationsReady: onAnnotationsReady,
   onFailure: onFailure,
+  onAnnotationFailure: onAnnotationFailure,
+  onAnnotationsRecovered: onAnnotationsRecovered,
   onTruckSelected: onTruckSelected,
   tripDetail: tripDetail,
   showTrail: showTrail,
@@ -522,4 +568,5 @@ Widget _productionMapBuilder({
   cameraRequest: cameraRequest,
   onManualCameraInteraction: onManualCameraInteraction,
   thumbnailLoader: thumbnailLoader,
+  telemetry: telemetry,
 );

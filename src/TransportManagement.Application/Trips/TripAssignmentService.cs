@@ -16,6 +16,7 @@ public sealed class TripAssignmentService(
     ResourceEventWriter resourceEvents,
     IDriverIdentityStore identities,
     INotificationStore notifications,
+    IClientStore clients,
     ICurrentUser currentUser)
 {
     public async Task<AssignmentOptionsResponse> OptionsAsync(
@@ -171,12 +172,25 @@ public sealed class TripAssignmentService(
         if (!driver.UserId.HasValue) return;
         var eventKey = $"TripAssignedToDriver:{trip.Id}:{driver.Id}:{trip.Version}";
         if (await notifications.EventExistsAsync(eventKey, cancellationToken)) return;
+        var client = await clients.GetClientAsync(trip.ClientId, cancellationToken);
+        var pickup = trip.Stops.OrderBy(x => x.Sequence).FirstOrDefault();
+        var delivery = trip.Stops.OrderBy(x => x.Sequence).LastOrDefault();
+        var occurredAt = clock.UtcNow;
         notifications.Add(new OperationNotification(Guid.NewGuid(), currentUser.CompanyId,
             "TripAssignedToDriver", "Information", trip.Id, trip.TruckId, driver.Id,
             eventKey, JsonSerializer.Serialize(new
-                { trip.TripNumber, truck.PlateNumber, truck.FleetCode, driverName = driver.FullName,
-                    pickupName = trip.Stops.OrderBy(x => x.Sequence).FirstOrDefault()?.Name,
-                    confirmationRequired = true }),
-            clock.UtcNow));
+                { eventCode = "TRIP_ASSIGNED", tripId = trip.Id, trip.TripNumber,
+                    truckId = truck.Id, truck.PlateNumber, truck.FleetCode,
+                    driverName = driver.FullName, clientName = client?.Name,
+                    pickupName = pickup?.Name, pickupAddress = pickup?.Address,
+                    pickupLatitude = pickup?.Latitude, pickupLongitude = pickup?.Longitude,
+                    deliveryName = delivery?.Name, deliveryAddress = delivery?.Address,
+                    deliveryLatitude = delivery?.Latitude, deliveryLongitude = delivery?.Longitude,
+                    cargoSummary = trip.CargoDescription, trip.PlannedStartAt,
+                    routeDistanceMeters = trip.RoutePlan?.DistanceMeters,
+                    estimatedDurationSeconds = trip.RoutePlan?.EstimatedDurationSeconds,
+                    notes = trip.Notes, operationalPhase = trip.Status.ToString(),
+                    eventAt = occurredAt, navigationTarget = $"/trips/{trip.Id}",
+                    confirmationRequired = true }), occurredAt));
     }
 }

@@ -1664,4 +1664,191 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get mapLoading => 'جارٍ تحميل الخريطة…';
+
+  @override
+  String get activeOperationsRetry => 'إعادة محاولة تحميل العمليات النشطة';
+
+  @override
+  String get activeOperationsTitle => 'العمليات النشطة';
+
+  @override
+  String get viewAll => 'عرض الكل';
+
+  @override
+  String get activeOperationsStale =>
+      'التحديث المباشر غير متاح مؤقتاً. يتم عرض آخر تحديث.';
+
+  @override
+  String activeOperationsCount(int count) {
+    return 'العمليات النشطة: $count';
+  }
+
+  @override
+  String get noActiveOperations => 'لا توجد عمليات نشطة.';
+
+  @override
+  String get phaseAwaitingDeparture => 'بانتظار الانطلاق';
+
+  @override
+  String get phaseToPickup => 'في الطريق إلى الاستلام';
+
+  @override
+  String get phaseAwaitingLoading => 'بانتظار التحميل';
+
+  @override
+  String get phaseToDelivery => 'في الطريق إلى التسليم';
+
+  @override
+  String get phaseAwaitingDeliveryConfirmation => 'بانتظار تأكيد التسليم';
+
+  @override
+  String get phaseAwaitingCompletion => 'بانتظار الإكمال';
+
+  @override
+  String get waitingDriverDeparture => 'بانتظار انطلاق السائق';
+
+  @override
+  String get waitingLoadingConfirmation => 'بانتظار تأكيد التحميل';
+
+  @override
+  String get waitingDeliveryConfirmation => 'بانتظار تأكيد التسليم';
+
+  @override
+  String get progressUnavailable => 'بيانات التقدم غير متاحة';
+
+  @override
+  String get trackingMissing => 'بيانات التتبع مفقودة';
+
+  @override
+  String get actionDriverDeparture => 'إجراء مطلوب: انطلاق السائق';
+
+  @override
+  String get actionLoadingConfirmation => 'إجراء مطلوب: تأكيد التحميل';
+
+  @override
+  String get actionDeliveryConfirmation => 'إجراء مطلوب: تأكيد التسليم';
+
+  @override
+  String remainingKilometers(String value) {
+    return 'متبقي $value كم';
+  }
+
+  @override
+  String remainingMeters(String value) {
+    return 'متبقي $value م';
+  }
+
+  @override
+  String etaShort(String time) {
+    return 'الوصول المتوقع $time';
+  }
+
+  @override
+  String get driverSelection => 'اختيار السائق';
+
+  @override
+  String get selectionNone => 'لا يوجد';
+
+  @override
+  String get selectionManual => 'يدوي';
+
+  @override
+  String get selectionTruckDefault => 'السائق الافتراضي للشاحنة';
+
+  @override
+  String get selectionExistingAssignment => 'الإسناد الحالي';
+
+  @override
+  String get selectTruckFirst => 'اختر شاحنة أولاً.';
+
+  @override
+  String get truckHasNoDefaultDriver =>
+      'لا يوجد سائق افتراضي لهذه الشاحنة. اختر سائقاً يدوياً.';
+
+  @override
+  String get truckDefaultDriverUnavailable =>
+      'السائق الافتراضي للشاحنة غير متاح. اختر سائقاً مؤهلاً يدوياً.';
+
+  @override
+  String get driverSelectedFromTruckDefault =>
+      'تم اختيار السائق لأنه مرتبط بهذه الشاحنة.';
+
+  @override
+  String notificationAssignedSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'تم إسناد الشاحنة $truck إلى الرحلة $trip. الاستلام: $location. الوقت: $time.';
+  }
+
+  @override
+  String notificationPickupSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'وصلت الشاحنة $truck للرحلة $trip إلى موقع الاستلام: $location. الوقت: $time.';
+  }
+
+  @override
+  String notificationDepartureSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'تم تأكيد تحميل الشاحنة $truck للرحلة $trip وانطلقت نحو $location. الوقت: $time.';
+  }
+
+  @override
+  String notificationDeliverySnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'وصلت الشاحنة $truck للرحلة $trip إلى موقع التسليم: $location. الوقت: $time.';
+  }
+
+  @override
+  String notificationCompletedSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'تم تأكيد التسليم وإكمال الرحلة $trip بالشاحنة $truck في $location. الوقت: $time.';
+  }
+
+  @override
+  String notificationHealthSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'تحتاج الشاحنة $truck في الرحلة $trip إلى متابعة التتبع قرب $location. الوقت: $time.';
+  }
+
+  @override
+  String get legacyNotificationFallback =>
+      'تفاصيل التحديث التشغيلي غير متاحة لهذا الإشعار القديم.';
+
+  @override
+  String notificationClient(String value) {
+    return 'العميل: $value';
+  }
+
+  @override
+  String notificationDriver(String value) {
+    return 'السائق: $value';
+  }
+
+  @override
+  String notificationCargo(String value) {
+    return 'الحمولة: $value';
+  }
 }

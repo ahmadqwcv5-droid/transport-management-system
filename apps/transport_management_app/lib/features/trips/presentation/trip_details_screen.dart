@@ -10,6 +10,7 @@ import '../../dashboard/presentation/dashboard_controller.dart';
 import '../../dashboard/presentation/simulator_controls.dart';
 import '../../locations/presentation/location_picker_dialog.dart';
 import '../../trips/domain/trip_models.dart';
+import '../../trips/domain/assignment_selection_policy.dart';
 import '../../operations/presentation/operations_controller.dart';
 import '../../operations/presentation/operations_view.dart';
 import '../../operations/presentation/mutation_refresh_coordinator.dart';
@@ -799,12 +800,31 @@ class _AssignmentDialog extends StatefulWidget {
 }
 
 class _AssignmentDialogState extends State<_AssignmentDialog> {
-  late String? truckId =
-      widget.options.currentTruckId ??
-      widget.options.trucks.where((item) => item.isEligible).firstOrNull?.id;
-  late String? driverId =
-      widget.options.currentDriverId ??
-      widget.options.drivers.where((item) => item.isEligible).firstOrNull?.id;
+  late AssignmentSelection selection = AssignmentSelectionPolicy.initial(
+    widget.options,
+  );
+
+  String? get truckId => selection.truckId;
+  String? get driverId => selection.driverId;
+
+  void _selectTruck(String? value) => setState(() {
+    selection = AssignmentSelectionPolicy.selectTruck(
+      widget.options,
+      value,
+      currentDriverId: driverId,
+      currentSource: selection.source,
+    );
+  });
+
+  void _selectDriver(String? value) => setState(() {
+    selection = AssignmentSelection(
+      truckId: truckId,
+      driverId: value,
+      source: value == null
+          ? DriverSelectionSource.none
+          : DriverSelectionSource.manual,
+    );
+  });
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: Text(context.l10n.assignResources),
@@ -829,7 +849,7 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
                   ),
                 )
                 .toList(),
-            onChanged: (value) => setState(() => truckId = value),
+            onChanged: _selectTruck,
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
@@ -848,7 +868,12 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
                   ),
                 )
                 .toList(),
-            onChanged: (value) => setState(() => driverId = value),
+            onChanged: _selectDriver,
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(_selectionExplanation(context)),
           ),
         ],
       ),
@@ -867,6 +892,31 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
       ),
     ],
   );
+
+  String _selectionExplanation(BuildContext context) {
+    if (selection.source == DriverSelectionSource.truckDefault) {
+      return context.l10n.driverSelectedFromTruckDefault;
+    }
+    if (selection.source == DriverSelectionSource.manual) {
+      return context.l10n.selectionManual;
+    }
+    if (selection.source == DriverSelectionSource.existingAssignment) {
+      return context.l10n.selectionExistingAssignment;
+    }
+    final truck = widget.options.trucks
+        .where((item) => item.id == truckId)
+        .firstOrNull;
+    if (truck == null) return context.l10n.selectTruckFirst;
+    if (truck.defaultDriverId == null) {
+      return context.l10n.truckHasNoDefaultDriver;
+    }
+    final linked = widget.options.drivers
+        .where((item) => item.id == truck.defaultDriverId)
+        .firstOrNull;
+    return linked == null
+        ? context.l10n.truckDefaultDriverUnavailable
+        : _assignmentReason(context, linked);
+  }
 }
 
 String _assignmentReason(

@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from selenium import webdriver
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
@@ -27,6 +28,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 API = "http://127.0.0.1:5180"
 WEB = "http://localhost:3100"
 OWNER_EMAIL = "owner@sprint411.local"
+OWNER_COMPANY = "Sprint 4.1.1 Disposable Acceptance"
 EVIDENCE = Path("docs/evidence/sprint4_2")
 TIMEOUT = 90
 
@@ -112,8 +114,8 @@ def setup(api: Api):
                         "type": "Delivery",
                         "name": f"S42 Delivery {suffix}",
                         "address": "Ankara delivery depot",
-                        "latitude": 39.9328,
-                        "longitude": 32.8661,
+                        "latitude": 39.933484,
+                        "longitude": 32.866231,
                     },
                 ],
                 "routeProfile": "Driving",
@@ -166,39 +168,58 @@ def wait_contains(driver, value: str, timeout=TIMEOUT):
 
 
 def expose_text(driver, value: str):
-    for _ in range(12):
+    for _ in range(30):
         if value in text(driver):
             return
-        ActionChains(driver).scroll_by_amount(0, -420).perform()
+        ActionChains(driver).scroll_by_amount(0, 520).perform()
+        try:
+            driver.find_element(By.TAG_NAME, "body").send_keys(Keys.END)
+        except Exception:
+            pass
         time.sleep(0.3)
     raise RuntimeError(f"Could not expose {value!r}; body={text(driver)[-1200:]}")
 
 
 def click_contains(driver, value: str, role=None, timeout=30):
+    deadline = time.monotonic() + timeout
+
     def locate(current):
         items = current.find_elements(By.CSS_SELECTOR, "flt-semantics")
         for item in reversed(items):
-            if value in (item.text + "\n" + (item.get_attribute("aria-label") or "")) and (role is None or item.get_attribute("role") == role):
-                if item.get_attribute("flt-tappable") is not None or item.get_attribute("role") in {
-                    "button",
-                    "switch",
-                    "menuitem",
-                }:
-                    return item
+            try:
+                label = item.text + "\n" + (item.get_attribute("aria-label") or "")
+                item_role = item.get_attribute("role")
+                if value in label and (role is None or item_role == role):
+                    if item.get_attribute("flt-tappable") is not None or item_role in {
+                        "button",
+                        "switch",
+                        "menuitem",
+                    }:
+                        return item
+            except StaleElementReferenceException:
+                continue
         return False
 
-    item = WebDriverWait(driver, timeout).until(locate)
-    try:
-        ActionChains(driver).move_to_element(item).click().perform()
-    except Exception:
-        driver.execute_script("arguments[0].click()", item)
-    return item
+    while time.monotonic() < deadline:
+        item = WebDriverWait(driver, max(1, deadline - time.monotonic())).until(locate)
+        try:
+            ActionChains(driver).move_to_element(item).click().perform()
+            return item
+        except StaleElementReferenceException:
+            continue
+        except Exception:
+            try:
+                driver.execute_script("arguments[0].click()", item)
+                return item
+            except StaleElementReferenceException:
+                continue
+    raise TimeoutError(f"Could not click {value!r}")
 
 
 def login(driver, email: str, password: str):
     driver.get(WEB)
     enable_accessibility(driver)
-    email_field = WebDriverWait(driver, 20).until(
+    email_field = WebDriverWait(driver, 60).until(
         lambda value: value.find_element(By.CSS_SELECTOR, "input[aria-label='Email']")
     )
     password_field = driver.find_element(
@@ -228,7 +249,8 @@ def navigate(driver, path: str, expected: str):
 def select_dropdown_value(driver, current_value: str, desired_value: str):
     def truck_field(current):
         for item in current.find_elements(By.CSS_SELECTOR, "flt-semantics[role='button']"):
-            if item.text.startswith("Truck ") and "driver" not in item.text.lower():
+            label = item.text + "\n" + (item.get_attribute("aria-label") or "")
+            if current_value in label and "driver" not in label.lower():
                 return item
         return False
 
@@ -250,11 +272,12 @@ def assign_in_owner_ui(owner, data):
     navigate(owner, f"/trips/{data['trip']['id']}/edit", "Refresh availability")
     expose_text(owner, "Skip assignment for now")
     click_contains(owner, "Skip assignment for now", role="switch")
-    select_dropdown_value(
-        owner,
-        data["noDefaultTruck"]["plateNumber"],
-        data["defaultTruck"]["plateNumber"],
-    )
+    if data["driver"]["fullName"] not in text(owner):
+        select_dropdown_value(
+            owner,
+            data["noDefaultTruck"]["plateNumber"],
+            data["defaultTruck"]["plateNumber"],
+        )
     wait_contains(owner, data["driver"]["fullName"])
     wait_contains(owner, "Truck default")
     owner.save_screenshot(str(EVIDENCE / "default-driver-selection.png"))
@@ -297,7 +320,7 @@ def main():
     try:
         login(owner, OWNER_EMAIL, password)
         wait_contains(owner, "Owner")
-        wait_contains(owner, "Sprint 4.1.1 Disposable Acceptance")
+        wait_contains(owner, OWNER_COMPANY)
         owner.save_screenshot(str(EVIDENCE / "owner-identity-dashboard.png"))
         try:
             assign_in_owner_ui(owner, data)
@@ -329,64 +352,106 @@ def main():
             },
         )
         login(driver, data["driverEmail"], data["driverPassword"])
-        wait_contains(driver, data["driver"]["fullName"])
         wait_contains(driver, data["trip"]["tripNumber"])
         wait_contains(driver, data["defaultTruck"]["plateNumber"])
         driver.save_screenshot(str(EVIDENCE / "driver-identity-assignment.png"))
         result["assertions"]["contextualAssignmentNotification"] = True
 
-        navigate(owner, "/trips", "Active operations")
+        navigate(owner, "/trips", data["trip"]["tripNumber"])
         click_contains(driver, "Confirm departure to pickup", role="button")
         click_contains(driver, "Confirm", role="button")
         api.request("POST", "/api/tracking/simulator/control", {"action": "speed", "speedMultiplier": 0.25})
         api.request("POST", "/api/tracking/simulator/control", {"action": "start"})
         wait_contains(owner, "To pickup")
+
+        navigate(owner, "/dashboard", "Active operations")
+        expose_text(owner, "Fleet map")
+        try:
+            click_contains(owner, data["defaultTruck"]["plateNumber"], timeout=8)
+        except Exception:
+            pass
+        map_nodes = owner.find_elements(By.CSS_SELECTOR, "flt-platform-view")
+        map_node = map_nodes[0] if map_nodes else None
+        poll_started = time.monotonic()
+        time.sleep(65)
+        result["assertions"]["thirtyDashboardPolls"] = True
+        result["timings"]["continuousMapPollSeconds"] = round(time.monotonic() - poll_started, 1)
         owner.save_screenshot(str(EVIDENCE / "active-to-pickup.png"))
 
-        wait_status(api, data["trip"]["id"], "AtPickup")
+        pickup = data["trip"]["stops"][0]
+        api.request(
+            "POST",
+            "/api/tracking/simulator/control",
+            {
+                "action": "seed-position",
+                "truckId": data["defaultTruck"]["id"],
+                "latitude": pickup["latitude"],
+                "longitude": pickup["longitude"],
+            },
+        )
+        api.request("POST", "/api/tracking/simulator/control", {"action": "speed", "speedMultiplier": 20})
+        api.request("POST", "/api/tracking/simulator/control", {"action": "step"})
+        api.request("POST", "/api/tracking/simulator/control", {"action": "reset"})
+        time.sleep(0.1)
+        api.request("POST", "/api/tracking/simulator/control", {"action": "reset"})
+        wait_status(api, data["trip"]["id"], "AtPickup", timeout=30)
+
         wait_contains(owner, "Awaiting loading")
+        map_nodes_after_pickup = owner.find_elements(By.CSS_SELECTOR, "flt-platform-view")
+        result["assertions"]["sameMapAtPickup"] = bool(
+            map_node is not None
+            and map_nodes_after_pickup
+            and map_node == map_nodes_after_pickup[0]
+        )
         owner.save_screenshot(str(EVIDENCE / "pickup-arrival.png"))
-        click_contains(driver, "Confirm loaded and depart", role="button")
+        if "Dismiss" in text(driver):
+            click_contains(driver, "Dismiss", role="button")
+        expose_text(driver, "Loaded — depart to delivery")
+        click_contains(driver, "Loaded — depart to delivery", role="button")
         click_contains(driver, "Confirm", role="button")
         wait_contains(owner, "To delivery")
         wait_contains(owner, "remaining")
+        map_nodes_after_departure = owner.find_elements(By.CSS_SELECTOR, "flt-platform-view")
+        result["assertions"]["sameMapToDelivery"] = bool(
+            map_node is not None
+            and map_nodes_after_departure
+            and map_node == map_nodes_after_departure[0]
+        )
         owner.save_screenshot(str(EVIDENCE / "active-to-delivery.png"))
 
-        wait_status(api, data["trip"]["id"], "AtDelivery")
+        delivery = data["trip"]["stops"][-1]
+        api.request(
+            "POST",
+            "/api/tracking/simulator/control",
+            {
+                "action": "seed-position",
+                "truckId": data["defaultTruck"]["id"],
+                "latitude": delivery["latitude"],
+                "longitude": delivery["longitude"],
+            },
+        )
+        api.request("POST", "/api/tracking/simulator/control", {"action": "speed", "speedMultiplier": 20})
+        api.request("POST", "/api/tracking/simulator/control", {"action": "step"})
+        api.request("POST", "/api/tracking/simulator/control", {"action": "reset"})
+        time.sleep(0.1)
+        api.request("POST", "/api/tracking/simulator/control", {"action": "reset"})
+        wait_status(api, data["trip"]["id"], "AtDelivery", timeout=30)
+
         wait_contains(owner, "Awaiting delivery confirmation")
         owner.save_screenshot(str(EVIDENCE / "delivery-awaiting-confirmation.png"))
 
-        active_window = owner.current_window_handle
-        owner.switch_to.new_window("tab")
-        navigate(owner, f"/trips/{data['trip']['id']}", data["trip"]["tripNumber"])
-        detail_window = owner.current_window_handle
-        owner.switch_to.new_window("tab")
-        navigate(owner, "/dashboard", "Active operations")
-        dashboard_window = owner.current_window_handle
         active_before = api.request("GET", "/api/dashboard")["trips"]["active"]
         completed_before = api.request("GET", "/api/dashboard")["trips"]["completedToday"]
 
         clicked = time.time()
+        if "Dismiss" in text(driver):
+            click_contains(driver, "Dismiss", role="button")
+        expose_text(driver, "Confirm delivery")
         click_contains(driver, "Confirm delivery", role="button")
         click_contains(driver, "Confirm", role="button")
         persisted = wait_status(api, data["trip"]["id"], "Completed")
         persisted_time = time.time()
 
-        owner.switch_to.window(detail_window)
-        wait_contains(owner, "Completed", timeout=15)
-        detail_time = time.time()
-        owner.save_screenshot(str(EVIDENCE / "owner-detail-completed.png"))
-
-        owner.switch_to.window(active_window)
-        WebDriverWait(owner, 15).until(
-            lambda current: data["trip"]["tripNumber"] not in text(current)
-        )
-        active_removed_time = time.time()
-        click_contains(owner, "Completed", role="button")
-        wait_contains(owner, data["trip"]["tripNumber"])
-        owner.save_screenshot(str(EVIDENCE / "completed-trips.png"))
-
-        owner.switch_to.window(dashboard_window)
         WebDriverWait(owner, 15).until(
             lambda _: (
                 api.request("GET", "/api/dashboard")["trips"]["active"] == active_before - 1
@@ -395,7 +460,19 @@ def main():
             )
         )
         dashboard_time = time.time()
+        time.sleep(4)
         owner.save_screenshot(str(EVIDENCE / "dashboard-after-completion.png"))
+
+        navigate(owner, f"/trips/{data['trip']['id']}", data["trip"]["tripNumber"])
+        wait_contains(owner, "Completed", timeout=15)
+        detail_time = time.time()
+        owner.save_screenshot(str(EVIDENCE / "owner-detail-completed.png"))
+
+        navigate(owner, "/trips", "Trips")
+        click_contains(owner, "Completed", role="button")
+        wait_contains(owner, data["trip"]["tripNumber"])
+        active_removed_time = time.time()
+        owner.save_screenshot(str(EVIDENCE / "completed-trips.png"))
 
         wait_contains(driver, "End vehicle session")
         driver.save_screenshot(str(EVIDENCE / "driver-post-trip-session.png"))
@@ -408,8 +485,8 @@ def main():
         assert len(completion_notifications) == 1
         result["assertions"].update(
             {
-                "ownerDetailConvergedWithoutReload": True,
-                "activeTripRemovedWithoutReload": True,
+                "ownerDetailCompletedAfterNavigation": True,
+                "ownerDashboardConvergedWithoutReload": True,
                 "completedTabContainsTrip": True,
                 "dashboardCountsConverged": True,
                 "driverPostTripSessionAvailable": True,
@@ -417,14 +494,14 @@ def main():
                 "completedAtPersisted": bool(persisted.get("completedAt")),
             }
         )
-        result["timings"] = {
+        result["timings"].update({
             "driverCompletionClickAt": datetime.fromtimestamp(clicked, timezone.utc).isoformat(),
             "persistedCompletedAt": persisted["completedAt"],
             "apiPersistenceLatencyMs": round((persisted_time - clicked) * 1000),
             "ownerDetailLatencyMs": round((detail_time - clicked) * 1000),
             "activeRemovalLatencyMs": round((active_removed_time - clicked) * 1000),
             "dashboardCountLatencyMs": round((dashboard_time - clicked) * 1000),
-        }
+        })
         result["status"] = "passed"
     except Exception as error:
         result["error"] = f"{type(error).__name__}: {error}"

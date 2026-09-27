@@ -23,12 +23,10 @@ class DashboardScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (ref.read(dashboardControllerProvider.notifier).isStale)
-                const MaterialBanner(
+                MaterialBanner(
                   key: Key('dashboard-stale-warning'),
-                  content: Text(
-                    'Live refresh is temporarily unavailable. Showing the last update.',
-                  ),
-                  actions: [SizedBox.shrink()],
+                  content: Text(context.l10n.activeOperationsStale),
+                  actions: const [SizedBox.shrink()],
                 ),
               Text(
                 error is ApiException
@@ -62,21 +60,21 @@ class DashboardScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Active operations',
+                      context.l10n.activeOperationsTitle,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
                   TextButton(
                     key: const Key('view-all-active-operations'),
                     onPressed: () => context.go('/trips'),
-                    child: const Text('View all'),
+                    child: Text(context.l10n.viewAll),
                   ),
                 ],
               ),
               if (data.activeTrips.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Text('No active operations.'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(context.l10n.noActiveOperations),
                 )
               else
                 ...data.activeTrips.map(

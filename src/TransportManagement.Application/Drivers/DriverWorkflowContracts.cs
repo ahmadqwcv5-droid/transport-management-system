@@ -29,4 +29,5 @@ public sealed record DriverWorkspaceResponse(
     DateTimeOffset? EstimatedArrivalAt,
     IReadOnlyList<string> AllowedActions,
     IReadOnlyList<DriverActionReadinessResponse> Actions,
-    DriverTruckSessionResponse? VehicleSession = null);
+    DriverTruckSessionResponse? VehicleSession = null,
+    string? ClientName = null);

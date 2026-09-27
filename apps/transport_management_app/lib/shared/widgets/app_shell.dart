@@ -334,11 +334,7 @@ class _OperationalAlertCard extends ConsumerWidget {
   static String _message(
     BuildContext context,
     OperationNotification notification,
-  ) => notification.type == 'TripAssignedToDriver'
-      ? context.l10n.assignmentRequiresDeparture
-      : notification.tripId == null
-      ? context.l10n.operationalAlertMessage
-      : context.l10n.operationalTripAlertMessage;
+  ) => notificationSnapshotMessage(context, notification);
 
   static String _identity(OperationNotification notification) =>
       notificationSnapshotIdentity(notification);

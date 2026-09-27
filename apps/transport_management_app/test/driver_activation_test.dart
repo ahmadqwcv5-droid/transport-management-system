@@ -27,7 +27,7 @@ void main() {
       final map = find.byKey(const Key('driver-map-unavailable'));
       expect(panel, findsOneWidget);
       expect(button.hitTestable(), findsOneWidget);
-      expect(tester.getTopLeft(panel).dy, lessThan(tester.getTopLeft(map).dy));
+      expect(map, findsNothing);
       expect(
         find.text(
           'The truck will not start moving until you confirm departure.',

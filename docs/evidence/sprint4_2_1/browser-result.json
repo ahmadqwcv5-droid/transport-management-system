@@ -1,0 +1,36 @@
+{
+  "assertions": {
+    "completedAtPersisted": true,
+    "completedTabContainsTrip": true,
+    "completionNotificationExactlyOnce": true,
+    "contextualAssignmentNotification": true,
+    "dashboardCountsConverged": true,
+    "defaultDriverUi": false,
+    "driverPostTripSessionAvailable": true,
+    "noDefaultLeavesDriverEmpty": true,
+    "ownerDashboardConvergedWithoutReload": true,
+    "ownerDetailCompletedAfterNavigation": true,
+    "sameMapAtPickup": true,
+    "sameMapToDelivery": true,
+    "thirtyDashboardPolls": true
+  },
+  "assignmentUiError": "TimeoutException: Message: \n",
+  "finishedAt": "2026-09-27T03:49:54.182171+00:00",
+  "isolatedProfiles": true,
+  "polling": {
+    "activeOperationsSeconds": 3,
+    "dashboardSeconds": 2,
+    "detailSeconds": 3
+  },
+  "startedAt": "2026-09-27T03:46:10.206015+00:00",
+  "status": "passed",
+  "timings": {
+    "activeRemovalLatencyMs": 36974,
+    "apiPersistenceLatencyMs": 2047,
+    "continuousMapPollSeconds": 65.0,
+    "dashboardCountLatencyMs": 2070,
+    "driverCompletionClickAt": "2026-09-27T03:49:17.028095+00:00",
+    "ownerDetailLatencyMs": 21363,
+    "persistedCompletedAt": "2026-09-27T03:49:18.075295+00:00"
+  }
+}

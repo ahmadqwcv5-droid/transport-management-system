@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/l10n_extensions.dart';
 import '../../dashboard/presentation/dashboard_controller.dart';
+import '../../trips/domain/trip_models.dart';
 import '../domain/live_operations_models.dart';
+import '../../../shared/widgets/truck_avatar.dart';
 import 'driver_workspace_map.dart';
 import 'live_operations_controller.dart';
 
@@ -67,6 +69,7 @@ class DriverMyTripScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   _DeparturePanel(
                     action: action,
+                    workspace: workspace,
                     loading: workspace.actionInProgress,
                     onConfirm: () => _depart(context, ref),
                   ),
@@ -179,11 +182,13 @@ class DriverMyTripScreen extends ConsumerWidget {
 class _DeparturePanel extends StatelessWidget {
   const _DeparturePanel({
     required this.action,
+    required this.workspace,
     required this.loading,
     required this.onConfirm,
   });
 
   final DriverActionReadiness action;
+  final DriverWorkspace workspace;
   final bool loading;
   final Future<void> Function() onConfirm;
 
@@ -212,6 +217,8 @@ class _DeparturePanel extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(guidance),
+            const SizedBox(height: 12),
+            _AssignmentSummary(workspace: workspace),
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
@@ -245,7 +252,17 @@ class _DeparturePanel extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(context.l10n.confirmDepartureToPickup),
-        content: Text(context.l10n.departToPickupWarning),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(context.l10n.departToPickupWarning),
+              const SizedBox(height: 12),
+              _AssignmentSummary(workspace: workspace),
+            ],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -287,6 +304,12 @@ class _WorkspaceCard extends StatelessWidget {
           children: [
             Row(
               children: [
+                TruckAvatar(
+                  photoUrl: truck?.photoThumbnailUrl,
+                  photoVersion: truck?.photoVersion,
+                  radius: 26,
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     trip.tripNumber,
@@ -311,6 +334,8 @@ class _WorkspaceCard extends StatelessWidget {
                 ),
               ],
             ),
+            const Divider(),
+            _AssignmentSummary(workspace: workspace),
             const Divider(),
             Text(
               context.l10n.nextStop,
@@ -357,6 +382,75 @@ class _WorkspaceCard extends StatelessWidget {
   static String _time(DateTime value) =>
       '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')} '
       '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
+}
+
+class _AssignmentSummary extends StatelessWidget {
+  const _AssignmentSummary({required this.workspace});
+  final DriverWorkspace workspace;
+
+  @override
+  Widget build(BuildContext context) {
+    final trip = workspace.currentTrip!;
+    final truck = workspace.truck;
+    final pickup = trip.stops
+        .where((stop) => stop.type == 'Pickup')
+        .firstOrNull;
+    final delivery = trip.stops
+        .where((stop) => stop.type == 'Delivery')
+        .firstOrNull;
+    final route = trip.routePlan;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _InfoRow(context.l10n.tripNumber, trip.tripNumber),
+        _InfoRow(
+          context.l10n.client,
+          workspace.clientName ?? context.l10n.notAvailable,
+        ),
+        _InfoRow(
+          context.l10n.truck,
+          truck == null
+              ? context.l10n.notAvailable
+              : '${truck.plateNumber}${truck.fleetCode == null ? '' : ' · ${truck.fleetCode}'}',
+        ),
+        _InfoRow(context.l10n.cargo, trip.cargoDescription),
+        _InfoRow(context.l10n.pickup, _stop(pickup, context)),
+        _InfoRow(context.l10n.delivery, _stop(delivery, context)),
+        _InfoRow(
+          context.l10n.planned,
+          trip.plannedStartAt ?? context.l10n.notAvailable,
+        ),
+        _InfoRow(
+          context.l10n.routeDistance,
+          route == null
+              ? context.l10n.notAvailable
+              : '${(route.distanceMeters / 1000).toStringAsFixed(1)} km',
+        ),
+        _InfoRow(
+          context.l10n.routeDuration,
+          route == null
+              ? context.l10n.notAvailable
+              : '${Duration(seconds: route.estimatedDurationSeconds).inMinutes} min',
+        ),
+        if (trip.notes?.isNotEmpty == true)
+          _InfoRow(context.l10n.notes, trip.notes!),
+        _InfoRow(
+          context.l10n.status,
+          localizedStatus(context.l10n, trip.status),
+        ),
+      ],
+    );
+  }
+
+  String _stop(TripStop? stop, BuildContext context) {
+    if (stop == null) return context.l10n.notAvailable;
+    final location = stop.address?.trim().isNotEmpty == true
+        ? stop.address!
+        : stop.hasCoordinates
+        ? '${stop.latitude!.toStringAsFixed(5)}, ${stop.longitude!.toStringAsFixed(5)}'
+        : null;
+    return [stop.name, ?location].join(' — ');
+  }
 }
 
 class _InfoRow extends StatelessWidget {

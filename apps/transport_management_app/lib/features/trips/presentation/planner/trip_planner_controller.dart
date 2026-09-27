@@ -11,6 +11,7 @@ import '../../../../l10n/l10n_extensions.dart';
 import '../../../locations/presentation/location_picker_dialog.dart';
 import '../../../clients/domain/client_models.dart';
 import '../../domain/trip_models.dart';
+import '../../domain/assignment_selection_policy.dart';
 import '../../../operations/domain/operations_data.dart';
 import '../../../operations/presentation/operations_controller.dart';
 import '../../../operations/presentation/operations_view.dart';
@@ -559,24 +560,15 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
   }
 
   String? _eligibleDefaultDriver(AssignmentOptions options, String? truckId) {
-    final defaultId = options.trucks
-        .where((truck) => truck.id == truckId)
-        .firstOrNull
-        ?.defaultDriverId;
-    if (defaultId == null) return null;
-    return options.drivers.any(
-          (driver) => driver.id == defaultId && driver.isEligible,
-        )
-        ? defaultId
-        : null;
+    return AssignmentSelectionPolicy.eligibleDefaultDriver(options, truckId);
   }
 
   String get _driverSelectionSource {
-    if (_driverId == null) return 'None';
-    if (_driverExplicitlySelected) return 'Manual';
+    if (_driverId == null) return context.l10n.selectionNone;
+    if (_driverExplicitlySelected) return context.l10n.selectionManual;
     return _eligibleDefaultDriver(_options!, _truckId) == _driverId
-        ? 'Truck default'
-        : 'Existing assignment';
+        ? context.l10n.selectionTruckDefault
+        : context.l10n.selectionExistingAssignment;
   }
 
   String get _driverSelectionExplanation {
@@ -584,11 +576,11 @@ class TripPlannerController extends ConsumerState<TripPlannerWorkflow> {
     final truck = _options?.trucks
         .where((item) => item.id == _truckId)
         .firstOrNull;
-    if (truck == null) return 'Select a truck first.';
+    if (truck == null) return context.l10n.selectTruckFirst;
     if (truck.defaultDriverId == null) {
-      return 'This truck has no default Driver. Choose one manually.';
+      return context.l10n.truckHasNoDefaultDriver;
     }
-    return 'The truck default Driver is unavailable. Choose an eligible Driver manually.';
+    return context.l10n.truckDefaultDriverUnavailable;
   }
 
   Future<void> _continue() async {

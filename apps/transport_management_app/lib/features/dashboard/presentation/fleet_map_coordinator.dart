@@ -142,6 +142,11 @@ final class FleetCameraPlan {
 }
 
 final class MapOperationTelemetry {
+  int mapInstancesCreated = 0;
+  int mapInstancesDisposed = 0;
+  int styleLoads = 0;
+  int recoverableAnnotationErrors = 0;
+  int fatalRendererErrors = 0;
   int imageRegistrations = 0;
   int symbolAdditions = 0;
   int symbolUpdates = 0;
@@ -165,8 +170,15 @@ final class MapOperationTelemetry {
   int globalCircleClears = 0;
   int cameraMoves = 0;
   int cameraMovesCausedByPolling = 0;
+  int initialCameraMoves = 0;
+  int explicitCameraMoves = 0;
 
   Map<String, int> toJson() => {
+    'mapInstancesCreated': mapInstancesCreated,
+    'mapInstancesDisposed': mapInstancesDisposed,
+    'styleLoads': styleLoads,
+    'recoverableAnnotationErrors': recoverableAnnotationErrors,
+    'fatalRendererErrors': fatalRendererErrors,
     'imageRegistrations': imageRegistrations,
     'symbolAdditions': symbolAdditions,
     'symbolUpdates': symbolUpdates,
@@ -190,6 +202,8 @@ final class MapOperationTelemetry {
     'globalCircleClears': globalCircleClears,
     'cameraMoves': cameraMoves,
     'cameraMovesCausedByPolling': cameraMovesCausedByPolling,
+    'initialCameraMoves': initialCameraMoves,
+    'explicitCameraMoves': explicitCameraMoves,
   };
 }
 
@@ -481,6 +495,11 @@ final class FleetMapAnnotationCoordinator {
     if (plan == null) return;
     await _adapter.animateCamera(plan);
     telemetry.cameraMoves++;
+    if (request.cameraRequest == FleetCameraRequest.initialFleet) {
+      telemetry.initialCameraMoves++;
+    } else {
+      telemetry.explicitCameraMoves++;
+    }
   }
 
   void dispose() {

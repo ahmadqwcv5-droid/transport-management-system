@@ -1676,4 +1676,192 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapLoading => 'Loading map…';
+
+  @override
+  String get activeOperationsRetry => 'Retry active operations';
+
+  @override
+  String get activeOperationsTitle => 'Active operations';
+
+  @override
+  String get viewAll => 'View all';
+
+  @override
+  String get activeOperationsStale =>
+      'Live refresh is temporarily unavailable. Showing the last update.';
+
+  @override
+  String activeOperationsCount(int count) {
+    return '$count active operations';
+  }
+
+  @override
+  String get noActiveOperations => 'No active operations.';
+
+  @override
+  String get phaseAwaitingDeparture => 'Awaiting departure';
+
+  @override
+  String get phaseToPickup => 'To pickup';
+
+  @override
+  String get phaseAwaitingLoading => 'Awaiting loading';
+
+  @override
+  String get phaseToDelivery => 'To delivery';
+
+  @override
+  String get phaseAwaitingDeliveryConfirmation =>
+      'Awaiting delivery confirmation';
+
+  @override
+  String get phaseAwaitingCompletion => 'Awaiting completion';
+
+  @override
+  String get waitingDriverDeparture => 'Waiting for Driver departure';
+
+  @override
+  String get waitingLoadingConfirmation => 'Waiting for loading confirmation';
+
+  @override
+  String get waitingDeliveryConfirmation => 'Waiting for delivery confirmation';
+
+  @override
+  String get progressUnavailable => 'Progress is unavailable';
+
+  @override
+  String get trackingMissing => 'Tracking missing';
+
+  @override
+  String get actionDriverDeparture => 'Action: Driver departure';
+
+  @override
+  String get actionLoadingConfirmation => 'Action: loading confirmation';
+
+  @override
+  String get actionDeliveryConfirmation => 'Action: delivery confirmation';
+
+  @override
+  String remainingKilometers(String value) {
+    return '$value km remaining';
+  }
+
+  @override
+  String remainingMeters(String value) {
+    return '$value m remaining';
+  }
+
+  @override
+  String etaShort(String time) {
+    return 'ETA $time';
+  }
+
+  @override
+  String get driverSelection => 'Driver selection';
+
+  @override
+  String get selectionNone => 'None';
+
+  @override
+  String get selectionManual => 'Manual';
+
+  @override
+  String get selectionTruckDefault => 'Truck default';
+
+  @override
+  String get selectionExistingAssignment => 'Existing assignment';
+
+  @override
+  String get selectTruckFirst => 'Select a truck first.';
+
+  @override
+  String get truckHasNoDefaultDriver =>
+      'This truck has no default Driver. Choose one manually.';
+
+  @override
+  String get truckDefaultDriverUnavailable =>
+      'The truck default Driver is unavailable. Choose an eligible Driver manually.';
+
+  @override
+  String get driverSelectedFromTruckDefault =>
+      'Selected because this Driver is linked to the truck.';
+
+  @override
+  String notificationAssignedSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'Truck $truck was assigned to trip $trip. Pickup: $location. Time: $time.';
+  }
+
+  @override
+  String notificationPickupSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'Truck $truck on trip $trip reached pickup: $location. Time: $time.';
+  }
+
+  @override
+  String notificationDepartureSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'Loading was confirmed for truck $truck, trip $trip; it departed toward $location. Time: $time.';
+  }
+
+  @override
+  String notificationDeliverySnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'Truck $truck on trip $trip reached delivery: $location. Time: $time.';
+  }
+
+  @override
+  String notificationCompletedSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'Delivery was confirmed and trip $trip was completed by truck $truck at $location. Time: $time.';
+  }
+
+  @override
+  String notificationHealthSnapshot(
+    String truck,
+    String trip,
+    String location,
+    String time,
+  ) {
+    return 'Truck $truck on trip $trip needs tracking attention near $location. Time: $time.';
+  }
+
+  @override
+  String get legacyNotificationFallback =>
+      'Operational update details are unavailable for this older notification.';
+
+  @override
+  String notificationClient(String value) {
+    return 'Client: $value';
+  }
+
+  @override
+  String notificationDriver(String value) {
+    return 'Driver: $value';
+  }
+
+  @override
+  String notificationCargo(String value) {
+    return 'Cargo: $value';
+  }
 }

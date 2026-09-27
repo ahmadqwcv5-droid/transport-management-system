@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../domain/active_operation.dart';
+import '../../../l10n/l10n_extensions.dart';
 
 class ActiveOperationCard extends StatelessWidget {
   const ActiveOperationCard({required this.operation, this.onTap, super.key});
@@ -33,7 +34,9 @@ class ActiveOperationCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
-                  Chip(label: Text(_phase(operation.operationalPhase))),
+                  Chip(
+                    label: Text(_phase(context, operation.operationalPhase)),
+                  ),
                 ],
               ),
               Text(
@@ -41,7 +44,7 @@ class ActiveOperationCard extends StatelessWidget {
                   operation.clientName,
                   if (operation.driverName != null) operation.driverName!,
                   if (operation.nextStopName != null)
-                    '${_milestone(operation.nextMilestone)}: ${operation.nextStopName}',
+                    '${_milestone(context, operation.nextMilestone)}: ${operation.nextStopName}',
                 ].join(' • '),
               ),
               const SizedBox(height: 8),
@@ -51,11 +54,11 @@ class ActiveOperationCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${operation.progressPercent!.toStringAsFixed(0)}% · ${_distance(operation.remainingDistanceMeters)}'
-                  '${operation.estimatedArrivalAt == null ? '' : ' · ETA ${_time(operation.estimatedArrivalAt!)}'}',
+                  '${operation.progressPercent!.toStringAsFixed(0)}% · ${_distance(context, operation.remainingDistanceMeters)}'
+                  '${operation.estimatedArrivalAt == null ? '' : ' · ${context.l10n.etaShort(_time(operation.estimatedArrivalAt!))}'}',
                 ),
               ] else
-                Text(_waiting(operation.operationalPhase)),
+                Text(_waiting(context, operation.operationalPhase)),
               const SizedBox(height: 6),
               Wrap(
                 spacing: 8,
@@ -67,10 +70,10 @@ class ActiveOperationCard extends StatelessWidget {
                         : Icons.gps_off,
                     size: 16,
                   ),
-                  Text(_health(operation.trackingHealth)),
+                  Text(_health(context, operation.trackingHealth)),
                   if (operation.needsAttention)
                     Text(
-                      _attention(operation.attentionCode),
+                      _attention(context, operation.attentionCode),
                       style: TextStyle(
                         color: color,
                         fontWeight: FontWeight.w600,
@@ -85,56 +88,61 @@ class ActiveOperationCard extends StatelessWidget {
     );
   }
 
-  static String _phase(String value) => switch (value) {
-    'AwaitingDeparture' => 'Awaiting departure',
-    'ToPickup' => 'To pickup',
-    'AwaitingLoading' => 'Awaiting loading',
-    'ToDelivery' => 'To delivery',
-    'AwaitingDeliveryConfirmation' => 'Awaiting delivery confirmation',
-    'AwaitingCompletion' => 'Awaiting completion',
-    _ => value,
+  static String _phase(BuildContext context, String value) => switch (value) {
+    'AwaitingDeparture' => context.l10n.phaseAwaitingDeparture,
+    'ToPickup' => context.l10n.phaseToPickup,
+    'AwaitingLoading' => context.l10n.phaseAwaitingLoading,
+    'ToDelivery' => context.l10n.phaseToDelivery,
+    'AwaitingDeliveryConfirmation' =>
+      context.l10n.phaseAwaitingDeliveryConfirmation,
+    'AwaitingCompletion' => context.l10n.phaseAwaitingCompletion,
+    _ => localizedStatus(context.l10n, value),
   };
 
-  static String _waiting(String value) => switch (value) {
-    'AwaitingDeparture' => 'Waiting for Driver departure',
-    'AwaitingLoading' => 'Waiting for loading confirmation',
-    'AwaitingDeliveryConfirmation' => 'Waiting for delivery confirmation',
-    _ => 'Progress is unavailable',
+  static String _waiting(BuildContext context, String value) => switch (value) {
+    'AwaitingDeparture' => context.l10n.waitingDriverDeparture,
+    'AwaitingLoading' => context.l10n.waitingLoadingConfirmation,
+    'AwaitingDeliveryConfirmation' => context.l10n.waitingDeliveryConfirmation,
+    _ => context.l10n.progressUnavailable,
   };
 
-  static String _milestone(String value) => switch (value) {
-    'Pickup' => 'Pickup',
-    'Delivery' => 'Delivery',
-    'DriverDeparture' => 'Departure',
-    'LoadingConfirmation' => 'Loading',
-    'DeliveryConfirmation' => 'Delivery confirmation',
-    _ => value,
+  static String _milestone(BuildContext context, String value) =>
+      switch (value) {
+        'Pickup' => context.l10n.pickup,
+        'Delivery' => context.l10n.delivery,
+        'DriverDeparture' => context.l10n.departToPickup,
+        'LoadingConfirmation' => context.l10n.confirmLoadedAndDepart,
+        'DeliveryConfirmation' => context.l10n.confirmDelivery,
+        _ => localizedStatus(context.l10n, value),
+      };
+
+  static String _health(BuildContext context, String value) => switch (value) {
+    'Current' => context.l10n.trackingCurrent,
+    'Stale' => context.l10n.trackingStale,
+    'Offline' => context.l10n.trackingOffline,
+    'NoTelemetry' => context.l10n.trackingNotStarted,
+    _ => localizedStatus(context.l10n, value),
   };
 
-  static String _health(String value) => switch (value) {
-    'Current' => 'Tracking current',
-    'Stale' => 'Tracking stale',
-    'Offline' => 'Tracking offline',
-    'NoTelemetry' => 'No telemetry',
-    _ => value,
+  static String _attention(
+    BuildContext context,
+    String value,
+  ) => switch (value) {
+    'OFF_ROUTE' => context.l10n.offRoute,
+    'TRACKING_OFFLINE' => context.l10n.trackingOffline,
+    'TRACKING_STALE' => context.l10n.trackingStale,
+    'TRACKING_MISSING' => context.l10n.trackingMissing,
+    'AWAITING_DRIVER_DEPARTURE' => context.l10n.actionDriverDeparture,
+    'AWAITING_LOADING_CONFIRMATION' => context.l10n.actionLoadingConfirmation,
+    'AWAITING_DELIVERY_CONFIRMATION' => context.l10n.actionDeliveryConfirmation,
+    _ => localizedStatus(context.l10n, value),
   };
 
-  static String _attention(String value) => switch (value) {
-    'OFF_ROUTE' => 'Off route',
-    'TRACKING_OFFLINE' => 'Tracking offline',
-    'TRACKING_STALE' => 'Tracking stale',
-    'TRACKING_MISSING' => 'Tracking missing',
-    'AWAITING_DRIVER_DEPARTURE' => 'Action: Driver departure',
-    'AWAITING_LOADING_CONFIRMATION' => 'Action: loading confirmation',
-    'AWAITING_DELIVERY_CONFIRMATION' => 'Action: delivery confirmation',
-    _ => value,
-  };
-
-  static String _distance(double? meters) {
-    if (meters == null) return 'Distance unavailable';
+  static String _distance(BuildContext context, double? meters) {
+    if (meters == null) return context.l10n.notAvailable;
     return meters >= 1000
-        ? '${(meters / 1000).toStringAsFixed(1)} km remaining'
-        : '${meters.toStringAsFixed(0)} m remaining';
+        ? context.l10n.remainingKilometers((meters / 1000).toStringAsFixed(1))
+        : context.l10n.remainingMeters(meters.toStringAsFixed(0));
   }
 
   static String _time(String value) {

@@ -161,8 +161,15 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
                     );
                     if (mounted) setState(() {});
                     _requestSync();
-                  } on Object {
-                    _markFailed();
+                  } on Object catch (error) {
+                    debugPrint(
+                      'DriverWorkspaceMap recoverable annotation error: '
+                      'operation=initial-style-overlay '
+                      'tripId=${widget.workspace.currentTrip?.id} '
+                      'phase=${widget.workspace.currentTrip?.status} '
+                      'exception=${error.runtimeType}: $error',
+                    );
+                    if (mounted) setState(() => _updateWarning = true);
                   }
                 },
               ),
@@ -231,10 +238,6 @@ class _DriverWorkspaceMapState extends State<DriverWorkspaceMap> {
 
   void _requestSync() {
     _synchronizer.schedule(_sync);
-  }
-
-  void _markFailed() {
-    if (mounted && !_failed) setState(() => _failed = true);
   }
 
   void _retry() {

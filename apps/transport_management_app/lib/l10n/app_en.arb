@@ -533,4 +533,59 @@
   ,"workspaceConnectionWarning": "Live updates are temporarily unavailable. Showing the last received trip state."
   ,"mapUpdateWarning": "The latest map update could not be drawn. Live trip data is still available."
   ,"mapLoading": "Loading map…"
+  ,"activeOperationsRetry": "Retry active operations"
+  ,"activeOperationsTitle": "Active operations"
+  ,"viewAll": "View all"
+  ,"activeOperationsStale": "Live refresh is temporarily unavailable. Showing the last update."
+  ,"activeOperationsCount": "{count} active operations"
+  ,"@activeOperationsCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"noActiveOperations": "No active operations."
+  ,"phaseAwaitingDeparture": "Awaiting departure"
+  ,"phaseToPickup": "To pickup"
+  ,"phaseAwaitingLoading": "Awaiting loading"
+  ,"phaseToDelivery": "To delivery"
+  ,"phaseAwaitingDeliveryConfirmation": "Awaiting delivery confirmation"
+  ,"phaseAwaitingCompletion": "Awaiting completion"
+  ,"waitingDriverDeparture": "Waiting for Driver departure"
+  ,"waitingLoadingConfirmation": "Waiting for loading confirmation"
+  ,"waitingDeliveryConfirmation": "Waiting for delivery confirmation"
+  ,"progressUnavailable": "Progress is unavailable"
+  ,"trackingMissing": "Tracking missing"
+  ,"actionDriverDeparture": "Action: Driver departure"
+  ,"actionLoadingConfirmation": "Action: loading confirmation"
+  ,"actionDeliveryConfirmation": "Action: delivery confirmation"
+  ,"remainingKilometers": "{value} km remaining"
+  ,"@remainingKilometers": {"placeholders": {"value": {"type": "String"}}}
+  ,"remainingMeters": "{value} m remaining"
+  ,"@remainingMeters": {"placeholders": {"value": {"type": "String"}}}
+  ,"etaShort": "ETA {time}"
+  ,"@etaShort": {"placeholders": {"time": {"type": "String"}}}
+  ,"driverSelection": "Driver selection"
+  ,"selectionNone": "None"
+  ,"selectionManual": "Manual"
+  ,"selectionTruckDefault": "Truck default"
+  ,"selectionExistingAssignment": "Existing assignment"
+  ,"selectTruckFirst": "Select a truck first."
+  ,"truckHasNoDefaultDriver": "This truck has no default Driver. Choose one manually."
+  ,"truckDefaultDriverUnavailable": "The truck default Driver is unavailable. Choose an eligible Driver manually."
+  ,"driverSelectedFromTruckDefault": "Selected because this Driver is linked to the truck."
+  ,"notificationAssignedSnapshot": "Truck {truck} was assigned to trip {trip}. Pickup: {location}. Time: {time}."
+  ,"@notificationAssignedSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"notificationPickupSnapshot": "Truck {truck} on trip {trip} reached pickup: {location}. Time: {time}."
+  ,"@notificationPickupSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"notificationDepartureSnapshot": "Loading was confirmed for truck {truck}, trip {trip}; it departed toward {location}. Time: {time}."
+  ,"@notificationDepartureSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"notificationDeliverySnapshot": "Truck {truck} on trip {trip} reached delivery: {location}. Time: {time}."
+  ,"@notificationDeliverySnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"notificationCompletedSnapshot": "Delivery was confirmed and trip {trip} was completed by truck {truck} at {location}. Time: {time}."
+  ,"@notificationCompletedSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"notificationHealthSnapshot": "Truck {truck} on trip {trip} needs tracking attention near {location}. Time: {time}."
+  ,"@notificationHealthSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
+  ,"legacyNotificationFallback": "Operational update details are unavailable for this older notification."
+  ,"notificationClient": "Client: {value}"
+  ,"@notificationClient": {"placeholders": {"value": {"type": "String"}}}
+  ,"notificationDriver": "Driver: {value}"
+  ,"@notificationDriver": {"placeholders": {"value": {"type": "String"}}}
+  ,"notificationCargo": "Cargo: {value}"
+  ,"@notificationCargo": {"placeholders": {"value": {"type": "String"}}}
 }

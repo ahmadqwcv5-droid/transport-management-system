@@ -409,7 +409,7 @@ extension TripPlannerSteps on TripPlannerController {
               : driver?.displayName ?? context.l10n.notAssigned,
         ),
         if (!_skipAssignment)
-          _ReviewRow('Driver selection', _driverSelectionExplanation),
+          _ReviewRow(context.l10n.driverSelection, _driverSelectionExplanation),
         if (!_skipAssignment && driver != null)
           _ReviewRow(
             context.l10n.driverAppAccount,

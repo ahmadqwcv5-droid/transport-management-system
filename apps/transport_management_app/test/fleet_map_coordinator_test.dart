@@ -484,6 +484,8 @@ void main() {
       expect(counts.globalLineClears, 0);
       expect(counts.globalCircleClears, 0);
       expect(counts.cameraMovesCausedByPolling, 0);
+      expect(counts.initialCameraMoves, 1);
+      expect(counts.explicitCameraMoves, 0);
     },
   );
 

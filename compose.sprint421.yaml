@@ -1,0 +1,15 @@
+services:
+  postgres:
+    ports: !override
+      - "55432:5432"
+
+  api:
+    ports: !override
+      - "5180:8080"
+    environment:
+      Cors__AllowedOrigins__0: http://localhost:3000
+      DevelopmentSeed__OwnerEmail: owner@sprint421.local
+      DevelopmentSeed__CompanyName: Sprint 4.2.1 Disposable Acceptance
+      DevelopmentSeed__CompanySlug: sprint-421-disposable
+      Geofence__MinimumDwellSeconds: "0"
+      Tracking__SimulatorTickSeconds: "1"
