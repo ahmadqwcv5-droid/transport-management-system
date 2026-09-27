@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/l10n_extensions.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../live_operations/presentation/live_operations_controller.dart';
+import 'operational_area_settings.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -56,6 +57,10 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 12),
+        if (user?.role == 'Owner') ...[
+          const OperationalAreaSettings(),
+          const SizedBox(height: 12),
+        ],
         Card(
           child: ListTile(
             key: const Key('change-password'),

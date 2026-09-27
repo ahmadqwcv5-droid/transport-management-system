@@ -89,7 +89,10 @@ class DashboardScreen extends ConsumerWidget {
                   SimulatorControls.enabled)
                 SimulatorControls(trucks: data.simulatorTrucks),
               const SizedBox(height: 16),
-              FleetMap(positions: data.positions),
+              FleetMap(
+                positions: data.positions,
+                operationalArea: data.operationalArea,
+              ),
               const SizedBox(height: 16),
               Text(
                 context.l10n.recentTrips,

@@ -102,8 +102,7 @@ public sealed class TrackingService(
                 Guid.NewGuid(), currentUser.CompanyId, seedTruckId, latitude, longitude,
                 0, 0, true, clock.UtcNow, "SimulatorSeed", null, null,
                 Guid.NewGuid(), MovementPhase.CurrentLocation);
-            trackingStore.AddPositions([seeded]);
-            await trackingStore.SaveChangesAsync(cancellationToken);
+            await trackingStore.IngestAsync(seeded, clock.UtcNow, cancellationToken);
             var seededLatest = await trackingStore.LatestPositionsAsync(cancellationToken);
             var seededTrips = await tripStore.ListTripsAsync(
                 null, null, null, null, null, null, cancellationToken);
@@ -127,8 +126,7 @@ public sealed class TrackingService(
                 previous.Latitude, previous.Longitude, 0, previous.Heading, true,
                 clock.UtcNow, "SimulatorRefresh", null, null, Guid.NewGuid(),
                 MovementPhase.CurrentLocation);
-            trackingStore.AddPositions([refreshed]);
-            await trackingStore.SaveChangesAsync(cancellationToken);
+            await trackingStore.IngestAsync(refreshed, clock.UtcNow, cancellationToken);
             return new(true, false, 1, 0);
         }
         var trips = await tripStore.ListTripsAsync(null, null, null, null, null, null, cancellationToken);

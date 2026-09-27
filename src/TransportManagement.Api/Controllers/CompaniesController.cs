@@ -7,7 +7,8 @@ namespace TransportManagement.Api.Controllers;
 [ApiController]
 [Authorize(Policy = "companies.read")]
 [Route("api/companies")]
-public sealed class CompaniesController(CompanyService companyService) : ControllerBase
+public sealed class CompaniesController(CompanyService companyService,
+    CompanyMapPreferenceService mapPreferences) : ControllerBase
 {
     [HttpGet("me")]
     [ProducesResponseType<CompanyResponse>(StatusCodes.Status200OK)]
@@ -15,6 +16,32 @@ public sealed class CompaniesController(CompanyService companyService) : Control
     {
         var result = await companyService.GetCurrentAsync(cancellationToken);
         return result is null ? NotFound() : Ok(result);
+    }
+
+    [HttpGet("me/map-preference")]
+    [ProducesResponseType<CompanyMapPreferenceResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<ActionResult<CompanyMapPreferenceResponse>> MapPreference(
+        CancellationToken cancellationToken)
+    {
+        var result = await mapPreferences.GetAsync(cancellationToken);
+        return result is null ? NoContent() : Ok(result);
+    }
+
+    [HttpPut("me/map-preference")]
+    [Authorize(Policy = "owner")]
+    [ProducesResponseType<CompanyMapPreferenceResponse>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<CompanyMapPreferenceResponse>> SetMapPreference(
+        CompanyMapPreferenceRequest request, CancellationToken cancellationToken) =>
+        Ok(await mapPreferences.SetAsync(request, cancellationToken));
+
+    [HttpDelete("me/map-preference")]
+    [Authorize(Policy = "owner")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ClearMapPreference(CancellationToken cancellationToken)
+    {
+        await mapPreferences.ClearAsync(cancellationToken);
+        return NoContent();
     }
 
     // This ID-based route intentionally remains tenant-filtered. It allows the isolation

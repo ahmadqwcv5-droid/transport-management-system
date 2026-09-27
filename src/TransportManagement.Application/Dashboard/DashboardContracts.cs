@@ -1,3 +1,4 @@
+using TransportManagement.Application.Companies;
 using TransportManagement.Application.Tracking;
 
 namespace TransportManagement.Application.Dashboard;
@@ -16,4 +17,5 @@ public sealed record DashboardResponse(
     IReadOnlyList<TruckPositionResponse> Positions,
     IReadOnlyList<SimulatorTruckResponse> SimulatorTrucks,
     IReadOnlyList<RecentTripResponse> RecentTrips,
-    IReadOnlyList<ActiveTripOperationalResponse> ActiveTrips);
+    IReadOnlyList<ActiveTripOperationalResponse> ActiveTrips,
+    CompanyMapPreferenceResponse? OperationalArea);

@@ -21,6 +21,31 @@ internal sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
     }
 }
 
+internal sealed class CompanyMapPreferenceConfiguration
+    : IEntityTypeConfiguration<CompanyMapPreference>
+{
+    public void Configure(EntityTypeBuilder<CompanyMapPreference> builder)
+    {
+        builder.ToTable("company_map_preferences");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.CountryCode).HasMaxLength(2).IsRequired();
+        builder.Property(x => x.Label).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.South).HasPrecision(9, 6);
+        builder.Property(x => x.West).HasPrecision(9, 6);
+        builder.Property(x => x.North).HasPrecision(9, 6);
+        builder.Property(x => x.East).HasPrecision(9, 6);
+        builder.Property(x => x.CenterLatitude).HasPrecision(9, 6);
+        builder.Property(x => x.CenterLongitude).HasPrecision(9, 6);
+        builder.Property(x => x.PreferredZoom).HasPrecision(5, 2);
+        builder.HasIndex(x => x.CompanyId).IsUnique();
+        builder.HasOne<Company>().WithOne()
+            .HasForeignKey<CompanyMapPreference>(x => x.CompanyId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.UpdatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
 internal sealed class TruckPositionConfiguration : IEntityTypeConfiguration<TruckPosition>
 {
     public void Configure(EntityTypeBuilder<TruckPosition> builder)
@@ -41,6 +66,27 @@ internal sealed class TruckPositionConfiguration : IEntityTypeConfiguration<Truc
         builder.HasOne<Trip>().WithMany().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<TripRoutePlan>().WithMany().HasForeignKey(x => x.RoutePlanId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<TripRepositioningPlan>().WithMany().HasForeignKey(x => x.RepositioningPlanId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class TruckCurrentPositionConfiguration
+    : IEntityTypeConfiguration<TruckCurrentPosition>
+{
+    public void Configure(EntityTypeBuilder<TruckCurrentPosition> builder)
+    {
+        builder.ToTable("truck_current_positions");
+        builder.HasKey(x => x.TruckId);
+        builder.Ignore(x => x.Id);
+        builder.HasIndex(x => x.CompanyId);
+        builder.HasIndex(x => x.PositionId).IsUnique();
+        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Truck>().WithOne()
+            .HasForeignKey<TruckCurrentPosition>(x => x.TruckId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<TruckPosition>().WithOne()
+            .HasForeignKey<TruckCurrentPosition>(x => x.PositionId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 

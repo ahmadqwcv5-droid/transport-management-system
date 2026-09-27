@@ -35,8 +35,31 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
         {
             var session = await identities.GetActiveSessionAsync(driver.Id, cancellationToken);
             if (session is null)
-                return new("NO_ACTIVE_TRIP", driverProjection, null, null, null, "NoTrip",
-                    null, null, null, null, null, [], []);
+            {
+                var defaults = await fleet.ListActiveDefaultTrucksForDriverAsync(
+                    driver.Id, cancellationToken);
+                if (defaults.Count == 0)
+                    return new("NO_VEHICLE_ASSIGNED", driverProjection, null, null,
+                        null, "NoTelemetry", null, null, null, null, null, [], []);
+                if (defaults.Count > 1)
+                {
+                    return new("VEHICLE_ASSIGNMENT_AMBIGUOUS", driverProjection,
+                        null, null, null, "Unavailable", null, null, null, null,
+                        null, [], []);
+                }
+
+                var idleTruck = defaults[0];
+                var idlePhoto = await photos.MetadataAsync(idleTruck.Id, cancellationToken);
+                var idlePosition = await tracking.LatestPositionAsync(idleTruck.Id, cancellationToken);
+                return new("VEHICLE_ASSIGNED_IDLE", driverProjection, null,
+                    new(idleTruck.Id, idleTruck.PlateNumber, idleTruck.FleetCode,
+                        idleTruck.Status.ToString(),
+                        idlePhoto?.Version, idlePhoto is null ? null
+                            : $"/api/driver/my-trip/truck-photo/thumbnail?v={idlePhoto.Version}"),
+                    idlePosition is null ? null : new(idlePosition.Latitude, idlePosition.Longitude,
+                        idlePosition.Speed, idlePosition.Heading, idlePosition.RecordedAt, idlePosition.IsOnline),
+                    TrackingState(idlePosition), null, null, null, null, null, [], []);
+            }
             var lastTrip = await identities.GetTripAsync(session.LastTripId, cancellationToken);
             var sessionTruck = await fleet.GetTruckAsync(session.TruckId, cancellationToken);
             var sessionPhoto = await photos.MetadataAsync(session.TruckId, cancellationToken);
@@ -44,11 +67,12 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
             var mapped = lastTrip is null ? null : TripResponseMapper.Map(lastTrip);
             return new("POST_TRIP_VEHICLE", driverProjection, mapped,
                 sessionTruck is null ? null : new(sessionTruck.Id, sessionTruck.PlateNumber,
-                    sessionTruck.FleetCode, sessionPhoto?.Version, sessionPhoto is null ? null
+                    sessionTruck.FleetCode, sessionTruck.Status.ToString(), sessionPhoto?.Version,
+                    sessionPhoto is null ? null
                         : $"/api/driver/my-trip/truck-photo/thumbnail?v={sessionPhoto.Version}"),
                 sessionPosition is null ? null : new(sessionPosition.Latitude, sessionPosition.Longitude,
                     sessionPosition.Speed, sessionPosition.Heading, sessionPosition.RecordedAt, sessionPosition.IsOnline),
-                sessionPosition is null ? "NoTelemetry" : "Current", mapped?.RoutePlan,
+                TrackingState(sessionPosition), mapped?.RoutePlan,
                 mapped?.RepositioningPlan, null, 0, null, ["end-vehicle-session"],
                 [new("END_VEHICLE_SESSION", true, true, null, true)],
                 new(session.Id, session.TruckId, session.LastTripId, session.StartedAt));
@@ -66,8 +90,9 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
         var truck = await fleet.GetTruckAsync(trip.TruckId.Value, cancellationToken);
         var photo = await photos.MetadataAsync(trip.TruckId.Value, cancellationToken);
         var truckProjection = truck is null ? null : new DriverWorkspaceTruck(
-            truck.Id, truck.PlateNumber, truck.FleetCode, photo?.Version,
-            photo is null ? null : $"/api/driver/my-trip/truck-photo/thumbnail?v={photo.Version}");
+            truck.Id, truck.PlateNumber, truck.FleetCode, truck.Status.ToString(),
+            photo?.Version, photo is null ? null
+                : $"/api/driver/my-trip/truck-photo/thumbnail?v={photo.Version}");
         var position = await tracking.LatestPositionAsync(trip.TruckId.Value, cancellationToken);
         if (position is null)
             return new("TRIP_ASSIGNED_NO_TELEMETRY", driverProjection, mappedTrip,
@@ -136,8 +161,21 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
     {
         var driver = await RequiredDriverAsync(cancellationToken);
         var trip = await identities.GetCurrentTripAsync(driver.Id, cancellationToken);
-        var truckId = trip?.TruckId ?? (await identities.GetActiveSessionAsync(
-            driver.Id, cancellationToken))?.TruckId;
+        var truckId = trip?.TruckId;
+        if (truckId is null)
+            truckId = (await identities.GetActiveSessionAsync(
+                driver.Id, cancellationToken))?.TruckId;
+        if (truckId is null)
+        {
+            var defaults = await fleet.ListActiveDefaultTrucksForDriverAsync(
+                driver.Id, cancellationToken);
+            if (defaults.Count > 1)
+            {
+                throw new ConflictException("The driver has multiple default-linked trucks.",
+                    "DRIVER_TRUCK_AMBIGUOUS");
+            }
+            truckId = defaults.SingleOrDefault()?.Id;
+        }
         if (truckId is null)
             throw new NotFoundException("The driver has no associated truck.", "TRUCK_NOT_FOUND");
         return await photos.ReadAsync(truckId.Value, true, cancellationToken);
@@ -193,6 +231,12 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
             _ => []
         };
     }
+
+    private string TrackingState(Domain.Tracking.TruckPosition? position) =>
+        position is null ? "NoTelemetry"
+        : !position.IsOnline ? "Offline"
+        : clock.UtcNow - position.RecordedAt > trackingPolicy.OfflineThreshold
+            ? "Stale" : "Current";
 
     private static (decimal? Remaining, DateTimeOffset? Eta) Progress(Trip trip,
         decimal latitude, decimal longitude, decimal speed, DateTimeOffset now)

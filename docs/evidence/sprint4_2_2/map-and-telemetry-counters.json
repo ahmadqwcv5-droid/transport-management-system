@@ -1,0 +1,70 @@
+{
+  "measurementBasis": {
+    "stableMapWidget": "Flutter widget regression over 30 updates",
+    "annotationLifecycle": "deterministic FleetMapAnnotationCoordinator regression over 30 moving polls",
+    "camera": "real Firefox Owner scenario plus focused state-machine tests",
+    "chronology": "Sprint422MapReliabilityTests and isolated PostgreSQL proof"
+  },
+  "stableMapWidget": {
+    "pollAndPhaseUpdates": 30,
+    "mapInstancesCreated": 1,
+    "mapInstancesDisposed": 0,
+    "fatalMapFallbacks": 0
+  },
+  "annotationLifecycle": {
+    "imageRegistrations": 1,
+    "markerAdditions": 1,
+    "markerUpdates": 30,
+    "markerRemovals": 0,
+    "plannedRouteAdditions": 1,
+    "plannedRouteUpdates": 0,
+    "trailAdditions": 1,
+    "trailUpdates": 30,
+    "stopMarkerAdditions": 2,
+    "globalSymbolClears": 0,
+    "globalLineClears": 0,
+    "globalCircleClears": 0,
+    "cameraMovesCausedByPolling": 0,
+    "initialCameraMoves": 1,
+    "explicitCameraMoves": 0,
+    "recoverableAnnotationErrors": 0,
+    "fatalRendererErrors": 0
+  },
+  "cameraAcceptance": {
+    "wheelZoomsPreservingFollow": 3,
+    "followModePositionUpdates": 5,
+    "panGesturesPausingFollow": 1,
+    "freeModePositionUpdates": 1,
+    "freeModeCameraMovesObserved": 0
+  },
+  "interpolation": {
+    "browserPositionUpdates": 30,
+    "ownerTimestampedFrames": 3,
+    "driverTimestampedFrames": 3,
+    "starts": "recorded internally but not exported by the production browser build",
+    "completions": "recorded internally but not exported by the production browser build",
+    "cancellations": "recorded internally but not exported by the production browser build",
+    "snaps": "recorded internally but not exported by the production browser build",
+    "deterministicPoliciesPassed": [
+      "bounded duration",
+      "latest-wins retarget",
+      "shortest heading arc",
+      "large-jump snap",
+      "offline/stale stop"
+    ]
+  },
+  "chronologyIntegrationCase": {
+    "acceptedCurrent": 2,
+    "storedOlderHistory": 1,
+    "duplicatesIgnored": 1,
+    "equalTimestampConflictsStoredWithoutAdvance": 1,
+    "crossTenantAttemptsRejected": 1,
+    "duplicateCurrentPositionRegressions": 0
+  },
+  "isolatedDatabaseOlderRow": {
+    "historyCountBefore": 693,
+    "historyCountAfter": 694,
+    "currentPositionIdUnchanged": true,
+    "currentCoordinatesUnchanged": true
+  }
+}

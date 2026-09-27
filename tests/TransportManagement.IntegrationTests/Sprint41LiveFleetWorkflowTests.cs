@@ -161,7 +161,7 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
         Assert.Equal(tripId, postTrip.GetProperty("vehicleSession").GetProperty("lastTripId").GetGuid());
         Assert.Equal(HttpStatusCode.NoContent, (await driver.PostEmptyAsync(
             "/api/driver/my-trip/end-vehicle-session")).StatusCode);
-        Assert.Equal("NO_ACTIVE_TRIP", (await driver.GetJsonAsync<JsonElement>(
+        Assert.Equal("NO_VEHICLE_ASSIGNED", (await driver.GetJsonAsync<JsonElement>(
             "/api/driver/my-trip/workspace")).GetProperty("state").GetString());
 
         await ResetAndPollAsync(manager);

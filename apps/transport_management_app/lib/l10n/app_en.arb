@@ -588,4 +588,21 @@
   ,"@notificationDriver": {"placeholders": {"value": {"type": "String"}}}
   ,"notificationCargo": "Cargo: {value}"
   ,"@notificationCargo": {"placeholders": {"value": {"type": "String"}}}
+  ,"operationalArea": "Operational country / area"
+  ,"operationalAreaDescription": "Sets the default fleet overview. Trucks outside the area remain visible."
+  ,"noOperationalArea": "Not configured. The map uses connected trucks or the regional fallback."
+  ,"configureOperationalArea": "Configure area"
+  ,"clearOperationalArea": "Clear area"
+  ,"operationalAreaSaved": "Operational area saved."
+  ,"countryCode": "ISO country code"
+  ,"countryCodeHint": "Two letters, for example TR or SY"
+  ,"selectAreaWithBounds": "Enter a valid two-letter country code and select a search result with geographic bounds."
+  ,"fleetOverview": "Fleet overview"
+  ,"trucksOutsideOperationalArea": "{count} truck(s) outside the operational area"
+  ,"@trucksOutsideOperationalArea": {"placeholders": {"count": {"type": "int"}}}
+  ,"noVehicleAssigned": "No vehicle assigned"
+  ,"noVehicleAssignedExplanation": "Ask the Owner to link one active truck to your Driver profile."
+  ,"vehicleAssignmentAmbiguous": "Vehicle assignment needs attention"
+  ,"vehicleAssignmentAmbiguousExplanation": "More than one truck is linked to your Driver profile. Ask the Owner to keep one default truck."
+  ,"heading": "Heading"
 }

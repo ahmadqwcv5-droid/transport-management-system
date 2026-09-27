@@ -232,16 +232,23 @@ final class LocationResult {
     required this.longitude,
     required this.providerName,
     this.address,
+    this.boundingBox,
   });
   final String displayName, providerName;
   final String? address;
   final double latitude, longitude;
+
+  /// Ordered south, west, north, east.
+  final List<double>? boundingBox;
   factory LocationResult.fromJson(Json json) => LocationResult(
     displayName: json['displayName'] as String,
     address: json['address'] as String?,
     latitude: (json['latitude'] as num).toDouble(),
     longitude: (json['longitude'] as num).toDouble(),
     providerName: json['providerName'] as String,
+    boundingBox: (json['boundingBox'] as List<dynamic>?)
+        ?.map((value) => (value as num).toDouble())
+        .toList(),
   );
 }
 

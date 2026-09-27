@@ -1,0 +1,8 @@
+{
+  "scenario": "Owner Firefox embedded MapLibre camera interaction",
+  "followPausedAfterWheelZoom": false,
+  "followPausedAfterPan": true,
+  "resumeControlStillPresentAfterPositionUpdate": true,
+  "positionUpdatesAfterPan": 1,
+  "result": "passed"
+}

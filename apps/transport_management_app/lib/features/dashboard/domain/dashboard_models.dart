@@ -151,6 +151,54 @@ final class RecentTrip {
   );
 }
 
+final class OperationalArea {
+  const OperationalArea({
+    required this.countryCode,
+    required this.label,
+    required this.south,
+    required this.west,
+    required this.north,
+    required this.east,
+    this.centerLatitude,
+    this.centerLongitude,
+    this.preferredZoom,
+  });
+
+  final String countryCode, label;
+  final double south, west, north, east;
+  final double? centerLatitude, centerLongitude, preferredZoom;
+
+  bool contains(double latitude, double longitude) =>
+      latitude >= south &&
+      latitude <= north &&
+      longitude >= west &&
+      longitude <= east;
+
+  factory OperationalArea.fromJson(Json json) => OperationalArea(
+    countryCode: json['countryCode'] as String,
+    label: json['label'] as String,
+    south: (json['south'] as num).toDouble(),
+    west: (json['west'] as num).toDouble(),
+    north: (json['north'] as num).toDouble(),
+    east: (json['east'] as num).toDouble(),
+    centerLatitude: (json['centerLatitude'] as num?)?.toDouble(),
+    centerLongitude: (json['centerLongitude'] as num?)?.toDouble(),
+    preferredZoom: (json['preferredZoom'] as num?)?.toDouble(),
+  );
+
+  Json toJson() => {
+    'countryCode': countryCode,
+    'label': label,
+    'south': south,
+    'west': west,
+    'north': north,
+    'east': east,
+    'centerLatitude': centerLatitude,
+    'centerLongitude': centerLongitude,
+    'preferredZoom': preferredZoom,
+  };
+}
+
 final class DashboardData {
   const DashboardData({
     required this.fleet,
@@ -160,12 +208,14 @@ final class DashboardData {
     required this.simulatorTrucks,
     required this.recentTrips,
     this.activeTrips = const [],
+    this.operationalArea,
   });
   final Json fleet, trips, tracking;
   final List<TrackedTruck> positions;
   final List<SimulatorTruck> simulatorTrucks;
   final List<RecentTrip> recentTrips;
   final List<ActiveOperation> activeTrips;
+  final OperationalArea? operationalArea;
   factory DashboardData.fromJson(Json json) => DashboardData(
     fleet: json['fleet'] as Json,
     trips: json['trips'] as Json,
@@ -186,5 +236,8 @@ final class DashboardData {
         .cast<Json>()
         .map(ActiveOperation.fromJson)
         .toList(),
+    operationalArea: json['operationalArea'] is Json
+        ? OperationalArea.fromJson(json['operationalArea'] as Json)
+        : null,
   );
 }

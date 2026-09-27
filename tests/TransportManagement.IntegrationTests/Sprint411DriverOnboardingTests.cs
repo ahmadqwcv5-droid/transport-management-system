@@ -37,7 +37,7 @@ public sealed class Sprint411DriverOnboardingTests(ApiFactory factory) : IClassF
             factory, $"onboarded-{suffix}@example.test", password!);
         var workspace = await driver.GetJsonAsync<JsonElement>(
             "/api/driver/my-trip/workspace");
-        Assert.Equal("NO_ACTIVE_TRIP", workspace.GetProperty("state").GetString());
+        Assert.Equal("NO_VEHICLE_ASSIGNED", workspace.GetProperty("state").GetString());
 
         var duplicate = await owner.PostJsonAsync("/api/company-users/drivers", new
         {

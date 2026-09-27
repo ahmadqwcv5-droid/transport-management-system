@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
+import '../../../core/maps/vehicle_motion_interpolator.dart';
 import 'fleet_map_coordinator.dart';
 import 'circular_marker_image.dart';
 
@@ -75,14 +78,20 @@ final class MapLibreFleetAnnotationAdapter
     this.thumbnailLoader, {
     CircularMarkerImageProcessor markerProcessor =
         const CircularMarkerImageProcessor(),
+    this.telemetry,
   }) : _markerProcessor = markerProcessor;
 
   final MapLibreMapController controller;
   final AuthenticatedThumbnailLoader thumbnailLoader;
   final CircularMarkerImageProcessor _markerProcessor;
   final Map<String, Symbol> _trucks = {};
+  final MapOperationTelemetry? telemetry;
   final Map<String, Circle> _statuses = {};
   final Map<String, Circle> _stops = {};
+  final Map<String, VehicleMotionInterpolator> _motions = {};
+  final Map<String, TruckMarkerModel> _targets = {};
+  final Map<String, int> _animationRevisions = {};
+  final Set<String> _animating = {};
   Line? _plannedRoute;
   static const _approachSourceId = 'tms-approach-route-source';
   static const _approachLayerId = 'tms-approach-route-layer';
@@ -99,6 +108,10 @@ final class MapLibreFleetAnnotationAdapter
     _plannedRoute = null;
     _approachRouteAdded = false;
     _trails.clear();
+    _motions.clear();
+    _targets.clear();
+    _animationRevisions.clear();
+    _animating.clear();
     _registeredPhotoImages.clear();
     _failedPhotoImages.clear();
 
@@ -130,6 +143,15 @@ final class MapLibreFleetAnnotationAdapter
   @override
   Future<void> addTruck(TruckMarkerModel truck) async {
     final photoReady = await _ensurePhoto(truck);
+    final motion = VehicleMotionInterpolator();
+    motion.retarget(
+      target: _visualState(truck),
+      now: DateTime.now(),
+      animate: false,
+    );
+    _motions[truck.id] = motion;
+    _targets[truck.id] = truck;
+    _animationRevisions[truck.id] = motion.revision;
     _trucks[truck.id] = await controller.addSymbol(
       truckSymbolOptions(truck, forceFallback: !photoReady),
       <String, dynamic>{'truckId': truck.id},
@@ -141,10 +163,81 @@ final class MapLibreFleetAnnotationAdapter
     final photoReady = await _ensurePhoto(truck);
     final symbol = _trucks[truck.id];
     if (symbol == null) return addTruck(truck);
+    final previous = _targets[truck.id];
+    _targets[truck.id] = truck;
+    final motion = _motions.putIfAbsent(
+      truck.id,
+      VehicleMotionInterpolator.new,
+    );
+    final now = DateTime.now();
+    final sampleGap = previous?.recordedAt == null || truck.recordedAt == null
+        ? null
+        : truck.recordedAt!.difference(previous!.recordedAt!).abs();
+    final animate =
+        truck.state == TruckMarkerState.moving &&
+        previous != null &&
+        previous.state != TruckMarkerState.offline &&
+        previous.state != TruckMarkerState.maintenance;
+    final visual = motion.retarget(
+      target: _visualState(truck),
+      now: now,
+      sampleGap: sampleGap,
+      animate: animate,
+    );
+    final revision = motion.revision;
+    _animationRevisions[truck.id] = revision;
+    if (_animating.contains(truck.id)) {
+      telemetry?.interpolationCancellations++;
+    }
+    if (_sameVisual(visual, _visualState(truck))) {
+      _animating.remove(truck.id);
+      telemetry?.interpolationSnaps++;
+      await _updateVisual(truck, symbol, photoReady);
+      return;
+    }
+
+    telemetry?.interpolationStarts++;
+    _animating.add(truck.id);
+    unawaited(_animate(truck, symbol, photoReady, motion, revision));
+  }
+
+  Future<void> _animate(
+    TruckMarkerModel target,
+    Symbol symbol,
+    bool photoReady,
+    VehicleMotionInterpolator motion,
+    int revision,
+  ) async {
+    try {
+      while (_animationRevisions[target.id] == revision) {
+        final visual = motion.sample(DateTime.now());
+        if (visual == null) return;
+        await _updateVisual(_withVisual(target, visual), symbol, photoReady);
+        if (_sameVisual(visual, _visualState(target))) {
+          _animating.remove(target.id);
+          telemetry?.interpolationCompletions++;
+          return;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+    } on Object {
+      _animating.remove(target.id);
+    }
+  }
+
+  Future<void> _updateVisual(
+    TruckMarkerModel truck,
+    Symbol symbol,
+    bool photoReady,
+  ) async {
     await controller.updateSymbol(
       symbol,
       truckSymbolOptions(truck, forceFallback: !photoReady),
     );
+    final status = _statuses[truck.id];
+    if (status != null) {
+      await controller.updateCircle(status, truckStatusCircleOptions(truck));
+    }
   }
 
   Future<bool> _ensurePhoto(TruckMarkerModel truck) async {
@@ -167,6 +260,10 @@ final class MapLibreFleetAnnotationAdapter
 
   @override
   Future<void> removeTruck(String truckId) async {
+    _animationRevisions[truckId] = (_animationRevisions[truckId] ?? 0) + 1;
+    _animating.remove(truckId);
+    _motions.remove(truckId);
+    _targets.remove(truckId);
     final symbol = _trucks.remove(truckId);
     if (symbol != null) await controller.removeSymbol(symbol);
   }
@@ -306,8 +403,11 @@ final class MapLibreFleetAnnotationAdapter
   Future<void> animateCamera(FleetCameraPlan plan) async {
     if (plan.points.isEmpty) return;
     if (plan.mode == FleetCameraMode.localTruck || plan.points.length == 1) {
+      final target = _latLng(plan.points.first);
       await controller.animateCamera(
-        CameraUpdate.newLatLngZoom(_latLng(plan.points.first), 13.5),
+        plan.targetZoom == null
+            ? CameraUpdate.newLatLng(target)
+            : CameraUpdate.newLatLngZoom(target, plan.targetZoom!),
         duration: const Duration(milliseconds: 500),
       );
       return;
@@ -325,19 +425,46 @@ final class MapLibreFleetAnnotationAdapter
         longitudes.reduce((a, b) => a > b ? a : b),
       ),
     );
-    final horizontalPadding = 48 + plan.panelWidth;
+    final panelPadding = plan.panelWidth.abs();
+    final leftPadding = 48.0 + (plan.panelWidth < 0 ? panelPadding : 0.0);
+    final rightPadding = 48.0 + (plan.panelWidth > 0 ? panelPadding : 0.0);
     await controller.animateCamera(
       CameraUpdate.newLatLngBounds(
         bounds,
-        left: horizontalPadding,
+        left: leftPadding,
         top: 64,
-        right: horizontalPadding,
+        right: rightPadding,
         bottom: 64,
       ),
       duration: const Duration(milliseconds: 650),
     );
   }
 }
+
+VehicleVisualState _visualState(TruckMarkerModel truck) => VehicleVisualState(
+  latitude: truck.point.latitude,
+  longitude: truck.point.longitude,
+  heading: truck.heading,
+);
+
+bool _sameVisual(VehicleVisualState left, VehicleVisualState right) =>
+    (left.latitude - right.latitude).abs() < 0.0000001 &&
+    (left.longitude - right.longitude).abs() < 0.0000001 &&
+    (left.heading - right.heading).abs() < 0.0001;
+
+TruckMarkerModel _withVisual(
+  TruckMarkerModel source,
+  VehicleVisualState visual,
+) => TruckMarkerModel(
+  id: source.id,
+  point: MapPoint(visual.latitude, visual.longitude),
+  heading: visual.heading,
+  state: source.state,
+  selected: source.selected,
+  recordedAt: source.recordedAt,
+  photoVersion: source.photoVersion,
+  photoThumbnailUrl: source.photoThumbnailUrl,
+);
 
 Map<String, dynamic> _lineGeoJson(List<MapPoint> route) => {
   'type': 'FeatureCollection',

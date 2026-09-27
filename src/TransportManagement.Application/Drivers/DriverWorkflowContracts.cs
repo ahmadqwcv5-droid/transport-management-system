@@ -7,7 +7,7 @@ public sealed record DriverMyTripResponse(Guid DriverId, string DriverName,
 
 public sealed record DriverWorkspaceDriver(Guid Id, string FullName);
 public sealed record DriverWorkspaceTruck(Guid Id, string PlateNumber, string? FleetCode,
-    string? PhotoVersion, string? PhotoThumbnailUrl);
+    string Status, string? PhotoVersion, string? PhotoThumbnailUrl);
 public sealed record DriverWorkspacePosition(decimal Latitude, decimal Longitude,
     decimal Speed, decimal Heading, DateTimeOffset RecordedAt, bool IsOnline);
 public sealed record DriverTruckSessionResponse(Guid Id, Guid TruckId, Guid LastTripId,

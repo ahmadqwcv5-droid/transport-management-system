@@ -93,7 +93,7 @@ void main() {
       expect(router.routeInformationProvider.value.uri.path, '/my-trip');
       expect(notifications.markReadCalls, 1);
       expect(driver.buildCalls, 1);
-      expect(find.text('No active trip is assigned to you'), findsOneWidget);
+      expect(find.text('No vehicle assigned'), findsOneWidget);
     },
   );
 }

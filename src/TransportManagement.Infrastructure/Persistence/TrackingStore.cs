@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Domain.Tracking;
 
@@ -8,20 +9,31 @@ internal sealed class TrackingStore(AppDbContext dbContext) : ITrackingStore
 {
     public async Task<IReadOnlyList<TruckPosition>> LatestPositionsAsync(CancellationToken cancellationToken)
     {
-        var latestTimes = dbContext.TruckPositions
-            .GroupBy(position => position.TruckId)
-            .Select(group => new { TruckId = group.Key, RecordedAt = group.Max(x => x.RecordedAt) });
-        return await dbContext.TruckPositions.AsNoTracking()
-            .Join(latestTimes,
-                position => new { position.TruckId, position.RecordedAt },
-                latest => new { latest.TruckId, latest.RecordedAt },
-                (position, _) => position)
+        var projected = await dbContext.TruckCurrentPositions.AsNoTracking()
+            .Join(dbContext.TruckPositions.AsNoTracking(), current => current.PositionId,
+                position => position.Id, (_, position) => position)
             .ToListAsync(cancellationToken);
+        var projectedTruckIds = projected.Select(x => x.TruckId).ToHashSet();
+        var legacy = await dbContext.TruckPositions.AsNoTracking()
+            .Where(x => !projectedTruckIds.Contains(x.TruckId))
+            .ToListAsync(cancellationToken);
+        return projected.Concat(legacy.GroupBy(x => x.TruckId)
+            .Select(group => group.OrderByDescending(x => x.RecordedAt)
+                .ThenByDescending(x => x.Id).First())).ToArray();
     }
 
-    public Task<TruckPosition?> LatestPositionAsync(Guid truckId, CancellationToken cancellationToken) =>
-        dbContext.TruckPositions.AsNoTracking().Where(x => x.TruckId == truckId)
-            .OrderByDescending(x => x.RecordedAt).FirstOrDefaultAsync(cancellationToken);
+    public async Task<TruckPosition?> LatestPositionAsync(
+        Guid truckId, CancellationToken cancellationToken)
+    {
+        var projected = await dbContext.TruckCurrentPositions.AsNoTracking()
+            .Where(x => x.TruckId == truckId)
+            .Join(dbContext.TruckPositions.AsNoTracking(), current => current.PositionId,
+                position => position.Id, (_, position) => position)
+            .SingleOrDefaultAsync(cancellationToken);
+        return projected ?? await dbContext.TruckPositions.AsNoTracking()
+            .Where(x => x.TruckId == truckId).OrderByDescending(x => x.RecordedAt)
+            .ThenByDescending(x => x.Id).FirstOrDefaultAsync(cancellationToken);
+    }
 
     public Task<TruckPosition?> LatestTripPositionAsync(
         Guid tripId, Guid truckId, CancellationToken cancellationToken) =>
@@ -63,6 +75,60 @@ internal sealed class TrackingStore(AppDbContext dbContext) : ITrackingStore
         dbContext.TruckPositions.AsNoTracking()
             .AnyAsync(x => x.TripId == tripId, cancellationToken);
 
-    public void AddPositions(IEnumerable<TruckPosition> positions) => dbContext.TruckPositions.AddRange(positions);
+    public async Task<PositionIngestionOutcome> IngestAsync(
+        TruckPosition position, DateTimeOffset projectedAt,
+        CancellationToken cancellationToken)
+    {
+        if (position.CompanyId != dbContext.CurrentCompanyId)
+            throw new InvalidOperationException("Cannot ingest another tenant's position.");
+        await using var transaction = dbContext.Database.IsRelational()
+            ? await dbContext.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable, cancellationToken) : null;
+        var current = await dbContext.TruckCurrentPositions
+            .SingleOrDefaultAsync(x => x.TruckId == position.TruckId, cancellationToken);
+        TruckPosition? previous = null;
+        if (current is not null)
+            previous = await dbContext.TruckPositions.AsNoTracking()
+                .SingleAsync(x => x.Id == current.PositionId, cancellationToken);
+
+        if (previous is not null && SamePacket(previous, position))
+        {
+            if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+            return PositionIngestionOutcome.DuplicateIgnored;
+        }
+
+        dbContext.TruckPositions.Add(position);
+        PositionIngestionOutcome outcome;
+        if (previous is null || position.RecordedAt > previous.RecordedAt)
+        {
+            if (current is null)
+                dbContext.TruckCurrentPositions.Add(new TruckCurrentPosition(
+                    position.CompanyId, position, projectedAt));
+            else
+                current.Advance(position, projectedAt);
+            outcome = PositionIngestionOutcome.AcceptedCurrent;
+        }
+        else
+            outcome = position.RecordedAt < previous.RecordedAt
+                ? PositionIngestionOutcome.StoredOlderHistory
+                : PositionIngestionOutcome.StoredEqualConflict;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+        return outcome;
+    }
+
+    private static bool SamePacket(TruckPosition left, TruckPosition right) =>
+        left.TruckId == right.TruckId
+        && left.TrackingRunId == right.TrackingRunId
+        && left.RecordedAt == right.RecordedAt
+        && left.Latitude == right.Latitude && left.Longitude == right.Longitude
+        && left.Speed == right.Speed && left.Heading == right.Heading
+        && left.IsOnline == right.IsOnline
+        && left.TripId == right.TripId && left.RoutePlanId == right.RoutePlanId
+        && left.RepositioningPlanId == right.RepositioningPlanId
+        && left.MovementPhase == right.MovementPhase
+        && string.Equals(left.Source, right.Source, StringComparison.Ordinal);
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken) => await dbContext.SaveChangesAsync(cancellationToken);
 }

@@ -9,6 +9,8 @@ public interface IFleetStore
     Task<IReadOnlyList<Truck>> ListTrucksAsync(
         TruckStatus? status, bool? isActive, string? search, TruckType? type,
         CancellationToken cancellationToken);
+    Task<IReadOnlyList<Truck>> ListActiveDefaultTrucksForDriverAsync(
+        Guid driverId, CancellationToken cancellationToken);
     Task<bool> PlateExistsAsync(string plateNumber, Guid? excludingId, CancellationToken cancellationToken);
     Task<bool> VinExistsAsync(string vin, Guid? excludingId, CancellationToken cancellationToken);
     Task<bool> FleetCodeExistsAsync(string fleetCode, Guid? excludingId, CancellationToken cancellationToken);

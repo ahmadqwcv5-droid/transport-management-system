@@ -30,11 +30,22 @@ class DriverMyTripScreen extends ConsumerWidget {
                   .refresh,
             );
           }
-          if (workspace.state == 'NO_ACTIVE_TRIP') {
+          if (workspace.state == 'VEHICLE_ASSIGNMENT_AMBIGUOUS') {
             return _WorkspaceEmptyState(
-              icon: Icons.route_outlined,
-              title: context.l10n.noAssignedTrip,
-              message: context.l10n.noAssignedTripExplanation,
+              icon: Icons.warning_amber_rounded,
+              title: context.l10n.vehicleAssignmentAmbiguous,
+              message: context.l10n.vehicleAssignmentAmbiguousExplanation,
+              onRefresh: ref
+                  .read(driverTripControllerProvider.notifier)
+                  .refresh,
+            );
+          }
+          if (workspace.state == 'NO_ACTIVE_TRIP' ||
+              workspace.state == 'NO_VEHICLE_ASSIGNED') {
+            return _WorkspaceEmptyState(
+              icon: Icons.local_shipping_outlined,
+              title: context.l10n.noVehicleAssigned,
+              message: context.l10n.noVehicleAssignedExplanation,
               onRefresh: ref
                   .read(driverTripControllerProvider.notifier)
                   .refresh,
@@ -86,7 +97,9 @@ class DriverMyTripScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _WorkspaceCard(workspace: workspace),
+                workspace.currentTrip == null
+                    ? _IdleVehicleCard(workspace: workspace)
+                    : _WorkspaceCard(workspace: workspace),
                 const SizedBox(height: 16),
                 if (workspace.allowedActions.contains(
                   'confirm-loaded-and-depart',
@@ -278,6 +291,89 @@ class _DeparturePanel extends StatelessWidget {
     );
     if (confirmed == true) await onConfirm();
   }
+}
+
+class _IdleVehicleCard extends StatelessWidget {
+  const _IdleVehicleCard({required this.workspace});
+  final DriverWorkspace workspace;
+
+  @override
+  Widget build(BuildContext context) {
+    final truck = workspace.truck!;
+    final position = workspace.currentPosition;
+    final updated = DateTime.tryParse(position?.recordedAt ?? '')?.toLocal();
+    final ageSeconds = updated == null
+        ? null
+        : DateTime.now().difference(updated).inSeconds.clamp(0, 8640000);
+    final tracking = switch (workspace.trackingState) {
+      'Offline' => context.l10n.trackingOffline,
+      'Stale' => context.l10n.trackingStale,
+      'Current' => context.l10n.trackingCurrent,
+      _ => context.l10n.trackingNotStarted,
+    };
+    return Card(
+      key: const Key('driver-idle-vehicle-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                TruckAvatar(
+                  photoUrl: truck.photoThumbnailUrl,
+                  photoVersion: truck.photoVersion,
+                  radius: 26,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '${truck.plateNumber}${truck.fleetCode == null ? '' : ' · ${truck.fleetCode}'}',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                Chip(label: Text(tracking)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(context.l10n.noAssignedTripExplanation),
+            const Divider(),
+            _InfoRow(
+              context.l10n.driver,
+              workspace.driverName ?? context.l10n.notAvailable,
+            ),
+            _InfoRow(
+              context.l10n.status,
+              localizedStatus(context.l10n, truck.status),
+            ),
+            _InfoRow(
+              context.l10n.lastPositionUpdate,
+              updated == null
+                  ? context.l10n.notAvailable
+                  : '${_localizedDateTime(context, updated)} · '
+                        '${context.l10n.locationAgeSeconds(ageSeconds!)}',
+            ),
+            if (position != null) ...[
+              _InfoRow(
+                context.l10n.speed,
+                '${position.speed.toStringAsFixed(1)} km/h',
+              ),
+              _InfoRow(
+                context.l10n.heading,
+                '${position.heading.toStringAsFixed(0)}°',
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _localizedDateTime(BuildContext context, DateTime value) {
+  final localizations = MaterialLocalizations.of(context);
+  return '${localizations.formatShortDate(value)} '
+      '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(value))}';
 }
 
 class _WorkspaceCard extends StatelessWidget {

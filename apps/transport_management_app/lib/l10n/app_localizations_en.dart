@@ -1864,4 +1864,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String notificationCargo(String value) {
     return 'Cargo: $value';
   }
+
+  @override
+  String get operationalArea => 'Operational country / area';
+
+  @override
+  String get operationalAreaDescription =>
+      'Sets the default fleet overview. Trucks outside the area remain visible.';
+
+  @override
+  String get noOperationalArea =>
+      'Not configured. The map uses connected trucks or the regional fallback.';
+
+  @override
+  String get configureOperationalArea => 'Configure area';
+
+  @override
+  String get clearOperationalArea => 'Clear area';
+
+  @override
+  String get operationalAreaSaved => 'Operational area saved.';
+
+  @override
+  String get countryCode => 'ISO country code';
+
+  @override
+  String get countryCodeHint => 'Two letters, for example TR or SY';
+
+  @override
+  String get selectAreaWithBounds =>
+      'Enter a valid two-letter country code and select a search result with geographic bounds.';
+
+  @override
+  String get fleetOverview => 'Fleet overview';
+
+  @override
+  String trucksOutsideOperationalArea(int count) {
+    return '$count truck(s) outside the operational area';
+  }
+
+  @override
+  String get noVehicleAssigned => 'No vehicle assigned';
+
+  @override
+  String get noVehicleAssignedExplanation =>
+      'Ask the Owner to link one active truck to your Driver profile.';
+
+  @override
+  String get vehicleAssignmentAmbiguous => 'Vehicle assignment needs attention';
+
+  @override
+  String get vehicleAssignmentAmbiguousExplanation =>
+      'More than one truck is linked to your Driver profile. Ask the Owner to keep one default truck.';
+
+  @override
+  String get heading => 'Heading';
 }

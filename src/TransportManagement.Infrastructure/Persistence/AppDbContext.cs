@@ -15,6 +15,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurren
 {
     public Guid CurrentCompanyId => currentUser.CompanyId;
     public DbSet<Company> Companies => Set<Company>();
+    public DbSet<CompanyMapPreference> CompanyMapPreferences => Set<CompanyMapPreference>();
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<CompanyUserEvent> CompanyUserEvents => Set<CompanyUserEvent>();
@@ -33,6 +34,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurren
     public DbSet<TripEvent> TripEvents => Set<TripEvent>();
     public DbSet<TripNumberCounter> TripNumberCounters => Set<TripNumberCounter>();
     public DbSet<TruckPosition> TruckPositions => Set<TruckPosition>();
+    public DbSet<TruckCurrentPosition> TruckCurrentPositions => Set<TruckCurrentPosition>();
     public DbSet<TripGeofenceObservation> TripGeofenceObservations => Set<TripGeofenceObservation>();
     public DbSet<OperationNotification> OperationNotifications => Set<OperationNotification>();
     public DbSet<TruckPhoto> TruckPhotos => Set<TruckPhoto>();

@@ -738,3 +738,62 @@ active-status filters, search, count, deterministic attention ordering, and the
 candidate bound execute in PostgreSQL with no tracking; fixed follow-up queries
 hydrate only the bounded result set. Application code derives presentation and
 attention state without loading complete tenant tables or issuing per-row reads.
+
+## ADR-032: Tenant map context and monotonic live tracking
+
+**Status:** Accepted
+
+A company may own one optional `CompanyMapPreference`. It stores validated
+ISO alpha-2 code, language-neutral display-label snapshot, south/west/north/east
+bounds, optional center/zoom, update actor, and timestamps. Owner-only commands
+save or clear it through the current-company route; all reads remain tenant
+filtered. Existing companies stay unconfigured. Fleet overview begins with the
+saved area, expands for connected out-of-area trucks, uses directional panel
+padding, and otherwise falls back to connected-fleet bounds or configurable
+regional `MAP_FALLBACK_*` values. Bounds crossing the antimeridian are rejected
+until a dedicated wrapped-bounds model exists.
+
+The client caches a transformed style per URL and locale. Name-bearing symbol
+layers use a single-script fallback expression instead of Liberty's
+mixed-direction concatenation. Arabic prefers `name:ar`, `name:nonlatin`,
+`name`, `name:latin`, then `name_en`; English prefers `name:latin`,
+`name_en`, `name`, then `name:nonlatin`. Sources, sprite, glyphs, fonts,
+and attribution are preserved. In the verified MapLibre GL JS 6.4.1 Firefox
+runtime, built-in shaping remained in `requested` state and the real canvas
+still reversed Arabic. Web therefore installs the pinned local
+`@mapbox/mapbox-gl-rtl-text` 0.3.0 compatibility asset before Flutter startup.
+The repository includes its BSD-2-Clause license. Manual text reversal remains
+forbidden.
+
+Owner and Driver maps use one platform-neutral interaction policy:
+`fleetOverview`, `followVehicle`, `freeExplore`, and `routeOverview`.
+MapLibre camera callbacks classify zoom separately from center/bearing/tilt
+exploration because Web platform views may consume outer Flutter pointer events.
+Programmatic movement is guarded. Wheel/pinch preserves follow and zoom;
+deliberate exploration pauses follow; stationary heartbeat timestamps do not
+start recenter animations. Explicit resume, fleet overview, and route overview
+are the only corresponding camera transitions.
+
+Visual movement is a latest-wins client projection. The interpolator derives a
+bounded duration from reported cadence, retargets from the current visual point,
+uses shortest-arc heading, and snaps large jumps. Offline/stale state stops
+animation. Visual frames never enter persistence, audit, history, geofences,
+notifications, speed, ETA, or progress.
+
+Immutable `truck_positions` remain the history source. The one-row-per-truck
+`truck_current_positions` projection points to the accepted current packet.
+A serializable transaction ignores an exact duplicate, stores older and
+conflicting equal-timestamp packets without advancing current, and advances
+only when `RecordedAt` is strictly newer. Tracking-run identity is preserved
+but does not override chronology; resets produce explicit new runs with newer
+timestamps. Cross-tenant ingestion fails before storage. Migration
+`20260927071807_Sprint422MapOperationsChronology` additively creates the
+preference/projection tables and deterministically backfills timestamp then
+packet ID. Rollback drops only those new tables.
+
+Driver workspace vehicle resolution is ordered: active trip, active vehicle
+session, exactly one active default-linked truck, then no vehicle. Multiple
+default-linked trucks return a language-neutral ambiguity state and log the
+invariant violation; no arbitrary first row is selected. Idle and post-trip
+states expose only the resolved truck's authorized photo and tracking context
+and never fabricate trip route, ETA, progress, or actions.

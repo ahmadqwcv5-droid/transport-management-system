@@ -18,6 +18,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services) => services
         .AddScoped<AuthService>()
         .AddScoped<CompanyService>()
+        .AddScoped<CompanyMapPreferenceService>()
         .AddScoped<ClientService>()
         .AddScoped<TruckService>()
         .AddScoped<DriverService>()

@@ -16,8 +16,6 @@ enum FleetCameraRequest {
 
 enum FleetCameraMode { localTruck, fleetBounds, routeBounds }
 
-enum FleetInteractionMode { free, followSelectedTruck, routeOverview }
-
 final class MapPoint {
   const MapPoint(this.latitude, this.longitude);
 
@@ -41,6 +39,7 @@ final class TruckMarkerModel {
     required this.heading,
     required this.state,
     required this.selected,
+    this.recordedAt,
     this.photoVersion,
     this.photoThumbnailUrl,
   });
@@ -50,6 +49,7 @@ final class TruckMarkerModel {
   final double heading;
   final TruckMarkerState state;
   final bool selected;
+  final DateTime? recordedAt;
   final String? photoVersion, photoThumbnailUrl;
   String? get photoImageName => photoVersion == null
       ? null
@@ -77,6 +77,7 @@ final class TruckMarkerModel {
       other.heading == heading &&
       other.state == state &&
       other.selected == selected &&
+      other.recordedAt == recordedAt &&
       other.photoVersion == photoVersion &&
       other.photoThumbnailUrl == photoThumbnailUrl;
 
@@ -87,6 +88,7 @@ final class TruckMarkerModel {
     heading,
     state,
     selected,
+    recordedAt,
     photoVersion,
     photoThumbnailUrl,
   );
@@ -122,11 +124,13 @@ final class FleetMapSnapshot {
     required Iterable<TruckMarkerModel> trucks,
     this.selectedTruckId,
     this.route,
+    this.overviewPoints = const [],
   }) : trucks = {for (final truck in trucks) truck.id: truck};
 
   final Map<String, TruckMarkerModel> trucks;
   final String? selectedTruckId;
   final RouteOverlayModel? route;
+  final List<MapPoint> overviewPoints;
 }
 
 final class FleetCameraPlan {
@@ -134,11 +138,13 @@ final class FleetCameraPlan {
     required this.mode,
     required this.points,
     this.panelWidth = 0,
+    this.targetZoom,
   });
 
   final FleetCameraMode mode;
   final List<MapPoint> points;
   final double panelWidth;
+  final double? targetZoom;
 }
 
 final class MapOperationTelemetry {
@@ -172,6 +178,10 @@ final class MapOperationTelemetry {
   int cameraMovesCausedByPolling = 0;
   int initialCameraMoves = 0;
   int explicitCameraMoves = 0;
+  int interpolationStarts = 0;
+  int interpolationCompletions = 0;
+  int interpolationCancellations = 0;
+  int interpolationSnaps = 0;
 
   Map<String, int> toJson() => {
     'mapInstancesCreated': mapInstancesCreated,
@@ -204,6 +214,10 @@ final class MapOperationTelemetry {
     'cameraMovesCausedByPolling': cameraMovesCausedByPolling,
     'initialCameraMoves': initialCameraMoves,
     'explicitCameraMoves': explicitCameraMoves,
+    'interpolationStarts': interpolationStarts,
+    'interpolationCompletions': interpolationCompletions,
+    'interpolationCancellations': interpolationCancellations,
+    'interpolationSnaps': interpolationSnaps,
   };
 }
 
@@ -248,6 +262,7 @@ final class FleetMapAnnotationCoordinator {
   Future<void> onStyleLoaded(
     FleetMapSnapshot snapshot, {
     double panelWidth = 0,
+    FleetCameraRequest cameraRequest = FleetCameraRequest.initialFleet,
   }) async {
     if (_disposed) return;
     final generation = ++_styleGeneration;
@@ -267,7 +282,7 @@ final class FleetMapAnnotationCoordinator {
     telemetry.imageRegistrations++;
     await synchronize(
       snapshot,
-      cameraRequest: FleetCameraRequest.initialFleet,
+      cameraRequest: cameraRequest,
       panelWidth: panelWidth,
     );
   }
@@ -478,18 +493,25 @@ final class FleetMapAnnotationCoordinator {
           mode: FleetCameraMode.localTruck,
           points: [truck.point],
           panelWidth: request.panelWidth,
+          targetZoom: request.cameraRequest == FleetCameraRequest.selection
+              ? 13.5
+              : null,
         );
       }
-    } else if (snapshot.trucks.isNotEmpty) {
-      final points = snapshot.trucks.values
-          .map((truck) => truck.point)
-          .toList();
+    } else {
+      final points =
+          request.cameraRequest == FleetCameraRequest.initialFleet &&
+              snapshot.overviewPoints.isNotEmpty
+          ? snapshot.overviewPoints
+          : snapshot.trucks.values.map((truck) => truck.point).toList();
+      if (points.isEmpty) return;
       plan = FleetCameraPlan(
         mode: points.length == 1
             ? FleetCameraMode.localTruck
             : FleetCameraMode.fleetBounds,
         points: points,
         panelWidth: request.panelWidth,
+        targetZoom: points.length == 1 ? 6 : null,
       );
     }
     if (plan == null) return;

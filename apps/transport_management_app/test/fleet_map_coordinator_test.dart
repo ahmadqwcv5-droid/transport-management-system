@@ -148,27 +148,34 @@ void main() {
     });
   });
 
-  testWidgets('pointer down and wheel report manual map intent first', (
+  testWidgets('single pointer pan and wheel report distinct map intent', (
     tester,
   ) async {
-    var interactions = 0;
+    var pans = 0;
+    var zooms = 0;
     await tester.pumpWidget(
       MaterialApp(
         home: ManualMapInteractionListener(
-          onInteraction: () => interactions++,
+          onPan: () => pans++,
+          onZoom: () => zooms++,
           child: const SizedBox(width: 300, height: 300),
         ),
       ),
     );
-    await tester.tapAt(tester.getCenter(find.byType(SizedBox)));
-    expect(interactions, 1);
 
     final center = tester.getCenter(find.byType(SizedBox));
+    final gesture = await tester.startGesture(center);
+    await gesture.moveBy(const Offset(20, 0));
+    await gesture.up();
+    expect(pans, 1);
+    expect(zooms, 0);
+
     tester.binding.handlePointerEvent(
       PointerScrollEvent(position: center, scrollDelta: const Offset(0, 20)),
     );
     await tester.pump();
-    expect(interactions, 2);
+    expect(pans, 1);
+    expect(zooms, 1);
   });
 
   group('incremental annotation lifecycle', () {
@@ -397,6 +404,25 @@ void main() {
     });
 
     test(
+      'initial and explicit fleet overview use operational bounds',
+      () async {
+        final adapter = FakeFleetMapAdapter();
+        final coordinator = FleetMapAnnotationCoordinator(adapter);
+        final overview = const [
+          MapPoint(35, 25),
+          MapPoint(43, 45),
+          MapPoint(44, 46),
+        ];
+        final snapshot = fleetSnapshot([
+          truck('one'),
+        ], overviewPoints: overview);
+        await coordinator.onStyleLoaded(snapshot);
+        expect(adapter.cameraPlans.single.mode, FleetCameraMode.fleetBounds);
+        expect(adapter.cameraPlans.single.points, overview);
+      },
+    );
+
+    test(
       'selection follows locally and route overview fits exactly on request',
       () async {
         final adapter = FakeFleetMapAdapter();
@@ -575,10 +601,12 @@ FleetMapSnapshot fleetSnapshot(
   List<TruckMarkerModel> trucks, {
   String? selectedTruckId,
   RouteOverlayModel? route,
+  List<MapPoint> overviewPoints = const [],
 }) => FleetMapSnapshot(
   trucks: trucks,
   selectedTruckId: selectedTruckId,
   route: route,
+  overviewPoints: overviewPoints,
 );
 
 RouteOverlayModel route({

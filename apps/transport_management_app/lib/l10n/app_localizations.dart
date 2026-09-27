@@ -3541,6 +3541,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cargo: {value}'**
   String notificationCargo(String value);
+
+  /// No description provided for @operationalArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Operational country / area'**
+  String get operationalArea;
+
+  /// No description provided for @operationalAreaDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the default fleet overview. Trucks outside the area remain visible.'**
+  String get operationalAreaDescription;
+
+  /// No description provided for @noOperationalArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Not configured. The map uses connected trucks or the regional fallback.'**
+  String get noOperationalArea;
+
+  /// No description provided for @configureOperationalArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure area'**
+  String get configureOperationalArea;
+
+  /// No description provided for @clearOperationalArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear area'**
+  String get clearOperationalArea;
+
+  /// No description provided for @operationalAreaSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Operational area saved.'**
+  String get operationalAreaSaved;
+
+  /// No description provided for @countryCode.
+  ///
+  /// In en, this message translates to:
+  /// **'ISO country code'**
+  String get countryCode;
+
+  /// No description provided for @countryCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Two letters, for example TR or SY'**
+  String get countryCodeHint;
+
+  /// No description provided for @selectAreaWithBounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid two-letter country code and select a search result with geographic bounds.'**
+  String get selectAreaWithBounds;
+
+  /// No description provided for @fleetOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet overview'**
+  String get fleetOverview;
+
+  /// No description provided for @trucksOutsideOperationalArea.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} truck(s) outside the operational area'**
+  String trucksOutsideOperationalArea(int count);
+
+  /// No description provided for @noVehicleAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'No vehicle assigned'**
+  String get noVehicleAssigned;
+
+  /// No description provided for @noVehicleAssignedExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the Owner to link one active truck to your Driver profile.'**
+  String get noVehicleAssignedExplanation;
+
+  /// No description provided for @vehicleAssignmentAmbiguous.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle assignment needs attention'**
+  String get vehicleAssignmentAmbiguous;
+
+  /// No description provided for @vehicleAssignmentAmbiguousExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'More than one truck is linked to your Driver profile. Ask the Owner to keep one default truck.'**
+  String get vehicleAssignmentAmbiguousExplanation;
+
+  /// No description provided for @heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading'**
+  String get heading;
 }
 
 class _AppLocalizationsDelegate

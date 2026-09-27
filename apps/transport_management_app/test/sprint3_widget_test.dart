@@ -152,6 +152,11 @@ void main() {
       localized(const SettingsScreen(), const Locale('en'), fakeAuth: fake),
     );
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('language-selector')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.byKey(const Key('language-selector')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('العربية').last);

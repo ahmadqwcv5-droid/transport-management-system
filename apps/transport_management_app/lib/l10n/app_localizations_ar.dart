@@ -1851,4 +1851,59 @@ class AppLocalizationsAr extends AppLocalizations {
   String notificationCargo(String value) {
     return 'الحمولة: $value';
   }
+
+  @override
+  String get operationalArea => 'بلد / منطقة التشغيل';
+
+  @override
+  String get operationalAreaDescription =>
+      'تحدد عرض الأسطول الافتراضي، مع إبقاء الشاحنات خارج المنطقة ظاهرة.';
+
+  @override
+  String get noOperationalArea =>
+      'غير مضبوطة. تستخدم الخريطة الشاحنات المتصلة أو المنطقة الاحتياطية.';
+
+  @override
+  String get configureOperationalArea => 'ضبط المنطقة';
+
+  @override
+  String get clearOperationalArea => 'مسح المنطقة';
+
+  @override
+  String get operationalAreaSaved => 'تم حفظ منطقة التشغيل.';
+
+  @override
+  String get countryCode => 'رمز البلد ISO';
+
+  @override
+  String get countryCodeHint => 'حرفان، مثل TR أو SY';
+
+  @override
+  String get selectAreaWithBounds =>
+      'أدخل رمز بلد صحيحاً من حرفين واختر نتيجة بحث ذات حدود جغرافية.';
+
+  @override
+  String get fleetOverview => 'عرض الأسطول';
+
+  @override
+  String trucksOutsideOperationalArea(int count) {
+    return 'عدد الشاحنات خارج منطقة التشغيل: $count';
+  }
+
+  @override
+  String get noVehicleAssigned => 'لا توجد مركبة مسندة';
+
+  @override
+  String get noVehicleAssignedExplanation =>
+      'اطلب من المالك ربط شاحنة نشطة واحدة بملف السائق الخاص بك.';
+
+  @override
+  String get vehicleAssignmentAmbiguous => 'إسناد المركبة يحتاج إلى مراجعة';
+
+  @override
+  String get vehicleAssignmentAmbiguousExplanation =>
+      'ترتبط أكثر من شاحنة بملف السائق. اطلب من المالك إبقاء شاحنة افتراضية واحدة.';
+
+  @override
+  String get heading => 'الاتجاه';
 }

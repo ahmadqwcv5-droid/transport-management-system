@@ -1,4 +1,5 @@
 using TransportManagement.Application.Abstractions;
+using TransportManagement.Application.Companies;
 using TransportManagement.Application.Tracking;
 using TransportManagement.Domain.Fleet;
 using TransportManagement.Domain.Trips;
@@ -10,6 +11,7 @@ public sealed class DashboardService(
     ITripQueryStore tripStore,
     TrackingService trackingService,
     ActiveOperationsService activeOperations,
+    CompanyMapPreferenceService mapPreferences,
     IClock clock)
 {
     public async Task<DashboardResponse> GetAsync(CancellationToken cancellationToken)
@@ -19,6 +21,7 @@ public sealed class DashboardService(
         var positions = await trackingService.CurrentAsync(cancellationToken);
         var simulatorTrucks = await trackingService.SimulatorInventoryAsync(false, cancellationToken);
         var operational = await activeOperations.QueryAsync(new(8), cancellationToken);
+        var operationalArea = await mapPreferences.GetAsync(cancellationToken);
         var activeStatuses = new[] { TripStatus.Assigned, TripStatus.EnRouteToPickup,
             TripStatus.AtPickup, TripStatus.Started, TripStatus.InTransit,
             TripStatus.AtDelivery, TripStatus.Delivered };
@@ -40,6 +43,7 @@ public sealed class DashboardService(
             trips.OrderByDescending(x => x.UpdatedAt).Take(8)
                 .Select(x => new RecentTripResponse(x.Id, x.TripNumber, x.Origin,
                     x.Destination, x.Status.ToString(), x.PlannedStartAt)).ToArray(),
-            operational.Items);
+            operational.Items,
+            operationalArea);
     }
 }

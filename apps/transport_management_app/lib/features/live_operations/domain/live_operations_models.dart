@@ -65,17 +65,20 @@ final class DriverWorkspaceTruck {
     required this.id,
     required this.plateNumber,
     this.fleetCode,
+    this.status = 'Unavailable',
     this.photoVersion,
     this.photoThumbnailUrl,
   });
   final String id, plateNumber;
   final String? fleetCode, photoVersion, photoThumbnailUrl;
+  final String status;
   factory DriverWorkspaceTruck.fromJson(Json json) => DriverWorkspaceTruck(
     id: json['id'] as String,
     plateNumber: json['plateNumber'] as String,
     fleetCode: json['fleetCode'] as String?,
     photoVersion: json['photoVersion'] as String?,
     photoThumbnailUrl: json['photoThumbnailUrl'] as String?,
+    status: json['status'] as String? ?? 'Unavailable',
   );
 }
 

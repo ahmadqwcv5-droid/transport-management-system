@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
+import '../../../core/maps/locale_aware_map_style.dart';
+import '../../../core/maps/map_camera_movement_classifier.dart';
+import '../../../core/maps/map_interaction_controller.dart';
 import '../../../l10n/l10n_extensions.dart';
 import '../../../shared/widgets/truck_avatar.dart';
 import '../domain/dashboard_models.dart';
@@ -30,6 +33,7 @@ typedef FleetMapBuilder =
 class FleetMap extends ConsumerStatefulWidget {
   const FleetMap({
     required this.positions,
+    this.operationalArea,
     this.styleUrlOverride,
     this.loadingTimeoutOverride,
     this.mapBuilder,
@@ -42,8 +46,17 @@ class FleetMap extends ConsumerStatefulWidget {
     'MAP_LOADING_TIMEOUT_SECONDS',
     defaultValue: 12,
   );
+  static final double _fallbackLatitude =
+      double.tryParse(const String.fromEnvironment('MAP_FALLBACK_LATITUDE')) ??
+      20;
+  static final double _fallbackLongitude =
+      double.tryParse(const String.fromEnvironment('MAP_FALLBACK_LONGITUDE')) ??
+      0;
+  static final double _fallbackZoom =
+      double.tryParse(const String.fromEnvironment('MAP_FALLBACK_ZOOM')) ?? 2;
 
   final List<TrackedTruck> positions;
+  final OperationalArea? operationalArea;
   final String? styleUrlOverride;
   final Duration? loadingTimeoutOverride;
   final FleetMapBuilder? mapBuilder;
@@ -57,6 +70,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   late FleetMapMode _mode;
   Timer? _loadingTimer;
   int _attempt = 0;
+  int _rendererGeneration = 0;
   bool _onlineOnly = false;
   bool _movingOnly = false;
   bool _showTrail = true;
@@ -65,9 +79,12 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   bool _loadingDetail = false;
   int _cameraRevision = 0;
   FleetCameraRequest _cameraRequest = FleetCameraRequest.none;
-  FleetInteractionMode _cameraMode = FleetInteractionMode.free;
+  late final MapInteractionController _camera;
   ({TrackedTruck truck, bool fitCamera})? _pendingDetailRefresh;
   bool _detailRefreshRunning = false;
+  String? _resolvedStyle;
+  String? _styleLocale;
+  int _styleResolution = 0;
   bool _annotationWarning = false;
 
   List<TrackedTruck> get _visiblePositions => widget.positions.where((item) {
@@ -80,8 +97,20 @@ class _FleetMapState extends ConsumerState<FleetMap> {
       .where((item) => item.truckId == _selectedTruckId)
       .firstOrNull;
 
-  String get _styleUrl =>
+  int get _outsideAreaCount {
+    final area = widget.operationalArea;
+    if (area == null) return 0;
+    return widget.positions
+        .where(
+          (item) =>
+              item.isOnline && !area.contains(item.latitude, item.longitude),
+        )
+        .length;
+  }
+
+  String get _configuredStyle =>
       widget.styleUrlOverride ?? FleetMap.configuredStyleUrl;
+  String get _styleUrl => _resolvedStyle ?? _configuredStyle;
   Duration get _loadingTimeout =>
       widget.loadingTimeoutOverride ??
       Duration(
@@ -93,24 +122,55 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   @override
   void initState() {
     super.initState();
-    _mode = _styleUrl.trim().isEmpty
+    _camera = MapInteractionController();
+    _mode = _configuredStyle.trim().isEmpty
         ? FleetMapMode.unconfigured
         : FleetMapMode.loading;
     if (_mode == FleetMapMode.loading) _armTimeout();
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = Localizations.localeOf(context).languageCode;
+    if (_styleLocale == locale && _resolvedStyle != null) return;
+    _styleLocale = locale;
+    _resolveStyle(locale);
+  }
+
+  Future<void> _resolveStyle(String locale) async {
+    if (widget.mapBuilder != null || _configuredStyle.trim().isEmpty) {
+      _resolvedStyle = _configuredStyle;
+      return;
+    }
+    final generation = ++_styleResolution;
+    try {
+      final style = await LocaleAwareMapStyle.resolve(_configuredStyle, locale);
+      if (!mounted || generation != _styleResolution) return;
+      setState(() {
+        _resolvedStyle = style;
+        _attempt++;
+        _mode = FleetMapMode.loading;
+      });
+      _armTimeout();
+    } on Object catch (_) {
+      if (mounted && generation == _styleResolution) _onFailure(_attempt);
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant FleetMap oldWidget) {
     super.didUpdateWidget(oldWidget);
     final oldStyle = oldWidget.styleUrlOverride ?? FleetMap.configuredStyleUrl;
-    if (oldStyle != _styleUrl) {
-      if (_styleUrl.trim().isEmpty) {
+    if (oldStyle != _configuredStyle) {
+      _resolvedStyle = null;
+      if (_configuredStyle.trim().isEmpty) {
         _loadingTimer?.cancel();
         setState(() {
           _mode = FleetMapMode.unconfigured;
         });
       } else {
-        _retry();
+        _resolveStyle(_styleLocale ?? 'en');
       }
     }
     final selectedId = _selectedTruckId;
@@ -126,9 +186,12 @@ class _FleetMapState extends ConsumerState<FleetMap> {
               oldSelected?.currentTripId != currentSelected.currentTripId)) {
         _queueDetailRefresh(currentSelected, fitCamera: false);
       }
-      if (_cameraMode == FleetInteractionMode.followSelectedTruck &&
-          oldSelected?.recordedAt != currentSelected?.recordedAt &&
-          currentSelected != null) {
+      final selectedMoved =
+          oldSelected == null ||
+          currentSelected == null ||
+          oldSelected.latitude != currentSelected.latitude ||
+          oldSelected.longitude != currentSelected.longitude;
+      if (_camera.followsVehicle && selectedMoved && currentSelected != null) {
         setState(() {
           _cameraRevision++;
           _cameraRequest = FleetCameraRequest.recenter;
@@ -237,11 +300,25 @@ class _FleetMapState extends ConsumerState<FleetMap> {
 
   Widget _buildRealMap(BuildContext context) {
     final attempt = _attempt;
+    if (widget.mapBuilder == null && _resolvedStyle == null) {
+      return Center(
+        key: const Key('map-style-resolving'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 12),
+            Text(context.l10n.loadingMap),
+          ],
+        ),
+      );
+    }
     final map = widget.mapBuilder == null
         ? _productionMapBuilder(
-            key: ValueKey('maplibre-attempt-$_attempt'),
+            key: ValueKey('maplibre-renderer-$_rendererGeneration'),
             styleUrl: _styleUrl,
             positions: _visiblePositions,
+            operationalArea: widget.operationalArea,
             onStyleLoaded: () => _onStyleLoaded(attempt),
             onAnnotationsReady: () => _onAnnotationsReady(attempt),
             onFailure: () => _onFailure(attempt),
@@ -254,13 +331,14 @@ class _FleetMapState extends ConsumerState<FleetMap> {
             cameraRevision: _cameraRevision,
             cameraRequest: _cameraRequest,
             onManualCameraInteraction: _pauseFollow,
+            onManualCameraZoom: _camera.userZoom,
             thumbnailLoader: ref
                 .read(dashboardRepositoryProvider)
                 .authenticatedImage,
             telemetry: widget.telemetry,
           )
         : widget.mapBuilder!(
-            key: ValueKey('maplibre-attempt-$_attempt'),
+            key: ValueKey('maplibre-renderer-$_rendererGeneration'),
             styleUrl: _styleUrl,
             positions: _visiblePositions,
             onStyleLoaded: () => _onStyleLoaded(attempt),
@@ -357,7 +435,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
             child: Wrap(
               spacing: 8,
               children: [
-                if (_cameraMode != FleetInteractionMode.followSelectedTruck)
+                if (!_camera.followsVehicle)
                   FilledButton.tonalIcon(
                     key: const Key('map-resume-follow'),
                     onPressed: _recenter,
@@ -374,6 +452,33 @@ class _FleetMapState extends ConsumerState<FleetMap> {
               ],
             ),
           ),
+        if (_mode == FleetMapMode.loaded)
+          PositionedDirectional(
+            end: 12,
+            bottom: _selected == null ? 12 : 64,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (_outsideAreaCount > 0)
+                  Chip(
+                    key: const Key('trucks-outside-operational-area'),
+                    avatar: const Icon(Icons.public_off, size: 18),
+                    label: Text(
+                      context.l10n.trucksOutsideOperationalArea(
+                        _outsideAreaCount,
+                      ),
+                    ),
+                  ),
+                FloatingActionButton.small(
+                  key: const Key('fleet-overview'),
+                  heroTag: 'fleet-overview',
+                  tooltip: context.l10n.fleetOverview,
+                  onPressed: _showFleetOverview,
+                  child: const Icon(Icons.public),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -386,7 +491,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
       _loadingDetail = position.currentTripId != null;
       _cameraRevision++;
       _cameraRequest = FleetCameraRequest.selection;
-      _cameraMode = FleetInteractionMode.followSelectedTruck;
+      _camera.followVehicle();
     });
     if (position.currentTripId == null) return;
     _queueDetailRefresh(position, fitCamera: true);
@@ -448,7 +553,15 @@ class _FleetMapState extends ConsumerState<FleetMap> {
       _selectedTruckId = null;
       _tripDetail = null;
       _loadingDetail = false;
-      _cameraMode = FleetInteractionMode.free;
+      _camera.userPan();
+    });
+  }
+
+  void _showFleetOverview() {
+    setState(() {
+      _cameraRevision++;
+      _cameraRequest = FleetCameraRequest.initialFleet;
+      _camera.fleetOverview();
     });
   }
 
@@ -456,7 +569,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
     setState(() {
       _cameraRevision++;
       _cameraRequest = FleetCameraRequest.recenter;
-      _cameraMode = FleetInteractionMode.followSelectedTruck;
+      _camera.followVehicle();
     });
   }
 
@@ -464,13 +577,13 @@ class _FleetMapState extends ConsumerState<FleetMap> {
     setState(() {
       _cameraRevision++;
       _cameraRequest = FleetCameraRequest.routeOverview;
-      _cameraMode = FleetInteractionMode.routeOverview;
+      _camera.routeOverview();
     });
   }
 
   void _pauseFollow() {
-    if (_cameraMode == FleetInteractionMode.free) return;
-    setState(() => _cameraMode = FleetInteractionMode.free);
+    if (_camera.mode == FleetInteractionMode.freeExplore) return;
+    setState(_camera.userPan);
   }
 
   void _armTimeout() {
@@ -482,6 +595,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   void _retry() {
     _loadingTimer?.cancel();
     setState(() {
+      _rendererGeneration++;
       _attempt++;
       _mode = FleetMapMode.loading;
     });
@@ -537,6 +651,8 @@ Widget _productionMapBuilder({
   required Key key,
   required String styleUrl,
   required List<TrackedTruck> positions,
+  OperationalArea? operationalArea,
+  VoidCallback? onManualCameraZoom,
   required VoidCallback onStyleLoaded,
   required VoidCallback onAnnotationsReady,
   required VoidCallback onFailure,
@@ -555,7 +671,9 @@ Widget _productionMapBuilder({
   key: key,
   styleUrl: styleUrl,
   positions: positions,
+  operationalArea: operationalArea,
   onStyleLoaded: onStyleLoaded,
+  onManualCameraZoom: onManualCameraZoom,
   onAnnotationsReady: onAnnotationsReady,
   onFailure: onFailure,
   onAnnotationFailure: onAnnotationFailure,

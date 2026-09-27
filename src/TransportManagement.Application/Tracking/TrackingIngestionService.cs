@@ -31,17 +31,22 @@ public sealed class TrackingIngestionService(
         var targets = BuildTargets(trucks.Select(x => x.Id), trips, latestByTruck);
         var samples = provider.GetCurrent(currentUser.CompanyId, targets, clock.UtcNow);
         var targetsByTruck = targets.ToDictionary(x => x.TruckId);
-        var changed = samples
-            .Where(sample => targetsByTruck.ContainsKey(sample.TruckId))
-            .Where(sample => !latestByTruck.TryGetValue(sample.TruckId, out var previous)
-                || ShouldPersist(sample, targetsByTruck[sample.TruckId], previous))
-            .Select(sample => Position(sample, targetsByTruck[sample.TruckId]))
-            .ToArray();
-        if (changed.Length > 0)
+        var accepted = new List<TruckPosition>();
+        foreach (var sample in samples)
         {
-            trackingStore.AddPositions(changed);
-            await trackingStore.SaveChangesAsync(cancellationToken);
-            foreach (var position in changed.Where(x => x.TripId.HasValue))
+            if (!targetsByTruck.TryGetValue(sample.TruckId, out var target)) continue;
+            if (latestByTruck.TryGetValue(sample.TruckId, out var previous)
+                && !ShouldPersist(sample, target, previous)) continue;
+            var position = Position(sample, target);
+            var outcome = await trackingStore.IngestAsync(
+                position, clock.UtcNow, cancellationToken);
+            if (outcome != PositionIngestionOutcome.AcceptedCurrent) continue;
+            accepted.Add(position);
+            latestByTruck[position.TruckId] = position;
+        }
+        if (accepted.Count > 0)
+        {
+            foreach (var position in accepted.Where(x => x.TripId.HasValue))
                 await geofences.EvaluateAsync(position, cancellationToken);
             latest = await trackingStore.LatestPositionsAsync(cancellationToken);
         }

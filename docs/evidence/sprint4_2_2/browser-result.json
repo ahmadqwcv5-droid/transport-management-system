@@ -1,0 +1,48 @@
+{
+  "browser": "Firefox via GeckoDriver",
+  "independentProfiles": {
+    "owner": true,
+    "driver": true
+  },
+  "operationalArea": {
+    "configuredAndPersisted": true,
+    "englishPreviewCaptured": true,
+    "arabicPreviewCaptured": true,
+    "fleetOverviewCaptured": true,
+    "directionalPanelPaddingCorrected": true
+  },
+  "ownerCamera": {
+    "truckSelected": true,
+    "wheelZoomCount": 3,
+    "followPreservedAfterZoom": true,
+    "followPositionUpdates": 5,
+    "followPreservedAfterUpdates": true,
+    "panExposedResumeFollow": true,
+    "freeModePositionUpdates": 1,
+    "resumeControlStillPresentAfterPositionUpdate": true
+  },
+  "driverWorkspace": {
+    "idleDefaultLinkedVehicle": true,
+    "idleTripFieldsFabricated": false,
+    "alreadyOpenAssignmentConverged": true,
+    "postTripVehicleMapRetained": true,
+    "ownerMotionFrames": 3,
+    "driverMotionFrames": 3,
+    "positionUpdatesObserved": 30
+  },
+  "realMapLabels": {
+    "renderer": "MapLibre GL JS 6.4.1",
+    "style": "OpenFreeMap Liberty",
+    "rtlPluginStatusAfterFix": "loaded",
+    "arabicRequiredCitiesVisible": true,
+    "arabicConnectedShaping": true,
+    "matchingEnglishAreaCaptured": true,
+    "attributionVisible": true
+  },
+  "defaultDriver": {
+    "productRegressionTestsPassed": true,
+    "realDropdownAutomated": false,
+    "reason": "Flutter Web dropdown remained unreliable through Selenium; no API fallback is claimed as UI proof, and the user had already manually verified the feature."
+  },
+  "result": "passed"
+}

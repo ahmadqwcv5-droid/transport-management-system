@@ -1,26 +1,47 @@
 part of 'fleet_map.dart';
 
-/// Reports physical pointer intent before MapLibre emits camera callbacks.
-///
-/// Keeping this boundary independently testable prevents programmatic camera
-/// movement from being mistaken for a user gesture while still pausing follow
-/// immediately for mouse, touch, trackpad, and wheel input.
-class ManualMapInteractionListener extends StatelessWidget {
+/// Classifies physical zoom separately from deliberate single-pointer panning.
+class ManualMapInteractionListener extends StatefulWidget {
   const ManualMapInteractionListener({
     required this.child,
-    required this.onInteraction,
+    required this.onPan,
+    required this.onZoom,
     super.key,
   });
 
   final Widget child;
-  final VoidCallback onInteraction;
+  final VoidCallback onPan, onZoom;
+
+  @override
+  State<ManualMapInteractionListener> createState() =>
+      _ManualMapInteractionListenerState();
+}
+
+class _ManualMapInteractionListenerState
+    extends State<ManualMapInteractionListener> {
+  final Map<int, Offset> _pointers = {};
+  bool _panReported = false;
 
   @override
   Widget build(BuildContext context) => Listener(
     behavior: HitTestBehavior.translucent,
-    onPointerDown: (_) => onInteraction(),
-    onPointerSignal: (_) => onInteraction(),
-    child: child,
+    onPointerDown: (event) {
+      _pointers[event.pointer] = event.position;
+      if (_pointers.length == 1) _panReported = false;
+    },
+    onPointerMove: (event) {
+      final previous = _pointers[event.pointer];
+      _pointers[event.pointer] = event.position;
+      if (_pointers.length != 1 || previous == null || _panReported) return;
+      if ((event.position - previous).distance >= 4) {
+        _panReported = true;
+        widget.onPan();
+      }
+    },
+    onPointerUp: (event) => _pointers.remove(event.pointer),
+    onPointerCancel: (event) => _pointers.remove(event.pointer),
+    onPointerSignal: (_) => widget.onZoom(),
+    child: widget.child,
   );
 }
 
@@ -28,6 +49,7 @@ class _ConfiguredFleetMap extends StatefulWidget {
   const _ConfiguredFleetMap({
     required this.styleUrl,
     required this.positions,
+    this.operationalArea,
     required this.onStyleLoaded,
     required this.onAnnotationsReady,
     required this.onFailure,
@@ -42,11 +64,13 @@ class _ConfiguredFleetMap extends StatefulWidget {
     required this.thumbnailLoader,
     this.telemetry,
     this.onManualCameraInteraction,
+    this.onManualCameraZoom,
     super.key,
   });
 
   final String styleUrl;
   final List<TrackedTruck> positions;
+  final OperationalArea? operationalArea;
   final VoidCallback onStyleLoaded;
   final VoidCallback onAnnotationsReady;
   final VoidCallback onFailure;
@@ -59,6 +83,7 @@ class _ConfiguredFleetMap extends StatefulWidget {
   final int cameraRevision;
   final FleetCameraRequest cameraRequest;
   final VoidCallback? onManualCameraInteraction;
+  final VoidCallback? onManualCameraZoom;
   final AuthenticatedThumbnailLoader thumbnailLoader;
   final MapOperationTelemetry? telemetry;
 
@@ -69,10 +94,12 @@ class _ConfiguredFleetMap extends StatefulWidget {
 class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
   MapLibreMapController? _controller;
   FleetMapAnnotationCoordinator? _coordinator;
+  bool _hasCompletedStyleLoad = false;
   void Function(Symbol)? _symbolTapListener;
   bool _styleLoaded = false;
   bool _programmaticCamera = false;
   Timer? _programmaticCameraRelease;
+  final _cameraMovement = MapCameraMovementClassifier();
 
   @override
   void initState() {
@@ -107,18 +134,34 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
   @override
   Widget build(BuildContext context) => ManualMapInteractionListener(
     key: const Key('fleet-map-input-listener'),
-    onInteraction: () => widget.onManualCameraInteraction?.call(),
+    onPan: () => widget.onManualCameraInteraction?.call(),
+    onZoom: () => widget.onManualCameraZoom?.call(),
     child: MapLibreMap(
       key: const Key('real-maplibre-map'),
       styleString: widget.styleUrl,
       initialCameraPosition: CameraPosition(
         target: widget.positions.isEmpty
-            ? const LatLng(39.0, 35.0)
+            ? LatLng(
+                widget.operationalArea?.centerLatitude ??
+                    (widget.operationalArea == null
+                        ? FleetMap._fallbackLatitude
+                        : (widget.operationalArea!.south +
+                                  widget.operationalArea!.north) /
+                              2),
+                widget.operationalArea?.centerLongitude ??
+                    (widget.operationalArea == null
+                        ? FleetMap._fallbackLongitude
+                        : (widget.operationalArea!.west +
+                                  widget.operationalArea!.east) /
+                              2),
+              )
             : LatLng(
                 widget.positions.first.latitude,
                 widget.positions.first.longitude,
               ),
-        zoom: widget.positions.isEmpty ? 4 : 11,
+        zoom: widget.positions.isEmpty
+            ? widget.operationalArea?.preferredZoom ?? FleetMap._fallbackZoom
+            : 11,
       ),
       annotationOrder: const [
         AnnotationType.line,
@@ -128,7 +171,11 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
       onMapCreated: (controller) {
         _controller = controller;
         _coordinator = FleetMapAnnotationCoordinator(
-          MapLibreFleetAnnotationAdapter(controller, widget.thumbnailLoader),
+          MapLibreFleetAnnotationAdapter(
+            controller,
+            widget.thumbnailLoader,
+            telemetry: widget.telemetry,
+          ),
           telemetry: widget.telemetry,
         );
         void listener(Symbol symbol) {
@@ -142,22 +189,27 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
         _symbolTapListener = listener;
         controller.onSymbolTapped.add(listener);
       },
-      onCameraMove: (_) {
-        if (_programmaticCamera) {
-          _scheduleProgrammaticRelease();
-        } else {
-          widget.onManualCameraInteraction?.call();
-        }
-      },
+      onCameraMove: _handleCameraMove,
       onCameraIdle: _scheduleProgrammaticRelease,
       onStyleLoadedCallback: () async {
         if (!mounted) return;
+        _cameraMovement.reset();
         _styleLoaded = true;
         widget.telemetry?.styleLoads++;
         widget.onStyleLoaded();
         try {
-          _beginProgrammaticCamera();
-          await _coordinator?.onStyleLoaded(_snapshot(), panelWidth: 290);
+          final cameraRequest = _hasCompletedStyleLoad
+              ? FleetCameraRequest.none
+              : FleetCameraRequest.initialFleet;
+          if (cameraRequest != FleetCameraRequest.none) {
+            _beginProgrammaticCamera();
+          }
+          await _coordinator?.onStyleLoaded(
+            _snapshot(),
+            cameraRequest: cameraRequest,
+            panelWidth: _directionalPanelWidth(),
+          );
+          _hasCompletedStyleLoad = true;
           if (mounted) widget.onAnnotationsReady();
         } on Object catch (error) {
           if (mounted) {
@@ -176,7 +228,7 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
       await coordinator.synchronize(
         _snapshot(),
         cameraRequest: cameraRequest,
-        panelWidth: 290,
+        panelWidth: _directionalPanelWidth(),
       );
       if (mounted) widget.onAnnotationsRecovered();
     } on Object catch (error) {
@@ -186,9 +238,13 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
     }
   }
 
+  double _directionalPanelWidth() =>
+      Directionality.of(context) == TextDirection.rtl ? 290 : -290;
+
   void _beginProgrammaticCamera() {
     _programmaticCameraRelease?.cancel();
     _programmaticCamera = true;
+    _scheduleProgrammaticRelease();
   }
 
   void _scheduleProgrammaticRelease() {
@@ -200,6 +256,30 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
     );
   }
 
+  void _handleCameraMove(CameraPosition position) {
+    if (_programmaticCamera) _scheduleProgrammaticRelease();
+    final movement = _cameraMovement.observe(
+      MapCameraView(
+        latitude: position.target.latitude,
+        longitude: position.target.longitude,
+        zoom: position.zoom,
+        bearing: position.bearing,
+        tilt: position.tilt,
+      ),
+      programmatic: _programmaticCamera,
+    );
+    switch (movement) {
+      case MapCameraMovement.none:
+        return;
+      case MapCameraMovement.zoom:
+        widget.onManualCameraZoom?.call();
+        return;
+      case MapCameraMovement.explore:
+        widget.onManualCameraInteraction?.call();
+        return;
+    }
+  }
+
   FleetMapSnapshot _snapshot() {
     final trucks = widget.positions.map(
       (position) => TruckMarkerModel(
@@ -208,6 +288,7 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
         heading: position.heading,
         state: TruckMarkerModel.stateFor(position),
         selected: position.truckId == widget.selectedTruckId,
+        recordedAt: DateTime.tryParse(position.recordedAt),
         photoVersion: position.photoVersion,
         photoThumbnailUrl: position.photoThumbnailUrl,
       ),
@@ -216,9 +297,22 @@ class _ConfiguredFleetMapState extends State<_ConfiguredFleetMap> {
     final selected = widget.positions
         .where((position) => position.truckId == widget.selectedTruckId)
         .firstOrNull;
+    final area = widget.operationalArea;
+    final overviewPoints = <MapPoint>[
+      if (area != null) ...[
+        MapPoint(area.south, area.west),
+        MapPoint(area.south, area.east),
+        MapPoint(area.north, area.west),
+        MapPoint(area.north, area.east),
+      ],
+      ...widget.positions
+          .where((position) => position.isOnline)
+          .map((position) => MapPoint(position.latitude, position.longitude)),
+    ];
     return FleetMapSnapshot(
       trucks: trucks,
       selectedTruckId: widget.selectedTruckId,
+      overviewPoints: overviewPoints,
       route: detail == null
           ? null
           : RouteOverlayModel(

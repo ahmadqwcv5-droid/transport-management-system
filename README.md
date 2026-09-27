@@ -175,6 +175,9 @@ flutter run -d chrome --web-port=3000 \
   --dart-define=API_BASE_URL=http://localhost:5080 \
   --dart-define=MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty \
   --dart-define=TRACKING_POLLING_INTERVAL_SECONDS=5 \
+  --dart-define=MAP_FALLBACK_LATITUDE=20 \
+  --dart-define=MAP_FALLBACK_LONGITUDE=0 \
+  --dart-define=MAP_FALLBACK_ZOOM=2 \
   --dart-define=MAP_LOADING_TIMEOUT_SECONDS=12 \
   --dart-define=ENABLE_SIMULATOR_CONTROLS=true
 ```
@@ -524,6 +527,9 @@ pull-to-refresh remains available.
 | `Geofence__MinimumSamples` | API | Consecutive qualifying persisted samples required for arrival, default 2 |
 | `Geofence__MinimumDwellSeconds` | API | Required qualifying dwell before arrival, default 8 seconds |
 | `MAP_STYLE_URL` (`--dart-define`) | Flutter | Optional MapLibre style URL; blank shows the intentional unconfigured state |
+| `MAP_FALLBACK_LATITUDE` (`--dart-define`) | Flutter | Regional fallback latitude used only when no saved operational area or connected truck exists; default 20 |
+| `MAP_FALLBACK_LONGITUDE` (`--dart-define`) | Flutter | Regional fallback longitude used only when no saved operational area or connected truck exists; default 0 |
+| `MAP_FALLBACK_ZOOM` (`--dart-define`) | Flutter | Regional fallback zoom used only when no saved operational area or connected truck exists; default 2 |
 | `TRACKING_POLLING_INTERVAL_SECONDS` (`--dart-define`) | Flutter | Live dashboard/workspace refresh interval, default 2 seconds |
 | `MAP_LOADING_TIMEOUT_SECONDS` (`--dart-define`) | Flutter | Time to await the genuine MapLibre style callback, default 12 seconds |
 | `ENABLE_SIMULATOR_CONTROLS` (`--dart-define`) | Flutter | Explicit development-only simulator panel gate, default false |
@@ -545,6 +551,9 @@ Never commit `.env`, signing keys, database passwords, or production credentials
 - `PUT /api/auth/me/preferences` — persist `en` or `ar`
 - `PUT /api/auth/me/password` — verify current password, change it, revoke all refresh tokens, and require fresh login
 - `GET /api/companies/me`
+- `GET /api/companies/me/map-preference` — tenant operational-area preference or 204 when unconfigured
+- `PUT /api/companies/me/map-preference` — Owner-only validated save
+- `DELETE /api/companies/me/map-preference` — Owner-only clear
 - `GET /api/companies/{id}` (tenant-filtered; used to prove ID-tampering resistance)
 - `/api/clients` — list/get/create/update, plus `POST /{id}/deactivate`
 - `/api/trucks` — list/get/create/update, status update, and deactivate
@@ -997,9 +1006,11 @@ MapLibre GL JS 6.4.1. The recommended development style remains configurable:
 ```
 
 OpenFreeMap Liberty uses its hosted glyph endpoint and bilingual
-`name:latin,name:nonlatin` labels. MapLibre GL JS 6.4.1 provides Arabic shaping
-and bidirectional text internally; do not add the deprecated RTL plugin or
-reverse Arabic strings. OpenFreeMap attribution remains enabled.
+`name:latin,name:nonlatin` labels. Sprint 4.2.2 real-canvas inspection later
+proved that this runtime left its RTL plugin in `requested` state and rendered
+those mixed-direction expressions incorrectly. The current locale-aware style
+and pinned local shaping plugin are documented below; Arabic strings are never
+manually reversed. OpenFreeMap attribution remains enabled.
 
 Operational notifications now render immutable truck, trip, location, and
 event-time snapshots in English or Arabic, with a localized legacy fallback.
@@ -1012,3 +1023,59 @@ retries with the already-rotated token instead of invalidating the session.
 The implementation plan is in `docs/sprints/sprint-4.2.1`; automated, Docker,
 Firefox manager/Driver, map-transition, Arabic/English map, and data-safety
 evidence is in `docs/evidence/sprint4_2_1`.
+
+## Sprint 4.2.2 unified map and live tracking
+
+Sprint 4.2.2 makes the configured basemap locale-aware without changing its
+provider. The style is fetched and cached by URL/locale, and only name-bearing
+symbol layers are transformed. Arabic uses
+`name:ar → name:nonlatin → name → name:latin → name_en`; English uses
+`name:latin → name_en → name → name:nonlatin`. The original sources, sprites,
+glyph URL, fonts, and attribution remain intact. Firefox showed MapLibre GL JS
+6.4.1 reporting RTL status `requested` and drawing reversed Arabic even after
+the mixed-direction expression was removed. Web therefore loads the pinned
+local `@mapbox/mapbox-gl-rtl-text` 0.3.0 compatibility asset and its BSD-2-Clause
+license before Flutter starts. This is a verified runtime-specific correction,
+not manual string reversal.
+
+Owners can configure the tenant operational area under **Settings →
+Operational area**. Search uses the configured backend geocoder only during
+explicit setup; save persists validated ISO alpha-2 code, label snapshot,
+bounds, optional center/zoom, actor, and timestamps. The fleet overview starts
+from those bounds, expands for connected trucks outside them, accounts for the
+directional side panel, and exposes a localized outside-area indicator and
+explicit **Fleet overview** action. If no preference exists, connected trucks
+are fit at a regional scale; if neither preference nor connected truck exists,
+the optional `MAP_FALLBACK_*` values are used. Dateline-crossing saved bounds
+remain explicitly unsupported.
+
+Owner and Driver maps share four camera modes: fleet overview, vehicle follow,
+free explore, and route overview. Wheel/pinch zoom keeps follow and its chosen
+zoom. A deliberate pan/rotate/tilt enters free explore. Programmatic moves are
+guarded, stationary heartbeats do not recenter, follow updates change center
+without forcing zoom 13.5, and route/fleet fits occur only on explicit actions.
+Markers use latest-wins visual interpolation with bounded duration, shortest-arc
+heading, large-jump snap, and stale/offline stop; interpolated frames are never
+stored as telemetry.
+
+The backend keeps immutable `truck_positions` and an additive
+`truck_current_positions` projection. A serializable ingestion transaction
+advances current only for a strictly newer `RecordedAt`; exact duplicates are
+ignored, older and conflicting equal-timestamp packets remain history, and a
+new tracking run advances only with a newer timestamp. Tenant mismatches fail
+before persistence. Driver workspace resolution is active trip, then active
+vehicle session, then one active default-linked truck, then no vehicle;
+multiple defaults return an explicit ambiguity state rather than selecting the
+first. Idle and post-trip Drivers retain truck identity, tracking quality, and
+map without fabricated route, ETA, progress, or trip actions.
+
+The additive `20260927071807_Sprint422MapOperationsChronology` migration creates
+one optional map preference per company and one current-position row per truck.
+It deterministically backfills the newest legacy history row by timestamp then
+packet ID, invents no preference or telemetry, and its rollback drops only the
+two new projection/preference tables.
+
+The implementation plan is in `docs/sprints/sprint-4.2.2`; automated, isolated
+Docker/PostgreSQL, genuine English/Arabic Firefox canvas, Owner camera, Driver
+idle/assignment/post-trip, chronology, and data-safety evidence is in
+`docs/evidence/sprint4_2_2`.

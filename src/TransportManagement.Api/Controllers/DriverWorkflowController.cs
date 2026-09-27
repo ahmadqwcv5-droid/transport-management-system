@@ -8,15 +8,28 @@ namespace TransportManagement.Api.Controllers;
 [ApiController]
 [Authorize(Policy = "driver.workflow")]
 [Route("api/driver/my-trip")]
-public sealed class DriverWorkflowController(DriverWorkflowService service) : ControllerBase
+public sealed class DriverWorkflowController(DriverWorkflowService service,
+    ILogger<DriverWorkflowController> logger) : ControllerBase
 {
+    private static readonly Action<ILogger, Exception?> LogAmbiguousVehicle =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(4222, "DriverVehicleAmbiguous"),
+            "Driver workspace detected multiple active default-linked trucks; " +
+            "Owner action is required.");
+
     [HttpGet]
     public Task<DriverMyTripResponse> Get(CancellationToken cancellationToken) =>
         service.MyTripAsync(cancellationToken);
 
     [HttpGet("workspace")]
-    public Task<DriverWorkspaceResponse> Workspace(CancellationToken cancellationToken) =>
-        service.WorkspaceAsync(cancellationToken);
+    public async Task<DriverWorkspaceResponse> Workspace(CancellationToken cancellationToken)
+    {
+        var result = await service.WorkspaceAsync(cancellationToken);
+        if (result.State == "VEHICLE_ASSIGNMENT_AMBIGUOUS")
+        {
+            LogAmbiguousVehicle(logger, null);
+        }
+        return result;
+    }
 
     [HttpGet("truck-photo/thumbnail")]
     public async Task<IActionResult> TruckPhoto(CancellationToken cancellationToken)

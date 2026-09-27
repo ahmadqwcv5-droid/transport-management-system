@@ -76,7 +76,14 @@ public sealed class NominatimGeocodingProvider(HttpClient client, IConfiguration
         if (!decimal.TryParse(value.Latitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var latitude)
             || !decimal.TryParse(value.Longitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var longitude))
             throw new ProviderException("The geocoding provider returned invalid coordinates.", "GEOCODING_PROVIDER_FAILURE");
-        var bounds = value.BoundingBox?.Select(item => decimal.Parse(item, CultureInfo.InvariantCulture)).ToArray();
+        // Nominatim returns south, north, west, east. The application contract is
+        // south, west, north, east so every provider exposes one stable order.
+        var rawBounds = value.BoundingBox?.Select(item =>
+            decimal.Parse(item, CultureInfo.InvariantCulture)).ToArray();
+        var bounds = rawBounds is { Length: 4 }
+            ? new[] { rawBounds[0], rawBounds[2], rawBounds[1], rawBounds[3] }
+            : null;
+
         return new(value.PlaceId.ToString(CultureInfo.InvariantCulture), value.DisplayName,
             value.DisplayName, latitude, longitude, bounds);
     }

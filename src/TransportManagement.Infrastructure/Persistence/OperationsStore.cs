@@ -115,6 +115,12 @@ internal sealed partial class OperationsStore(AppDbContext dbContext) :
         return await query.OrderBy(x => x.PlateNumber).Take(100).ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Truck>> ListActiveDefaultTrucksForDriverAsync(
+        Guid driverId, CancellationToken cancellationToken) =>
+        await dbContext.Trucks.AsNoTracking()
+            .Where(x => x.DefaultDriverId == driverId && x.Status != TruckStatus.Archived)
+            .OrderBy(x => x.Id).ToListAsync(cancellationToken);
+
     public Task<bool> PlateExistsAsync(string plateNumber, Guid? excludingId, CancellationToken cancellationToken) =>
         dbContext.Trucks.AnyAsync(x => x.PlateNumber == plateNumber && (!excludingId.HasValue || x.Id != excludingId), cancellationToken);
 
@@ -149,10 +155,18 @@ internal sealed partial class OperationsStore(AppDbContext dbContext) :
         CancellationToken cancellationToken) => await dbContext.Trips.AsNoTracking()
         .Where(x => x.TruckId == truckId).OrderByDescending(x => x.PlannedStartAt)
         .Take(Math.Clamp(limit, 1, 100)).ToListAsync(cancellationToken);
-    public Task<TransportManagement.Domain.Tracking.TruckPosition?> LatestTruckPositionAsync(
-        Guid truckId, CancellationToken cancellationToken) => dbContext.TruckPositions
-        .AsNoTracking().Where(x => x.TruckId == truckId)
-        .OrderByDescending(x => x.RecordedAt).FirstOrDefaultAsync(cancellationToken);
+    public async Task<TransportManagement.Domain.Tracking.TruckPosition?> LatestTruckPositionAsync(
+        Guid truckId, CancellationToken cancellationToken)
+    {
+        var projected = await dbContext.TruckCurrentPositions.AsNoTracking()
+            .Where(x => x.TruckId == truckId)
+            .Join(dbContext.TruckPositions.AsNoTracking(), current => current.PositionId,
+                position => position.Id, (_, position) => position)
+            .SingleOrDefaultAsync(cancellationToken);
+        return projected ?? await dbContext.TruckPositions.AsNoTracking()
+            .Where(x => x.TruckId == truckId).OrderByDescending(x => x.RecordedAt)
+            .ThenByDescending(x => x.Id).FirstOrDefaultAsync(cancellationToken);
+    }
     public async Task<bool> TruckHasHistoryAsync(Guid truckId, CancellationToken cancellationToken)
     {
         if (await dbContext.Trips.AnyAsync(x => x.TruckId == truckId, cancellationToken)) return true;

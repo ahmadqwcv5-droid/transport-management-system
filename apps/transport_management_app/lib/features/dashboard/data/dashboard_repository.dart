@@ -113,4 +113,36 @@ final class DashboardRepository {
       throw ApiException.fromDio(error);
     }
   }
+
+  Future<OperationalArea?> operationalArea() async {
+    try {
+      final response = await _client.dio.get<Json?>(
+        '/api/companies/me/map-preference',
+      );
+      final data = response.data;
+      return data == null ? null : OperationalArea.fromJson(data);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<OperationalArea> saveOperationalArea(OperationalArea area) async {
+    try {
+      final response = await _client.dio.put<Json>(
+        '/api/companies/me/map-preference',
+        data: area.toJson(),
+      );
+      return OperationalArea.fromJson(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<void> clearOperationalArea() async {
+    try {
+      await _client.dio.delete<void>('/api/companies/me/map-preference');
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
 }

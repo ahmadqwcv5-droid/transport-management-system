@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IIdentityStore, IdentityStore>();
         services.AddScoped<ICompanyUserStore, CompanyUserStore>();
         services.AddScoped<ICompanyReader, CompanyReader>();
+        services.AddScoped<ICompanyMapPreferenceStore, CompanyMapPreferenceStore>();
         services.AddScoped<OperationsStore>();
         services.AddScoped<IClientStore>(provider => provider.GetRequiredService<OperationsStore>());
         services.AddScoped<IFleetStore>(provider => provider.GetRequiredService<OperationsStore>());

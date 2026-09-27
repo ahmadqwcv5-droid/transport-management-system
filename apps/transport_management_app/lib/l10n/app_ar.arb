@@ -588,4 +588,21 @@
   ,"@notificationDriver": {"placeholders": {"value": {"type": "String"}}}
   ,"notificationCargo": "الحمولة: {value}"
   ,"@notificationCargo": {"placeholders": {"value": {"type": "String"}}}
+  ,"operationalArea": "بلد / منطقة التشغيل"
+  ,"operationalAreaDescription": "تحدد عرض الأسطول الافتراضي، مع إبقاء الشاحنات خارج المنطقة ظاهرة."
+  ,"noOperationalArea": "غير مضبوطة. تستخدم الخريطة الشاحنات المتصلة أو المنطقة الاحتياطية."
+  ,"configureOperationalArea": "ضبط المنطقة"
+  ,"clearOperationalArea": "مسح المنطقة"
+  ,"operationalAreaSaved": "تم حفظ منطقة التشغيل."
+  ,"countryCode": "رمز البلد ISO"
+  ,"countryCodeHint": "حرفان، مثل TR أو SY"
+  ,"selectAreaWithBounds": "أدخل رمز بلد صحيحاً من حرفين واختر نتيجة بحث ذات حدود جغرافية."
+  ,"fleetOverview": "عرض الأسطول"
+  ,"trucksOutsideOperationalArea": "عدد الشاحنات خارج منطقة التشغيل: {count}"
+  ,"@trucksOutsideOperationalArea": {"placeholders": {"count": {"type": "int"}}}
+  ,"noVehicleAssigned": "لا توجد مركبة مسندة"
+  ,"noVehicleAssignedExplanation": "اطلب من المالك ربط شاحنة نشطة واحدة بملف السائق الخاص بك."
+  ,"vehicleAssignmentAmbiguous": "إسناد المركبة يحتاج إلى مراجعة"
+  ,"vehicleAssignmentAmbiguousExplanation": "ترتبط أكثر من شاحنة بملف السائق. اطلب من المالك إبقاء شاحنة افتراضية واحدة."
+  ,"heading": "الاتجاه"
 }
