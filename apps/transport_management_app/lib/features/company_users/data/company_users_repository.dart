@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import '../domain/company_user.dart';
+import '../../memberships/domain/membership_models.dart' show Invitation;
 
 final class CompanyUsersRepository {
   CompanyUsersRepository(this._client);
@@ -20,7 +21,7 @@ final class CompanyUsersRepository {
     }
   }
 
-  Future<TemporaryCredential> createDriver({
+  Future<Invitation> createDriver({
     required String email,
     required String displayName,
     String? driverId,
@@ -34,18 +35,7 @@ final class CompanyUsersRepository {
           'driverId': ?driverId,
         },
       );
-      return TemporaryCredential.fromJson(response.data!);
-    } on DioException catch (error) {
-      throw ApiException.fromDio(error);
-    }
-  }
-
-  Future<TemporaryCredential> resetPassword(String id) async {
-    try {
-      final response = await _client.dio.post<Json>(
-        '/api/company-users/$id/reset-temporary-password',
-      );
-      return TemporaryCredential.fromJson(response.data!);
+      return Invitation.fromJson(response.data!);
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }

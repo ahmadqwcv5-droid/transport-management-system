@@ -36,9 +36,14 @@ public static class DevelopmentDataSeeder
             configuration["DevelopmentSeed:CompanySlug"] ?? "demo-transport",
             now);
         var owner = new User(
-            Guid.NewGuid(), company.Id, email, "Demo Owner", passwordHasher.Hash(password), AppRoles.Owner, now);
+            Guid.NewGuid(), email, "Demo Owner", passwordHasher.Hash(password), now);
+        var membership = new CompanyMembership(Guid.NewGuid(), company.Id, owner.Id,
+            MembershipStatus.Active, owner.Id, now);
         dbContext.Companies.Add(company);
         dbContext.Users.Add(owner);
+        dbContext.CompanyMemberships.Add(membership);
+        dbContext.CompanyMembershipRoles.Add(
+            new CompanyMembershipRole(company.Id, membership.Id, AppRoles.Owner));
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

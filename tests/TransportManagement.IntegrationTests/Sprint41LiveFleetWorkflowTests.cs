@@ -277,10 +277,13 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-        var user = new User(Guid.NewGuid(), ApiFactory.CompanyAId, email,
-            "Test Driver", hasher.Hash(ApiFactory.Password), AppRoles.Driver,
-            DateTimeOffset.UtcNow);
+        var user = new User(Guid.NewGuid(), email, "Test Driver",
+            hasher.Hash(ApiFactory.Password), DateTimeOffset.UtcNow);
         db.Users.Add(user);
+        var membership = new CompanyMembership(Guid.NewGuid(), ApiFactory.CompanyAId,
+            user.Id, MembershipStatus.Active, user.Id, DateTimeOffset.UtcNow);
+        db.CompanyMemberships.Add(membership);
+        db.CompanyMembershipRoles.Add(new(ApiFactory.CompanyAId, membership.Id, AppRoles.Driver));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return user.Id;
     }
@@ -299,7 +302,8 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
     {
         var page = await client.GetJsonAsync<JsonElement>("/api/notifications?pageSize=100");
         return page.GetProperty("items").EnumerateArray()
-            .Single(x => x.GetProperty("tripId").GetGuid() == tripId
+            .Single(x => x.GetProperty("tripId").ValueKind == JsonValueKind.String
+                && x.GetProperty("tripId").GetGuid() == tripId
                 && x.GetProperty("type").GetString() == type);
     }
 
@@ -308,7 +312,8 @@ public sealed class Sprint41LiveFleetWorkflowTests(ApiFactory factory) : IClassF
     {
         var page = await client.GetJsonAsync<JsonElement>("/api/notifications?pageSize=100");
         return page.GetProperty("items").EnumerateArray()
-            .Count(x => x.GetProperty("tripId").GetGuid() == tripId
+            .Count(x => x.GetProperty("tripId").ValueKind == JsonValueKind.String
+                && x.GetProperty("tripId").GetGuid() == tripId
                 && x.GetProperty("type").GetString() == type);
     }
 }

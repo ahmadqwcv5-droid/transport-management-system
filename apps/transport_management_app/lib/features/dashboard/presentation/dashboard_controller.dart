@@ -39,6 +39,10 @@ class DashboardController extends AsyncNotifier<DashboardData> {
   }
 
   Future<void> refresh({bool silent = false}) async {
+    if (ref.read(authControllerProvider).value == null) {
+      _timer?.cancel();
+      return;
+    }
     if (_refreshing) return;
     _refreshing = true;
     final generation = ++_generation;

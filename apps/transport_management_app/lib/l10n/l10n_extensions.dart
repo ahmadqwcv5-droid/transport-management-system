@@ -54,6 +54,33 @@ String localizedStatus(AppLocalizations l10n, String value) => switch (value) {
 String localizedErrorCode(AppLocalizations l10n, String? code) =>
     switch (code) {
       'AUTHENTICATION_FAILED' => l10n.authenticationFailed,
+      'ACCOUNT_EMAIL_CONFLICT' => l10n.accountEmailConflict,
+      'EXTERNAL_LOGIN_ALREADY_LINKED' => l10n.externalLoginAlreadyLinked,
+      'EXTERNAL_LOGIN_CONFIRMATION_REQUIRED' =>
+        l10n.externalLoginConfirmationRequired,
+      'GOOGLE_AUTH_NOT_CONFIGURED' => l10n.googleNotConfigured,
+      'GOOGLE_TOKEN_INVALID' => l10n.googleTokenInvalid,
+      'MEMBERSHIP_NOT_ACTIVE' => l10n.membershipNotActive,
+      'WORKSPACE_ACCESS_DENIED' => l10n.workspaceAccessDenied,
+      'INVITATION_INVALID' => l10n.invitationInvalid,
+      'INVITATION_EXPIRED' => l10n.invitationExpired,
+      'INVITATION_ALREADY_USED' => l10n.invitationAlreadyUsed,
+      'INVITATION_EMAIL_MISMATCH' => l10n.invitationEmailMismatch,
+      'COMPANY_CODE_INVALID' => l10n.companyCodeInvalid,
+      'CONNECTION_REQUEST_ALREADY_PENDING' => l10n.connectionAlreadyPending,
+      'DRIVER_ACCOUNT_ALREADY_LINKED' => l10n.driverAccountAlreadyLinked,
+      'DRIVER_LINK_REQUIRED' => l10n.driverLinkRequired,
+      'TRUCK_QR_INVALID' => l10n.truckQrInvalid,
+      'TRUCK_QR_REVOKED' => l10n.truckQrRevoked,
+      'TRUCK_SESSION_CONFLICT' ||
+      'DRIVER_ALREADY_IN_ACTIVE_SESSION' ||
+      'TRUCK_ALREADY_IN_ACTIVE_SESSION' => l10n.truckSessionConflict,
+      'HANDOVER_APPROVAL_REQUIRED' => l10n.handoverApprovalRequired,
+      'HANDOVER_REQUEST_STALE' => l10n.handoverRequestStale,
+      'HANDOVER_ALREADY_RESOLVED' => l10n.handoverAlreadyResolved,
+      'TRIP_ASSIGNMENT_CHANGED' ||
+      'CONCURRENCY_CONFLICT' => l10n.tripAssignmentChanged,
+
       'INVALID_TRIP_TRANSITION' => l10n.invalidTripTransition,
       'TRUCK_ALREADY_ASSIGNED' => l10n.truckAlreadyAssigned,
       'DRIVER_ALREADY_ASSIGNED' => l10n.driverAlreadyAssigned,

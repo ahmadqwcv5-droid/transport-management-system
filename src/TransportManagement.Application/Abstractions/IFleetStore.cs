@@ -1,5 +1,6 @@
 using TransportManagement.Application.Trips;
 using TransportManagement.Domain.Fleet;
+using TransportManagement.Domain.Trips;
 
 namespace TransportManagement.Application.Abstractions;
 
@@ -21,6 +22,7 @@ public interface IFleetStore
     void RemoveTruck(Truck truck);
     Task<IReadOnlyList<TruckEvent>> ListTruckEventsAsync(Guid truckId, int limit, CancellationToken cancellationToken);
     void AddTruckEvent(TruckEvent truckEvent);
+    void AddNotification(OperationNotification notification);
     Task<IReadOnlyList<TransportManagement.Domain.Trips.Trip>> ListTruckTripsAsync(Guid truckId, int limit, CancellationToken cancellationToken);
     Task<TransportManagement.Domain.Tracking.TruckPosition?> LatestTruckPositionAsync(Guid truckId, CancellationToken cancellationToken);
     Task<bool> TruckHasHistoryAsync(Guid truckId, CancellationToken cancellationToken);

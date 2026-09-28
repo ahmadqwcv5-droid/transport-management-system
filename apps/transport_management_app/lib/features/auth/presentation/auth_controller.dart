@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/token_store.dart';
 import '../data/auth_repository.dart';
+import '../data/external_identity_launcher.dart';
 import '../domain/auth_session.dart';
 
 final tokenStoreProvider = Provider<TokenStore>((ref) => TokenStore());
@@ -36,6 +37,50 @@ class AuthController extends AsyncNotifier<AuthSession?> {
   Future<void> login(String email, String password) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => _repository.login(email, password));
+  }
+
+  Future<bool> externalSignIn(String provider) async {
+    final launcher = ref.read(externalIdentityLauncherProvider);
+    if (!launcher.isAvailable) return false;
+    final credential = await launcher.authenticate(provider);
+    if (credential == null) return false;
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => _repository.externalSignIn(
+        provider,
+        credential.idToken,
+        nonce: credential.nonce,
+      ),
+    );
+    return !state.hasError;
+  }
+
+  Future<bool> externalSignInToken(
+    String provider,
+    String idToken, {
+    String? nonce,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => _repository.externalSignIn(provider, idToken, nonce: nonce),
+    );
+    return !state.hasError;
+  }
+
+  Future<List<Workspace>> workspaces() => _repository.workspaces();
+
+  Future<bool> switchWorkspace(String membershipId) async {
+    final previous = state;
+    state = const AsyncLoading();
+    try {
+      state = AsyncData(await _repository.switchWorkspace(membershipId));
+      return true;
+    } on Object catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      await Future<void>.delayed(Duration.zero);
+      state = previous;
+      return false;
+    }
   }
 
   Future<void> logout() async {

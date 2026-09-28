@@ -10,6 +10,7 @@ internal sealed class CurrentUser(IHttpContextAccessor accessor,
     private ClaimsPrincipal? Principal => accessor.HttpContext?.User;
     public bool IsAuthenticated => Principal?.Identity?.IsAuthenticated == true;
     public Guid UserId => ReadGuid(CustomClaims.UserId);
+    public Guid MembershipId => ReadGuid(CustomClaims.MembershipId);
     public Guid CompanyId
     {
         get
@@ -19,6 +20,7 @@ internal sealed class CurrentUser(IHttpContextAccessor accessor,
         }
     }
     public string Role => Principal?.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+    public bool IsInRole(string role) => Principal?.IsInRole(role) == true;
 
     private Guid ReadGuid(string claim) =>
         Guid.TryParse(Principal?.FindFirstValue(claim), out var value) ? value : Guid.Empty;

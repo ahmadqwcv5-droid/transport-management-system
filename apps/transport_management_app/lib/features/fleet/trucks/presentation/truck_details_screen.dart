@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../l10n/l10n_extensions.dart';
 import '../../../clients/domain/client_models.dart';
@@ -11,6 +13,7 @@ import '../../../operations/presentation/operations_view.dart';
 import '../../domain/fleet_models.dart';
 import 'trucks_screen.dart';
 import '../../../../shared/widgets/truck_avatar.dart';
+import '../../../memberships/presentation/membership_providers.dart';
 
 class TruckDetailsScreen extends ConsumerWidget {
   const TruckDetailsScreen({required this.truckId, super.key});
@@ -95,6 +98,13 @@ class _Header extends ConsumerWidget {
           icon: const Icon(Icons.no_photography_outlined),
           tooltip: context.l10n.removeTruckPhoto,
           onPressed: () => _removePhoto(context, ref),
+        ),
+      if (canManageOperations(ref))
+        IconButton(
+          key: const Key('truck-qr-label'),
+          icon: const Icon(Icons.qr_code_2),
+          tooltip: context.l10n.qrCode,
+          onPressed: () => _showTruckQr(context, ref, truck),
         ),
       if (canManageOperations(ref))
         IconButton(
@@ -461,3 +471,76 @@ Widget _line(String label, String? value) => Padding(
   padding: const EdgeInsets.only(top: 8),
   child: Text('$label: ${value ?? '—'}'),
 );
+
+Future<void> _showTruckQr(
+  BuildContext context,
+  WidgetRef ref,
+  Truck truck,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(context.l10n.regenerateTruckQr),
+      content: Text(context.l10n.truckQrExplanation),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: Text(context.l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: Text(context.l10n.confirm),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+  final credential = await ref
+      .read(membershipRepositoryProvider)
+      .regenerateTruckQr(truck.id);
+  if (!context.mounted) return;
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => AlertDialog(
+      title: Text('${context.l10n.qrCode} · ${credential.plateNumber}'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RepaintBoundary(
+              key: const Key('printable-truck-qr'),
+              child: ColoredBox(
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: QrImageView(
+                    data: credential.qrPayload,
+                    size: 240,
+                    semanticsLabel:
+                        '${context.l10n.qrCode} ${credential.plateNumber}',
+                  ),
+                ),
+              ),
+            ),
+            SelectableText(credential.code),
+            const SizedBox(height: 8),
+            Text(context.l10n.truckQrExplanation),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton.icon(
+          onPressed: () =>
+              Clipboard.setData(ClipboardData(text: credential.code)),
+          icon: const Icon(Icons.copy),
+          label: Text(context.l10n.copy),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text(context.l10n.done),
+        ),
+      ],
+    ),
+  );
+}

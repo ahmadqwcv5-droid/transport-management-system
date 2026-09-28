@@ -27,3 +27,4 @@ Sprint.
 | 4.2 | [Prompt](sprint-4.2/transport_management_sprint4_2_operational_control_center_codex_prompt.md) | [Plan](sprint-4.2/SPRINT4_2_IMPLEMENTATION_PLAN.md) |
 | 4.2.1 | [Prompt](sprint-4.2.1/transport_management_sprint4_2_1_codex_prompt.md) | [Plan](sprint-4.2.1/SPRINT4_2_1_IMPLEMENTATION_PLAN.md) |
 | 4.2.2 | [Prompt](sprint-4.2.2/transport_management_sprint4_2_2_codex_prompt.md) | [Plan](sprint-4.2.2/SPRINT4_2_2_IMPLEMENTATION_PLAN.md) |
+| 4.3 | [Prompt](sprint-4.3/transport_management_sprint4_3_codex_prompt.md) | [Plan](sprint-4.3/SPRINT4_3_IMPLEMENTATION_PLAN.md) |

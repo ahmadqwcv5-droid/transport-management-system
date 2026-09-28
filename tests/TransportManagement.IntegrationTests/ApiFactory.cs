@@ -61,6 +61,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
             services.RemoveAll<AppDbContext>();
             services.RemoveAll<ITrackingProvider>();
+            services.RemoveAll<IExternalIdentityVerifier>();
+            services.AddSingleton<IExternalIdentityVerifier, FakeExternalIdentityVerifier>();
             services.RemoveAll<GeofencePolicy>();
             services.AddSingleton(new GeofencePolicy(50, 80, 2,
                 TimeSpan.Zero, TimeSpan.FromSeconds(60)));
@@ -88,9 +90,19 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         db.Companies.AddRange(
             new Company(CompanyAId, "Company A", "company-a", now),
             new Company(CompanyBId, "Company B", "company-b", now));
-        db.Users.AddRange(
-            new User(Guid.NewGuid(), CompanyAId, "owner-a@example.test", "Owner A", hasher.Hash(Password), AppRoles.Owner, now),
-            new User(Guid.NewGuid(), CompanyBId, "owner-b@example.test", "Owner B", hasher.Hash(Password), AppRoles.Owner, now));
+        var ownerA = new User(Guid.NewGuid(), "owner-a@example.test",
+            "Owner A", hasher.Hash(Password), now);
+        var ownerB = new User(Guid.NewGuid(), "owner-b@example.test",
+            "Owner B", hasher.Hash(Password), now);
+        var membershipA = new CompanyMembership(Guid.NewGuid(), CompanyAId,
+            ownerA.Id, MembershipStatus.Active, ownerA.Id, now);
+        var membershipB = new CompanyMembership(Guid.NewGuid(), CompanyBId,
+            ownerB.Id, MembershipStatus.Active, ownerB.Id, now);
+        db.Users.AddRange(ownerA, ownerB);
+        db.CompanyMemberships.AddRange(membershipA, membershipB);
+        db.CompanyMembershipRoles.AddRange(
+            new CompanyMembershipRole(CompanyAId, membershipA.Id, AppRoles.Owner),
+            new CompanyMembershipRole(CompanyBId, membershipB.Id, AppRoles.Owner));
         await db.SaveChangesAsync();
     }
 
@@ -123,5 +135,26 @@ internal sealed class FailingRoutingProvider : IRoutingProvider
             throw new TransportManagement.Application.Common.ProviderException(
                 "The routing provider failed.", "ROUTING_PROVIDER_FAILURE");
         return _inner.CalculateAsync(request, cancellationToken);
+    }
+}
+
+internal sealed class FakeExternalIdentityVerifier : IExternalIdentityVerifier
+{
+    public bool IsConfigured(string provider) =>
+        provider.Equals("google", StringComparison.OrdinalIgnoreCase);
+
+    public Task<VerifiedExternalIdentity> VerifyAsync(
+        string provider, string idToken, string? nonce,
+        CancellationToken cancellationToken)
+    {
+        if (!IsConfigured(provider))
+            throw new TransportManagement.Domain.Common.DomainRuleException(
+                "The provider is not configured.", "EXTERNAL_PROVIDER_UNAVAILABLE");
+        var parts = idToken.Split('|');
+        if (parts.Length != 4 || parts[0] != "verified")
+            throw new TransportManagement.Domain.Common.DomainRuleException(
+                "The Google identity token is invalid.", "EXTERNAL_TOKEN_INVALID");
+        return Task.FromResult(new VerifiedExternalIdentity(
+            "google", parts[1], parts[2], parts[3] == "true", parts[2]));
     }
 }

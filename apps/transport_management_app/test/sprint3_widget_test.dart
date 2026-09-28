@@ -157,6 +157,8 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -80));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('language-selector')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('العربية').last);

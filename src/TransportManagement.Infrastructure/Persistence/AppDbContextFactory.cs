@@ -20,7 +20,9 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
     {
         public bool IsAuthenticated => false;
         public Guid UserId => Guid.Empty;
+        public Guid MembershipId => Guid.Empty;
         public Guid CompanyId => Guid.Empty;
         public string Role => string.Empty;
+        public bool IsInRole(string role) => false;
     }
 }

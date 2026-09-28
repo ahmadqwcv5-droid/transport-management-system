@@ -13,7 +13,5 @@ public sealed record LinkCompanyUserRequest(Guid DriverId);
 public sealed record CompanyUserResponse(
     Guid Id, string Email, string DisplayName, string Role, bool IsActive,
     bool NotificationSoundsEnabled, Guid? DriverId, string? DriverName,
-    DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
-
-public sealed record CompanyUserCredentialResponse(
-    CompanyUserResponse User, string TemporaryPassword);
+    DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt,
+    Guid? MembershipId, string MembershipStatus, IReadOnlyList<string> Roles);

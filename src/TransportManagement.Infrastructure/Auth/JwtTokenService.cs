@@ -13,19 +13,26 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, IClock clock
 {
     private readonly JwtOptions _options = options.Value;
 
-    public (string Token, DateTimeOffset ExpiresAt) CreateAccessToken(User user)
+    public (string Token, DateTimeOffset ExpiresAt) CreateAccessToken(
+        User account, CompanyMembership? membership,
+        IReadOnlyCollection<string> roles)
     {
         var now = clock.UtcNow;
         var expiresAt = now.AddMinutes(_options.AccessTokenMinutes);
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(CustomClaims.UserId, user.Id.ToString()),
-            new Claim(CustomClaims.CompanyId, user.CompanyId.ToString()),
-            new Claim(ClaimTypes.Role, user.Role),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new(JwtRegisteredClaimNames.Sub, account.Id.ToString()),
+            new(CustomClaims.UserId, account.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, account.Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+        if (membership is not null)
+        {
+            claims.Add(new(CustomClaims.MembershipId, membership.Id.ToString()));
+            claims.Add(new(CustomClaims.CompanyId, membership.CompanyId.ToString()));
+            claims.AddRange(roles.Distinct(StringComparer.Ordinal)
+                .Select(role => new Claim(ClaimTypes.Role, role)));
+        }
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey)),
             SecurityAlgorithms.HmacSha256);

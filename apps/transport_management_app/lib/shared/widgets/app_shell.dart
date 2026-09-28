@@ -91,16 +91,19 @@ class AppShell extends ConsumerWidget {
     builder: (context, constraints) {
       final wide = constraints.maxWidth >= 720;
       final authenticatedUser = ref.watch(authControllerProvider).value?.user;
-      final isDriver = authenticatedUser?.role == 'Driver';
-      final isOwner = authenticatedUser?.role == 'Owner';
-      final paths = isDriver
+      final isManager =
+          authenticatedUser?.hasRole('Owner') == true ||
+          authenticatedUser?.hasRole('Operations') == true;
+      final isDriverOnly =
+          authenticatedUser?.hasRole('Driver') == true && !isManager;
+      final paths = isDriverOnly
           ? _driverPaths
-          : isOwner
+          : isManager
           ? _managerPaths
           : _managerPaths.take(6).toList();
-      final destinations = isDriver
+      final destinations = isDriverOnly
           ? _driverDestinations(context)
-          : isOwner
+          : isManager
           ? _managerDestinations(context)
           : _managerDestinations(context).take(6).toList();
       final inferredIndex = selectedIndex < 0

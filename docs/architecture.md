@@ -797,3 +797,48 @@ default-linked trucks return a language-neutral ambiguity state and log the
 invariant violation; no arbitrary first row is selected. Idle and post-trip
 states expose only the resolved truck's authorized photo and tracking context
 and never fabricate trip route, ETA, progress, or actions.
+## ADR-033: Global accounts, active memberships, and attributed handover
+
+**Status:** Accepted
+
+Authentication identity is global. `User` retains the existing account ID,
+BCrypt password hash, locale, and notification preference but is no longer
+`ITenantOwned`. `CompanyMembership` owns company access and lifecycle state;
+normalized membership-role rows support combined Owner, Operations, Accountant,
+and Driver capabilities. JWTs carry account, active membership, company, and
+all role claims. A workspace-selection token carries no tenant claims.
+Request-time validation and refresh reject inactive/missing memberships, while
+operational EF filters continue deriving `CompanyId` only from validated
+claims. Only the reviewed identity stores may bypass tenant filters.
+
+A tenant-owned `Driver` optionally links to the global account. The link is
+resolved within the active company and never makes Driver employment data
+global. Invitations and exact company-code requests create or activate
+memberships explicitly; passwords belong to the person. Invitation and QR raw
+secrets are never persisted. External identities are provider/subject pairs.
+Google ID tokens are verified server-side against issuer, JWKS signature,
+expiration, verified email, optional nonce, and configured Web/Android/server
+audiences. Matching email alone never links an existing local account.
+`ExternalLogin` is provider-neutral, leaving a clean future seam for verified
+E.164 phone identities and OTP challenges without implementing fake OTP.
+
+Default truck assignment is a persistent company preference. A
+`DriverTruckSession` is temporary operational custody and records source,
+initiator, approver, start/end, and reason. Trip assignment is the current
+responsibility. Unique filtered database indexes limit one active session per
+Driver and per truck.
+
+QR resolution is active-member and same-tenant only; regeneration revokes the
+old hash. A free-truck confirmation transaction ends the prior safe session and
+starts the new one without changing the default. A conflicting active trip
+creates `TripHandoverRequest` and makes no mutation before Owner/Operations
+approval. Approval uses optimistic concurrency, retains the same trip/truck and
+all route/tracking state, and closes/opens immutable
+`TripDriverParticipation` rows at one logical boundary. Stable event codes
+and structured notification metadata remain language-neutral; Flutter owns
+English/Arabic presentation.
+
+Migration `20260927152730_Sprint43GlobalAccountsMembershipsAndHandover`
+preserves account IDs/password hashes and backfills one active membership plus
+the legacy role, Driver link, and refresh-token scope. Its Down path refuses a
+lossy collapse if new multi-membership or multi-role relationships exist.

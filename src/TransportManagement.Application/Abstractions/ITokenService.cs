@@ -6,7 +6,9 @@ public sealed record GeneratedRefreshToken(string PlainText, string Hash, DateTi
 
 public interface ITokenService
 {
-    (string Token, DateTimeOffset ExpiresAt) CreateAccessToken(User user);
+    (string Token, DateTimeOffset ExpiresAt) CreateAccessToken(
+        User account, CompanyMembership? membership,
+        IReadOnlyCollection<string> roles);
     GeneratedRefreshToken CreateRefreshToken(DateTimeOffset now);
     string HashRefreshToken(string plainTextToken);
 }

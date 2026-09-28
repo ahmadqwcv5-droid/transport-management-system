@@ -24,6 +24,8 @@ public sealed class TruckService(IFleetStore store, ITruckPhotoStore photos,
             request.OdometerKilometers, request.DefaultDriverId, request.Notes, now);
         store.AddTruck(truck);
         Event(truck, "TruckCreated", null, now);
+        if (request.DefaultDriverId.HasValue)
+            DefaultDriverNotification(truck, null, request.DefaultDriverId, now);
         await store.SaveChangesAsync(cancellationToken);
         return await MapAsync(truck, cancellationToken);
     }
@@ -42,6 +44,9 @@ public sealed class TruckService(IFleetStore store, ITruckPhotoStore photos,
         Event(truck, oldDefaultDriver != request.DefaultDriverId
             ? "TruckDefaultDriverChanged" : oldOdometer != request.OdometerKilometers
                 ? "TruckOdometerUpdated" : "TruckProfileUpdated", null, now);
+        if (oldDefaultDriver != request.DefaultDriverId)
+            DefaultDriverNotification(
+                truck, oldDefaultDriver, request.DefaultDriverId, now);
         await store.SaveChangesAsync(cancellationToken);
         return await MapAsync(truck, cancellationToken);
     }
@@ -191,6 +196,21 @@ public sealed class TruckService(IFleetStore store, ITruckPhotoStore photos,
     private void Event(Truck truck, string code, object? metadata, DateTimeOffset now) =>
         store.AddTruckEvent(new(Guid.NewGuid(), truck.CompanyId, truck.Id,
             currentUser.UserId, code, metadata is null ? null : JsonSerializer.Serialize(metadata), now));
+    private void DefaultDriverNotification(Truck truck, Guid? previousDriverId,
+        Guid? driverId, DateTimeOffset now) =>
+        store.AddNotification(new OperationNotification(Guid.NewGuid(),
+            truck.CompanyId, "TruckDefaultDriverChanged", "Information",
+            null, truck.Id, driverId,
+            $"TruckDefaultDriverChanged:{truck.Id}:{now.UtcTicks}",
+            JsonSerializer.Serialize(new
+            {
+                eventCode = "TRUCK_DEFAULT_DRIVER_CHANGED",
+                truckId = truck.Id,
+                truck.PlateNumber,
+                previousDriverId,
+                driverId
+            }), now));
+
     private static string? Normalize(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToUpperInvariant();
     private async Task<ResourceTripSummaryResponse> MapTripAsync(Trip x,

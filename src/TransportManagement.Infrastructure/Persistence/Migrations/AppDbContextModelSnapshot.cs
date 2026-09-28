@@ -249,6 +249,17 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ConnectionCodeHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ConnectionCodeHint")
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.Property<int>("ConnectionCodeVersion")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -269,6 +280,10 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ConnectionCodeHash")
+                        .IsUnique()
+                        .HasFilter("\"ConnectionCodeHash\" IS NOT NULL");
 
                     b.HasIndex("Slug")
                         .IsUnique();
@@ -393,12 +408,14 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasFilter("\"UserId\" IS NOT NULL");
+                    b.HasIndex("UserId");
 
                     b.HasIndex("CompanyId", "LicenseNumber")
                         .IsUnique();
+
+                    b.HasIndex("CompanyId", "UserId")
+                        .IsUnique()
+                        .HasFilter("\"UserId\" IS NOT NULL");
 
                     b.ToTable("drivers", (string)null);
                 });
@@ -407,6 +424,9 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApprovedByAccountId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CompanyId")
@@ -425,13 +445,21 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("EndedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("LastTripId")
+                    b.Property<Guid?>("InitiatedByAccountId")
                         .HasColumnType("uuid");
+
+                    b.Property<Guid?>("LastTripId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
 
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("StartedFromTripId")
+                    b.Property<Guid?>("StartedFromTripId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("TruckId")
@@ -446,7 +474,11 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ApprovedByAccountId");
+
                     b.HasIndex("DriverId");
+
+                    b.HasIndex("InitiatedByAccountId");
 
                     b.HasIndex("LastTripId");
 
@@ -663,6 +695,259 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                     b.ToTable("truck_photos", (string)null);
                 });
 
+            modelBuilder.Entity("TransportManagement.Domain.Fleet.TruckQrCredential", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CodeHint")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("GeneratedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("GeneratedByAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RevokedByAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("TruckId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GeneratedByAccountId");
+
+                    b.HasIndex("RevokedByAccountId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("TruckId");
+
+                    b.HasIndex("CompanyId", "TruckId")
+                        .IsUnique()
+                        .HasFilter("\"RevokedAt\" IS NULL");
+
+                    b.ToTable("truck_qr_credentials", (string)null);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Identity.CompanyConnectionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RequestedRolesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ResolutionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedByAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("ResolvedByAccountId");
+
+                    b.HasIndex("CompanyId", "AccountId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Pending'");
+
+                    b.HasIndex("CompanyId", "AccountId", "Status");
+
+                    b.ToTable("company_connection_requests", (string)null);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Identity.CompanyInvitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AcceptedByAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("InviterAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RolesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcceptedByAccountId");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("InviterAccountId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "Email", "Status");
+
+                    b.ToTable("company_invitations", (string)null);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Identity.CompanyMembership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("InvitedByAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("JoinedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("LeftAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("SuspendedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvitedByAccountId");
+
+                    b.HasIndex("AccountId", "Status");
+
+                    b.HasIndex("CompanyId", "AccountId")
+                        .IsUnique();
+
+                    b.ToTable("company_memberships", (string)null);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Identity.CompanyMembershipRole", b =>
+                {
+                    b.Property<Guid>("MembershipId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Role")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("MembershipId", "Role");
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("company_membership_roles", (string)null);
+                });
+
             modelBuilder.Entity("TransportManagement.Domain.Identity.CompanyUserEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -703,10 +988,57 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                     b.ToTable("company_user_events", (string)null);
                 });
 
-            modelBuilder.Entity("TransportManagement.Domain.Identity.RefreshToken", b =>
+            modelBuilder.Entity("TransportManagement.Domain.Identity.ExternalLogin", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EmailSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("ProviderSubject")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId", "Provider")
+                        .IsUnique();
+
+                    b.HasIndex("Provider", "ProviderSubject")
+                        .IsUnique();
+
+                    b.ToTable("external_logins", (string)null);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Identity.IdentityAuditEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ActorAccountId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CompanyId")
@@ -715,8 +1047,48 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DataJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("EventCode")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("ActorAccountId");
+
+                    b.HasIndex("CompanyId", "CreatedAt");
+
+                    b.ToTable("identity_audit_events", (string)null);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Identity.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("MembershipId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("ReplacedByTokenId")
                         .HasColumnType("uuid");
@@ -732,17 +1104,16 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
 
+                    b.HasIndex("MembershipId");
+
                     b.HasIndex("TokenHash")
                         .IsUnique();
 
-                    b.HasIndex("UserId", "ExpiresAt");
+                    b.HasIndex("AccountId", "ExpiresAt");
 
                     b.ToTable("refresh_tokens", (string)null);
                 });
@@ -751,9 +1122,6 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -778,7 +1146,6 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(true);
 
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
@@ -789,17 +1156,10 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(5)")
                         .HasDefaultValue("en");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CompanyId");
 
                     b.HasIndex("Email")
                         .IsUnique();
@@ -1107,6 +1467,83 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                     b.ToTable("trips", (string)null);
                 });
 
+            modelBuilder.Entity("TransportManagement.Domain.Trips.TripDriverParticipation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApprovedByAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AssignedByAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EndedPhase")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid?>("EndedPositionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("HandoverRequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("StartedPhase")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid?>("StartedPositionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedByAccountId");
+
+                    b.HasIndex("AssignedByAccountId");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("HandoverRequestId");
+
+                    b.HasIndex("TripId");
+
+                    b.HasIndex("CompanyId", "TripId")
+                        .IsUnique()
+                        .HasFilter("\"EndedAt\" IS NULL");
+
+                    b.HasIndex("CompanyId", "TripId", "StartedAt");
+
+                    b.ToTable("trip_driver_participations", (string)null);
+                });
+
             modelBuilder.Entity("TransportManagement.Domain.Trips.TripEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1210,6 +1647,84 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("trip_geofence_observations", (string)null);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Trips.TripHandoverRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CurrentDriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ExpectedTripVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("RequestedByAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RequestingDriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ResolutionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedByAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TruckId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrentDriverId");
+
+                    b.HasIndex("RequestedByAccountId");
+
+                    b.HasIndex("RequestingDriverId");
+
+                    b.HasIndex("ResolvedByAccountId");
+
+                    b.HasIndex("TripId");
+
+                    b.HasIndex("TruckId");
+
+                    b.HasIndex("CompanyId", "TripId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Pending'");
+
+                    b.HasIndex("CompanyId", "TripId", "Status");
+
+                    b.ToTable("trip_handover_requests", (string)null);
                 });
 
             modelBuilder.Entity("TransportManagement.Domain.Trips.TripNumberCounter", b =>
@@ -1552,13 +2067,18 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.HasOne("TransportManagement.Domain.Identity.User", null)
-                        .WithOne()
-                        .HasForeignKey("TransportManagement.Domain.Fleet.Driver", "UserId")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("TransportManagement.Domain.Fleet.DriverTruckSession", b =>
                 {
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TransportManagement.Domain.Companies.Company", null)
                         .WithMany()
                         .HasForeignKey("CompanyId")
@@ -1571,17 +2091,20 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("InitiatedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TransportManagement.Domain.Trips.Trip", null)
                         .WithMany()
                         .HasForeignKey("LastTripId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TransportManagement.Domain.Trips.Trip", null)
                         .WithMany()
                         .HasForeignKey("StartedFromTripId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TransportManagement.Domain.Fleet.Truck", null)
                         .WithMany()
@@ -1645,6 +2168,117 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TransportManagement.Domain.Fleet.TruckQrCredential", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("GeneratedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("RevokedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Truck", null)
+                        .WithMany()
+                        .HasForeignKey("TruckId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Identity.CompanyConnectionRequest", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Driver", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ResolvedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Identity.CompanyInvitation", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("AcceptedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Driver", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("InviterAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Identity.CompanyMembership", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("InvitedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Identity.CompanyMembershipRole", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Identity.CompanyMembership", null)
+                        .WithMany()
+                        .HasForeignKey("MembershipId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TransportManagement.Domain.Identity.CompanyUserEvent", b =>
                 {
                     b.HasOne("TransportManagement.Domain.Identity.User", null)
@@ -1666,28 +2300,51 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("TransportManagement.Domain.Identity.RefreshToken", b =>
+            modelBuilder.Entity("TransportManagement.Domain.Identity.ExternalLogin", b =>
                 {
-                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("TransportManagement.Domain.Identity.User", null)
                         .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("TransportManagement.Domain.Identity.User", b =>
+            modelBuilder.Entity("TransportManagement.Domain.Identity.IdentityAuditEvent", b =>
                 {
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TransportManagement.Domain.Companies.Company", null)
                         .WithMany()
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Identity.RefreshToken", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Identity.CompanyMembership", null)
+                        .WithMany()
+                        .HasForeignKey("MembershipId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("TransportManagement.Domain.Tracking.TruckCurrentPosition", b =>
@@ -1795,6 +2452,42 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("TransportManagement.Domain.Trips.TripDriverParticipation", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("AssignedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Driver", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Trips.TripHandoverRequest", null)
+                        .WithMany()
+                        .HasForeignKey("HandoverRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TransportManagement.Domain.Trips.TripEvent", b =>
                 {
                     b.HasOne("TransportManagement.Domain.Identity.User", null)
@@ -1827,6 +2520,50 @@ namespace TransportManagement.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("TripId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TransportManagement.Domain.Trips.TripHandoverRequest", b =>
+                {
+                    b.HasOne("TransportManagement.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Driver", null)
+                        .WithMany()
+                        .HasForeignKey("CurrentDriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Driver", null)
+                        .WithMany()
+                        .HasForeignKey("RequestingDriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ResolvedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagement.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagement.Domain.Fleet.Truck", null)
+                        .WithMany()
+                        .HasForeignKey("TruckId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

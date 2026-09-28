@@ -17,6 +17,7 @@ import 'features/settings/presentation/settings_screen.dart';
 import 'features/live_operations/presentation/driver_my_trip_screen.dart';
 import 'features/live_operations/presentation/notifications_screen.dart';
 import 'features/company_users/presentation/company_users_screen.dart';
+import 'features/memberships/presentation/workspace_screens.dart';
 import 'l10n/app_localizations.dart';
 import 'shared/widgets/app_shell.dart';
 
@@ -27,36 +28,61 @@ final routerProvider = Provider<GoRouter>((ref) {
         isLoading: auth.isLoading,
         signedIn: auth.value != null,
         role: auth.value?.user.role,
+        roles: auth.value?.user.roles ?? const <String>[],
+        companyId: auth.value?.user.companyId,
       ),
     ),
   );
   final signedIn = authRouteState.signedIn;
+  final hasWorkspace = authRouteState.companyId != null;
+  final manager =
+      authRouteState.roles.contains('Owner') ||
+      authRouteState.roles.contains('Operations');
+  final driverOnly = authRouteState.roles.contains('Driver') && !manager;
+  String home() => driverOnly ? '/my-trip' : '/dashboard';
   return GoRouter(
     initialLocation: signedIn
-        ? (authRouteState.role == 'Driver' ? '/my-trip' : '/dashboard')
+        ? (hasWorkspace ? home() : '/workspaces')
         : '/login',
     redirect: (context, state) {
       if (authRouteState.isLoading) return null;
-      final onLogin = state.matchedLocation == '/login';
-      if (!signedIn && !onLogin) return '/login';
-      if (signedIn && onLogin) {
-        return authRouteState.role == 'Driver' ? '/my-trip' : '/dashboard';
+      final path = state.matchedLocation;
+      final publicRoute = path == '/login' || path == '/accept-invitation';
+      if (!signedIn && !publicRoute) return '/login';
+      if (!signedIn) return null;
+      if (!hasWorkspace &&
+          path != '/workspaces' &&
+          path != '/accept-invitation') {
+        return '/workspaces';
       }
-      final driver = authRouteState.role == 'Driver';
+      if (path == '/login') return hasWorkspace ? home() : '/workspaces';
       final driverRoute =
-          state.matchedLocation == '/my-trip' ||
-          state.matchedLocation == '/notifications' ||
-          state.matchedLocation == '/settings';
-      if (driver && !driverRoute) return '/my-trip';
-      if (!driver && state.matchedLocation == '/my-trip') return '/dashboard';
-      if (state.matchedLocation == '/company-users' &&
-          authRouteState.role != 'Owner') {
+          path == '/my-trip' ||
+          path == '/notifications' ||
+          path == '/settings' ||
+          path == '/workspaces' ||
+          path == '/accept-invitation';
+      if (driverOnly && !driverRoute) return '/my-trip';
+      if (!driverOnly &&
+          path == '/my-trip' &&
+          !authRouteState.roles.contains('Driver')) {
         return '/dashboard';
       }
+      if (path == '/company-users' && !manager) return home();
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+      GoRoute(
+        path: '/workspaces',
+        builder: (_, _) => const WorkspaceChooserScreen(),
+      ),
+      GoRoute(
+        path: '/accept-invitation',
+        builder: (_, state) => InvitationAcceptanceScreen(
+          token: state.uri.queryParameters['token'] ?? '',
+        ),
+      ),
       GoRoute(
         path: '/dashboard',
         builder: (_, _) =>

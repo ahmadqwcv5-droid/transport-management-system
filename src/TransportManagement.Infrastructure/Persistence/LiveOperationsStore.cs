@@ -55,6 +55,13 @@ internal sealed class LiveOperationsStore(AppDbContext dbContext) :
     public Task<User?> GetUserAsync(Guid userId, CancellationToken cancellationToken) =>
         dbContext.Users.SingleOrDefaultAsync(x => x.Id == userId, cancellationToken);
 
+    public Task<bool> AccountHasRoleAsync(Guid accountId, string role,
+        CancellationToken cancellationToken) => dbContext.CompanyMemberships
+        .Where(x => x.AccountId == accountId && x.Status == MembershipStatus.Active)
+        .Join(dbContext.CompanyMembershipRoles.Where(x => x.Role == role),
+            membership => membership.Id, membershipRole => membershipRole.MembershipId,
+            (_, _) => true).AnyAsync(cancellationToken);
+
     public Task<Trip?> GetCurrentTripAsync(Guid driverId, CancellationToken cancellationToken) =>
         dbContext.Trips.Include(x => x.Stops).Include(x => x.RoutePlan)
             .Include(x => x.RepositioningPlans).Where(x => x.DriverId == driverId
@@ -75,6 +82,9 @@ internal sealed class LiveOperationsStore(AppDbContext dbContext) :
             && (x.DriverId == driverId || x.TruckId == truckId)).ToListAsync(cancellationToken);
 
     public void AddSession(DriverTruckSession session) => dbContext.DriverTruckSessions.Add(session);
+    public void AddTruckEvent(TruckEvent truckEvent) => dbContext.TruckEvents.Add(truckEvent);
+    public void AddNotification(OperationNotification notification) =>
+        dbContext.OperationNotifications.Add(notification);
 
     public Task<bool> UserLinkedAsync(Guid userId, Guid? excludingDriverId,
         CancellationToken cancellationToken) => dbContext.Drivers.AnyAsync(x =>

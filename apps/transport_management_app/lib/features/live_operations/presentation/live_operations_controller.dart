@@ -158,6 +158,10 @@ class NotificationController extends AsyncNotifier<NotificationPage> {
   }
 
   Future<void> refresh() async {
+    if (ref.read(authControllerProvider).value == null) {
+      _timer?.cancel();
+      return;
+    }
     if (_refreshing) return;
     _refreshing = true;
     try {
@@ -217,6 +221,10 @@ class DriverTripController extends AsyncNotifier<DriverWorkspace> {
   }
 
   Future<void> refresh() async {
+    if (ref.read(authControllerProvider).value == null) {
+      _timer?.cancel();
+      return;
+    }
     if (_refreshing) return;
     _refreshing = true;
     try {

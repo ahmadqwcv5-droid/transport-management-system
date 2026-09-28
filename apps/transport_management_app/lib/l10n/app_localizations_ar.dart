@@ -1906,4 +1906,249 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get heading => 'الاتجاه';
+
+  @override
+  String get workspaceChooser => 'اختيار مساحة العمل';
+
+  @override
+  String get chooseWorkspace => 'اختر مساحة الشركة التي تريد استخدامها.';
+
+  @override
+  String get noWorkspace => 'ليس لديك مساحة عمل نشطة بعد.';
+
+  @override
+  String get joinCompany => 'الانضمام إلى شركة';
+
+  @override
+  String get companyCode => 'رمز الشركة الخاص';
+
+  @override
+  String get exactCodePrivacy =>
+      'لا يظهر اسم الشركة إلا عند إدخال الرمز الخاص المطابق تماماً.';
+
+  @override
+  String get resolveCompany => 'التحقق من الرمز';
+
+  @override
+  String get requestConnection => 'طلب الاتصال';
+
+  @override
+  String get pendingRequests => 'الطلبات المعلقة';
+
+  @override
+  String get switchWorkspace => 'تبديل مساحة العمل';
+
+  @override
+  String get roles => 'الأدوار';
+
+  @override
+  String get invitationAccept => 'دعوة شركة';
+
+  @override
+  String get invitationFor => 'دعوة إلى';
+
+  @override
+  String get expiresAt => 'تنتهي';
+
+  @override
+  String get createAccount => 'إنشاء حسابك';
+
+  @override
+  String get acceptInvitation => 'قبول الدعوة';
+
+  @override
+  String get declineInvitation => 'رفض الدعوة';
+
+  @override
+  String get invitationAccepted =>
+      'تم قبول الدعوة. سجّل الدخول أو بدّل مساحة العمل للمتابعة.';
+
+  @override
+  String get loginToAccept =>
+      'سجّل الدخول بالبريد المدعو، أو أنشئ حسابك الشخصي أدناه.';
+
+  @override
+  String get googleSignIn => 'المتابعة باستخدام Google';
+
+  @override
+  String get googleNotConfigured =>
+      'تسجيل الدخول عبر Google غير مهيأ لهذه البيئة.';
+
+  @override
+  String get signInMethods => 'طرق تسجيل الدخول';
+
+  @override
+  String get linked => 'مرتبط';
+
+  @override
+  String get unlink => 'إلغاء الربط';
+
+  @override
+  String get phoneComingSoon =>
+      'تسجيل الدخول بالهاتف مخطط له لكنه غير متاح حالياً.';
+
+  @override
+  String get invitations => 'الدعوات';
+
+  @override
+  String get invitePerson => 'دعوة شخص';
+
+  @override
+  String get invitationLink => 'رابط الدعوة';
+
+  @override
+  String get copyInvitationLink => 'نسخ رابط الدعوة';
+
+  @override
+  String get revoke => 'إلغاء';
+
+  @override
+  String get connectionRequests => 'طلبات الاتصال';
+
+  @override
+  String get approve => 'موافقة';
+
+  @override
+  String get reject => 'رفض';
+
+  @override
+  String get companyConnectionCode => 'رمز اتصال الشركة';
+
+  @override
+  String get rotateCode => 'تغيير الرمز';
+
+  @override
+  String get qrCode => 'رمز QR للشاحنة';
+
+  @override
+  String get regenerateTruckQr => 'إنشاء / إعادة إنشاء QR للشاحنة';
+
+  @override
+  String get truckQrExplanation =>
+      'يعرّف هذا الرمز الشاحنة وليس الرحلة. إعادة الإنشاء تلغي الملصق السابق.';
+
+  @override
+  String get scanTruckQr => 'مسح QR للشاحنة';
+
+  @override
+  String get manualCode => 'إدخال الرمز يدوياً';
+
+  @override
+  String get previewTruck => 'مراجعة الشاحنة';
+
+  @override
+  String get confirmTruckSwitch => 'تأكيد تبديل الشاحنة';
+
+  @override
+  String get handoverApprovalRequired =>
+      'لهذه الشاحنة رحلة نشطة لسائق آخر. يجب الحصول على موافقة قبل أي تغيير.';
+
+  @override
+  String get requestSent => 'تم إرسال الطلب';
+
+  @override
+  String get handoverRequests => 'طلبات تسليم القيادة';
+
+  @override
+  String get currentDriver => 'السائق الحالي';
+
+  @override
+  String get requestingDriver => 'السائق الطالب';
+
+  @override
+  String get approveHandover => 'الموافقة على التسليم';
+
+  @override
+  String get rejectHandover => 'رفض التسليم';
+
+  @override
+  String get reason => 'السبب';
+
+  @override
+  String get selectDriver => 'اختيار السائق';
+
+  @override
+  String get copied => 'تم النسخ';
+
+  @override
+  String get invitationPending => 'الدعوة معلقة';
+
+  @override
+  String get accountConnected => 'الحساب متصل';
+
+  @override
+  String get driverRecordOnly => 'سجل سائق بلا وصول للتطبيق';
+
+  @override
+  String get googleLinkRequiresProvider =>
+      'استخدم نتيجة مصادقة Google موثقة لربط هذه الطريقة.';
+
+  @override
+  String get accountEmailConflict => 'يوجد حساب يستخدم هذا البريد بالفعل.';
+
+  @override
+  String get externalLoginAlreadyLinked => 'هوية Google هذه مرتبطة بالفعل.';
+
+  @override
+  String get externalLoginConfirmationRequired =>
+      'سجّل الدخول إلى الحساب الحالي قبل ربط Google.';
+
+  @override
+  String get googleTokenInvalid => 'تعذر على Google التحقق من تسجيل الدخول.';
+
+  @override
+  String get membershipNotActive => 'عضوية الشركة هذه غير نشطة.';
+
+  @override
+  String get workspaceAccessDenied => 'ليس لديك وصول إلى مساحة العمل هذه.';
+
+  @override
+  String get invitationInvalid => 'هذه الدعوة غير صالحة.';
+
+  @override
+  String get invitationExpired => 'انتهت صلاحية هذه الدعوة.';
+
+  @override
+  String get invitationAlreadyUsed => 'تم استخدام هذه الدعوة بالفعل.';
+
+  @override
+  String get invitationEmailMismatch =>
+      'سجّل الدخول بالبريد الذي استلم الدعوة.';
+
+  @override
+  String get companyCodeInvalid => 'رمز الشركة غير صالح.';
+
+  @override
+  String get connectionAlreadyPending => 'يوجد طلب اتصال معلّق بالفعل.';
+
+  @override
+  String get driverAccountAlreadyLinked => 'سجل السائق هذا مرتبط بحساب بالفعل.';
+
+  @override
+  String get driverLinkRequired => 'اختر سجل السائق المحدد قبل الموافقة.';
+
+  @override
+  String get truckQrInvalid => 'رمز QR للشاحنة غير صالح أو غير متاح.';
+
+  @override
+  String get truckQrRevoked => 'تم استبدال رمز QR هذا. امسح الملصق الجديد.';
+
+  @override
+  String get truckSessionConflict => 'لدى السائق أو الشاحنة جلسة نشطة متعارضة.';
+
+  @override
+  String get handoverRequestStale =>
+      'لم يعد طلب التسليم مطابقاً لتعيين الرحلة الحالي.';
+
+  @override
+  String get handoverAlreadyResolved => 'تمت معالجة طلب التسليم بالفعل.';
+
+  @override
+  String get tripAssignmentChanged => 'تغير تعيين الرحلة. حدّث وراجعه مجدداً.';
+
+  @override
+  String get noData => 'لا توجد سجلات بعد.';
+
+  @override
+  String get useCamera => 'استخدام الكاميرا';
 }

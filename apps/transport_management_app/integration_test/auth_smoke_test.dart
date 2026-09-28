@@ -12,6 +12,10 @@ void main() {
     defaultValue: 'owner@demo.local',
   );
   const password = String.fromEnvironment('E2E_PASSWORD');
+  const expectedHomeKey = String.fromEnvironment(
+    'E2E_EXPECTED_HOME_KEY',
+    defaultValue: 'fleet-dashboard',
+  );
 
   testWidgets('login and logout return the user to the login route', (
     tester,
@@ -34,7 +38,9 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
     await tester.pumpAndSettle(const Duration(milliseconds: 100));
 
-    await _waitFor(tester, find.byKey(const Key('fleet-dashboard')));
+    await _waitFor(tester, find.byKey(const Key(expectedHomeKey)));
+    await tester.tap(find.byKey(const Key('account-identity-control')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('logout-button')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('logout-button')));
@@ -42,7 +48,7 @@ void main() {
 
     await _waitFor(tester, find.byType(TextFormField));
     expect(find.byType(TextFormField), findsNWidgets(2));
-    expect(find.byKey(const Key('fleet-dashboard')), findsNothing);
+    expect(find.byKey(const Key(expectedHomeKey)), findsNothing);
   });
 }
 

@@ -1919,4 +1919,258 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get heading => 'Heading';
+
+  @override
+  String get workspaceChooser => 'Choose a workspace';
+
+  @override
+  String get chooseWorkspace => 'Select the company workspace you want to use.';
+
+  @override
+  String get noWorkspace => 'You do not have an active workspace yet.';
+
+  @override
+  String get joinCompany => 'Join a company';
+
+  @override
+  String get companyCode => 'Private company code';
+
+  @override
+  String get exactCodePrivacy =>
+      'Only an exact private code can reveal the company name.';
+
+  @override
+  String get resolveCompany => 'Check code';
+
+  @override
+  String get requestConnection => 'Request connection';
+
+  @override
+  String get pendingRequests => 'Pending requests';
+
+  @override
+  String get switchWorkspace => 'Switch workspace';
+
+  @override
+  String get roles => 'Roles';
+
+  @override
+  String get invitationAccept => 'Company invitation';
+
+  @override
+  String get invitationFor => 'Invitation for';
+
+  @override
+  String get expiresAt => 'Expires';
+
+  @override
+  String get createAccount => 'Create your account';
+
+  @override
+  String get acceptInvitation => 'Accept invitation';
+
+  @override
+  String get declineInvitation => 'Decline invitation';
+
+  @override
+  String get invitationAccepted =>
+      'Invitation accepted. Sign in or switch workspace to continue.';
+
+  @override
+  String get loginToAccept =>
+      'Sign in with the invited email, or create your personal account below.';
+
+  @override
+  String get googleSignIn => 'Continue with Google';
+
+  @override
+  String get googleNotConfigured =>
+      'Google sign-in is not configured for this environment.';
+
+  @override
+  String get signInMethods => 'Sign-in methods';
+
+  @override
+  String get linked => 'Linked';
+
+  @override
+  String get unlink => 'Unlink';
+
+  @override
+  String get phoneComingSoon =>
+      'Phone sign-in is planned but is not available yet.';
+
+  @override
+  String get invitations => 'Invitations';
+
+  @override
+  String get invitePerson => 'Invite person';
+
+  @override
+  String get invitationLink => 'Invitation link';
+
+  @override
+  String get copyInvitationLink => 'Copy invitation link';
+
+  @override
+  String get revoke => 'Revoke';
+
+  @override
+  String get connectionRequests => 'Connection requests';
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get reject => 'Reject';
+
+  @override
+  String get companyConnectionCode => 'Company connection code';
+
+  @override
+  String get rotateCode => 'Rotate code';
+
+  @override
+  String get qrCode => 'Truck QR';
+
+  @override
+  String get regenerateTruckQr => 'Generate / regenerate truck QR';
+
+  @override
+  String get truckQrExplanation =>
+      'This QR identifies the truck, not a trip. Regenerating invalidates the previous label.';
+
+  @override
+  String get scanTruckQr => 'Scan truck QR';
+
+  @override
+  String get manualCode => 'Enter code manually';
+
+  @override
+  String get previewTruck => 'Review truck';
+
+  @override
+  String get confirmTruckSwitch => 'Confirm truck switch';
+
+  @override
+  String get handoverApprovalRequired =>
+      'This truck has another Driver\'s active trip. Approval is required before anything changes.';
+
+  @override
+  String get requestSent => 'Request sent';
+
+  @override
+  String get handoverRequests => 'Handover requests';
+
+  @override
+  String get currentDriver => 'Current Driver';
+
+  @override
+  String get requestingDriver => 'Requesting Driver';
+
+  @override
+  String get approveHandover => 'Approve handover';
+
+  @override
+  String get rejectHandover => 'Reject handover';
+
+  @override
+  String get reason => 'Reason';
+
+  @override
+  String get selectDriver => 'Select Driver';
+
+  @override
+  String get copied => 'Copied';
+
+  @override
+  String get invitationPending => 'Invitation pending';
+
+  @override
+  String get accountConnected => 'Account connected';
+
+  @override
+  String get driverRecordOnly => 'Driver record without app access';
+
+  @override
+  String get googleLinkRequiresProvider =>
+      'Use a verified Google authorization result to link this method.';
+
+  @override
+  String get accountEmailConflict => 'An account already uses this email.';
+
+  @override
+  String get externalLoginAlreadyLinked =>
+      'This Google identity is already linked.';
+
+  @override
+  String get externalLoginConfirmationRequired =>
+      'Sign in to the existing account before linking Google.';
+
+  @override
+  String get googleTokenInvalid => 'Google could not verify this sign-in.';
+
+  @override
+  String get membershipNotActive => 'This company membership is not active.';
+
+  @override
+  String get workspaceAccessDenied =>
+      'You do not have access to this workspace.';
+
+  @override
+  String get invitationInvalid => 'This invitation is invalid.';
+
+  @override
+  String get invitationExpired => 'This invitation has expired.';
+
+  @override
+  String get invitationAlreadyUsed => 'This invitation has already been used.';
+
+  @override
+  String get invitationEmailMismatch =>
+      'Sign in with the email address that received this invitation.';
+
+  @override
+  String get companyCodeInvalid => 'The company code is invalid.';
+
+  @override
+  String get connectionAlreadyPending =>
+      'A connection request is already pending.';
+
+  @override
+  String get driverAccountAlreadyLinked =>
+      'This Driver record is already linked to an account.';
+
+  @override
+  String get driverLinkRequired =>
+      'Select the exact Driver record before approval.';
+
+  @override
+  String get truckQrInvalid => 'The truck QR code is invalid or unavailable.';
+
+  @override
+  String get truckQrRevoked =>
+      'This truck QR code was replaced. Scan the new label.';
+
+  @override
+  String get truckSessionConflict =>
+      'The Driver or truck already has a conflicting active session.';
+
+  @override
+  String get handoverRequestStale =>
+      'This handover no longer matches the current trip assignment.';
+
+  @override
+  String get handoverAlreadyResolved =>
+      'This handover request was already resolved.';
+
+  @override
+  String get tripAssignmentChanged =>
+      'The trip assignment changed. Refresh and review it again.';
+
+  @override
+  String get noData => 'No records yet.';
+
+  @override
+  String get useCamera => 'Use camera';
 }

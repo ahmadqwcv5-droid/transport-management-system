@@ -151,6 +151,8 @@ internal sealed partial class OperationsStore(AppDbContext dbContext) :
         .OrderByDescending(x => x.CreatedAt).Take(Math.Clamp(limit, 1, 100))
         .ToListAsync(cancellationToken);
     public void AddTruckEvent(TruckEvent truckEvent) => dbContext.TruckEvents.Add(truckEvent);
+    public void AddNotification(OperationNotification notification) =>
+        dbContext.OperationNotifications.Add(notification);
     public async Task<IReadOnlyList<Trip>> ListTruckTripsAsync(Guid truckId, int limit,
         CancellationToken cancellationToken) => await dbContext.Trips.AsNoTracking()
         .Where(x => x.TruckId == truckId).OrderByDescending(x => x.PlannedStartAt)
@@ -179,6 +181,12 @@ internal sealed partial class OperationsStore(AppDbContext dbContext) :
 
     public Task<Driver?> GetDriverAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Drivers.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+    public Task<TripDriverParticipation?> GetActiveParticipationAsync(
+        Guid tripId, CancellationToken cancellationToken) =>
+        dbContext.TripDriverParticipations.SingleOrDefaultAsync(
+            x => x.TripId == tripId && x.EndedAt == null, cancellationToken);
+    public void AddParticipation(TripDriverParticipation participation) =>
+        dbContext.TripDriverParticipations.Add(participation);
 
     public async Task<IReadOnlyList<Driver>> ListDriversAsync(DriverStatus? status, bool? isActive, string? search, CancellationToken cancellationToken)
     {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/fleet_models.dart';
@@ -7,7 +8,7 @@ import '../../../operations/presentation/operations_view.dart';
 import '../../../../l10n/l10n_extensions.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../../company_users/presentation/company_users_controller.dart';
-import '../../../company_users/presentation/company_users_screen.dart';
+import '../../../memberships/domain/membership_models.dart';
 import '../../../company_users/domain/company_user.dart';
 
 class DriversScreen extends ConsumerWidget {
@@ -184,18 +185,18 @@ class _DriverTile extends ConsumerWidget {
                           final navigator = Navigator.of(dialogContext);
                           final values = await _accountInput(dialogContext);
                           if (values == null) return;
-                          final credential = await ref
+                          final invitation = await ref
                               .read(companyUsersControllerProvider.notifier)
                               .create(
                                 email: values.$1,
                                 displayName: values.$2,
                                 driverId: driver.id,
                               );
-                          if (credential != null && navigator.mounted) {
+                          if (invitation != null && navigator.mounted) {
                             if (navigator.canPop()) navigator.pop();
-                            await showTemporaryCredential(
+                            await _showDriverInvitation(
                               navigator.context,
-                              credential,
+                              invitation,
                             );
                             ref
                                 .read(operationsControllerProvider.notifier)
@@ -449,3 +450,27 @@ class _DriverFormState extends State<_DriverForm> {
     ],
   );
 }
+
+Future<void> _showDriverInvitation(
+  BuildContext context,
+  Invitation invitation,
+) => showDialog<void>(
+  context: context,
+  builder: (dialogContext) => AlertDialog(
+    title: Text(context.l10n.invitationLink),
+    content: SelectableText(invitation.acceptancePath ?? ''),
+    actions: [
+      TextButton.icon(
+        onPressed: () => Clipboard.setData(
+          ClipboardData(text: invitation.acceptancePath ?? ''),
+        ),
+        icon: const Icon(Icons.copy),
+        label: Text(context.l10n.copyInvitationLink),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(dialogContext),
+        child: Text(context.l10n.done),
+      ),
+    ],
+  ),
+);

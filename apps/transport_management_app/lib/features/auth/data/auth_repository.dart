@@ -30,6 +30,22 @@ final class AuthRepository {
     }
   }
 
+  Future<AuthSession> externalSignIn(
+    String provider,
+    String idToken, {
+    String? nonce,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post<Map<String, dynamic>>(
+        '/api/auth/external/sign-in',
+        data: {'provider': provider, 'idToken': idToken, 'nonce': ?nonce},
+      );
+      return await _saveResponse(response.data!);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
   Future<bool> refresh() async {
     final refreshToken = await _tokenStore.readRefreshToken();
     if (refreshToken == null) return false;
@@ -55,6 +71,39 @@ final class AuthRepository {
         '/api/auth/me',
       );
       return AuthSession(user: CurrentUser.fromJson(response.data!));
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<List<Workspace>> workspaces() async {
+    try {
+      final response = await _apiClient.dio.get<List<dynamic>>(
+        '/api/auth/workspaces',
+      );
+      return response.data!
+          .cast<Map<String, dynamic>>()
+          .map(Workspace.fromJson)
+          .toList();
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<AuthSession> switchWorkspace(String membershipId) async {
+    final refreshToken = await _tokenStore.readRefreshToken();
+    if (refreshToken == null) {
+      throw const ApiException(
+        'The session has expired.',
+        code: 'AUTHENTICATION_FAILED',
+      );
+    }
+    try {
+      final response = await _apiClient.dio.post<Map<String, dynamic>>(
+        '/api/auth/switch-workspace',
+        data: {'membershipId': membershipId, 'refreshToken': refreshToken},
+      );
+      return await _saveResponse(response.data!);
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }

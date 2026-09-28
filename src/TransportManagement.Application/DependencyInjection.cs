@@ -10,6 +10,7 @@ using TransportManagement.Application.Routing;
 using TransportManagement.Application.Notifications;
 using TransportManagement.Application.Drivers;
 using TransportManagement.Application.CompanyUsers;
+using TransportManagement.Application.Memberships;
 
 namespace TransportManagement.Application;
 
@@ -23,6 +24,7 @@ public static class DependencyInjection
         .AddScoped<TruckService>()
         .AddScoped<DriverService>()
         .AddScoped<TruckPhotoService>()
+        .AddScoped<QrHandoverService>()
         .AddScoped<TripEntityResolver>()
         .AddScoped<TripEventWriter>()
         .AddScoped<ResourceEventWriter>()
@@ -42,6 +44,7 @@ public static class DependencyInjection
         .AddScoped<DriverDepartureService>()
         .AddScoped<DriverWorkflowService>()
         .AddScoped<CompanyUserService>()
+        .AddScoped<MembershipService>()
         .AddScoped<DashboardService>()
         .AddScoped<ActiveOperationsService>();
 }

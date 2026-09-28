@@ -102,7 +102,9 @@ public sealed class ArchitectureRulesTests
         var approved = new HashSet<string>(StringComparer.Ordinal)
         {
             "src/TransportManagement.Infrastructure/Persistence/IdentityStore.cs",
-            "src/TransportManagement.Infrastructure/Persistence/DevelopmentDataSeeder.cs"
+            "src/TransportManagement.Infrastructure/Persistence/DevelopmentDataSeeder.cs",
+            "src/TransportManagement.Infrastructure/Persistence/MembershipWorkflowStore.cs",
+            "src/TransportManagement.Infrastructure/DependencyInjection.cs"
         };
         var offenders = Directory.EnumerateFiles(Path.Combine(Root, "src"), "*.cs", SearchOption.AllDirectories)
             .Where(path => File.ReadAllText(path).Contains("IgnoreQueryFilters", StringComparison.Ordinal))
@@ -187,8 +189,10 @@ public sealed class ArchitectureRulesTests
     private sealed class ArchitectureCurrentUser : ICurrentUser
     {
         public Guid UserId => Guid.Parse("11111111-1111-1111-1111-111111111111");
+        public Guid MembershipId => Guid.Parse("33333333-3333-3333-3333-333333333333");
         public Guid CompanyId => Guid.Parse("22222222-2222-2222-2222-222222222222");
         public string Role => "Owner";
         public bool IsAuthenticated => true;
+        public bool IsInRole(string role) => role == Role;
     }
 }

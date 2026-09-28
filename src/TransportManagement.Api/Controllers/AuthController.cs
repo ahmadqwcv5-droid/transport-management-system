@@ -16,6 +16,37 @@ public sealed class AuthController(AuthService authService) : ControllerBase
         authService.LoginAsync(request, cancellationToken);
 
     [AllowAnonymous]
+    [HttpGet("external/providers")]
+    public IReadOnlyList<ExternalProviderResponse> ExternalProviders() =>
+        authService.ExternalProviders();
+
+    [AllowAnonymous]
+    [HttpPost("external/sign-in")]
+    [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
+    public Task<AuthResponse> ExternalSignIn(
+        ExternalSignInRequest request, CancellationToken cancellationToken) =>
+        authService.ExternalSignInAsync(request, cancellationToken);
+
+    [Authorize]
+    [HttpGet("me/sign-in-methods")]
+    public Task<IReadOnlyList<SignInMethodResponse>> SignInMethods(
+        CancellationToken cancellationToken) =>
+        authService.ListSignInMethodsAsync(cancellationToken);
+
+    [Authorize]
+    [HttpPost("me/external-logins")]
+    public Task<IReadOnlyList<SignInMethodResponse>> LinkExternal(
+        LinkExternalLoginRequest request, CancellationToken cancellationToken) =>
+        authService.LinkExternalAsync(request, cancellationToken);
+
+    [Authorize]
+    [HttpDelete("me/external-logins/{provider}")]
+    public Task<IReadOnlyList<SignInMethodResponse>> UnlinkExternal(
+        string provider, CancellationToken cancellationToken) =>
+        authService.UnlinkExternalAsync(provider, cancellationToken);
+
+
+    [AllowAnonymous]
     [HttpPost("refresh")]
     [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
     public Task<AuthResponse> Refresh(RefreshRequest request, CancellationToken cancellationToken) =>
@@ -39,6 +70,18 @@ public sealed class AuthController(AuthService authService) : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
+    [Authorize]
+    [HttpGet("workspaces")]
+    public Task<IReadOnlyList<WorkspaceResponse>> Workspaces(
+        CancellationToken cancellationToken) =>
+        authService.ListWorkspacesAsync(cancellationToken);
+
+    [Authorize]
+    [HttpPost("switch-workspace")]
+    [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
+    public Task<AuthResponse> SwitchWorkspace(
+        SwitchWorkspaceRequest request, CancellationToken cancellationToken) =>
+        authService.SwitchWorkspaceAsync(request, cancellationToken);
     [Authorize]
     [HttpPut("me/preferences")]
     public Task<CurrentUserResponse> UpdatePreferences(

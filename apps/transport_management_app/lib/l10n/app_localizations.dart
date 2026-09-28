@@ -3637,6 +3637,474 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Heading'**
   String get heading;
+
+  /// No description provided for @workspaceChooser.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a workspace'**
+  String get workspaceChooser;
+
+  /// No description provided for @chooseWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the company workspace you want to use.'**
+  String get chooseWorkspace;
+
+  /// No description provided for @noWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have an active workspace yet.'**
+  String get noWorkspace;
+
+  /// No description provided for @joinCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a company'**
+  String get joinCompany;
+
+  /// No description provided for @companyCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Private company code'**
+  String get companyCode;
+
+  /// No description provided for @exactCodePrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Only an exact private code can reveal the company name.'**
+  String get exactCodePrivacy;
+
+  /// No description provided for @resolveCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Check code'**
+  String get resolveCompany;
+
+  /// No description provided for @requestConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Request connection'**
+  String get requestConnection;
+
+  /// No description provided for @pendingRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending requests'**
+  String get pendingRequests;
+
+  /// No description provided for @switchWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch workspace'**
+  String get switchWorkspace;
+
+  /// No description provided for @roles.
+  ///
+  /// In en, this message translates to:
+  /// **'Roles'**
+  String get roles;
+
+  /// No description provided for @invitationAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Company invitation'**
+  String get invitationAccept;
+
+  /// No description provided for @invitationFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation for'**
+  String get invitationFor;
+
+  /// No description provided for @expiresAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires'**
+  String get expiresAt;
+
+  /// No description provided for @createAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your account'**
+  String get createAccount;
+
+  /// No description provided for @acceptInvitation.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept invitation'**
+  String get acceptInvitation;
+
+  /// No description provided for @declineInvitation.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline invitation'**
+  String get declineInvitation;
+
+  /// No description provided for @invitationAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation accepted. Sign in or switch workspace to continue.'**
+  String get invitationAccepted;
+
+  /// No description provided for @loginToAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with the invited email, or create your personal account below.'**
+  String get loginToAccept;
+
+  /// No description provided for @googleSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get googleSignIn;
+
+  /// No description provided for @googleNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in is not configured for this environment.'**
+  String get googleNotConfigured;
+
+  /// No description provided for @signInMethods.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in methods'**
+  String get signInMethods;
+
+  /// No description provided for @linked.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked'**
+  String get linked;
+
+  /// No description provided for @unlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink'**
+  String get unlink;
+
+  /// No description provided for @phoneComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone sign-in is planned but is not available yet.'**
+  String get phoneComingSoon;
+
+  /// No description provided for @invitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitations'**
+  String get invitations;
+
+  /// No description provided for @invitePerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite person'**
+  String get invitePerson;
+
+  /// No description provided for @invitationLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation link'**
+  String get invitationLink;
+
+  /// No description provided for @copyInvitationLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy invitation link'**
+  String get copyInvitationLink;
+
+  /// No description provided for @revoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get revoke;
+
+  /// No description provided for @connectionRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection requests'**
+  String get connectionRequests;
+
+  /// No description provided for @approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get approve;
+
+  /// No description provided for @reject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get reject;
+
+  /// No description provided for @companyConnectionCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Company connection code'**
+  String get companyConnectionCode;
+
+  /// No description provided for @rotateCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate code'**
+  String get rotateCode;
+
+  /// No description provided for @qrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck QR'**
+  String get qrCode;
+
+  /// No description provided for @regenerateTruckQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate / regenerate truck QR'**
+  String get regenerateTruckQr;
+
+  /// No description provided for @truckQrExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'This QR identifies the truck, not a trip. Regenerating invalidates the previous label.'**
+  String get truckQrExplanation;
+
+  /// No description provided for @scanTruckQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan truck QR'**
+  String get scanTruckQr;
+
+  /// No description provided for @manualCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter code manually'**
+  String get manualCode;
+
+  /// No description provided for @previewTruck.
+  ///
+  /// In en, this message translates to:
+  /// **'Review truck'**
+  String get previewTruck;
+
+  /// No description provided for @confirmTruckSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm truck switch'**
+  String get confirmTruckSwitch;
+
+  /// No description provided for @handoverApprovalRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This truck has another Driver\'s active trip. Approval is required before anything changes.'**
+  String get handoverApprovalRequired;
+
+  /// No description provided for @requestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent'**
+  String get requestSent;
+
+  /// No description provided for @handoverRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Handover requests'**
+  String get handoverRequests;
+
+  /// No description provided for @currentDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Driver'**
+  String get currentDriver;
+
+  /// No description provided for @requestingDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'Requesting Driver'**
+  String get requestingDriver;
+
+  /// No description provided for @approveHandover.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve handover'**
+  String get approveHandover;
+
+  /// No description provided for @rejectHandover.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject handover'**
+  String get rejectHandover;
+
+  /// No description provided for @reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get reason;
+
+  /// No description provided for @selectDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Driver'**
+  String get selectDriver;
+
+  /// No description provided for @copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get copied;
+
+  /// No description provided for @invitationPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation pending'**
+  String get invitationPending;
+
+  /// No description provided for @accountConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Account connected'**
+  String get accountConnected;
+
+  /// No description provided for @driverRecordOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver record without app access'**
+  String get driverRecordOnly;
+
+  /// No description provided for @googleLinkRequiresProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a verified Google authorization result to link this method.'**
+  String get googleLinkRequiresProvider;
+
+  /// No description provided for @accountEmailConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'An account already uses this email.'**
+  String get accountEmailConflict;
+
+  /// No description provided for @externalLoginAlreadyLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'This Google identity is already linked.'**
+  String get externalLoginAlreadyLinked;
+
+  /// No description provided for @externalLoginConfirmationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to the existing account before linking Google.'**
+  String get externalLoginConfirmationRequired;
+
+  /// No description provided for @googleTokenInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Google could not verify this sign-in.'**
+  String get googleTokenInvalid;
+
+  /// No description provided for @membershipNotActive.
+  ///
+  /// In en, this message translates to:
+  /// **'This company membership is not active.'**
+  String get membershipNotActive;
+
+  /// No description provided for @workspaceAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have access to this workspace.'**
+  String get workspaceAccessDenied;
+
+  /// No description provided for @invitationInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This invitation is invalid.'**
+  String get invitationInvalid;
+
+  /// No description provided for @invitationExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This invitation has expired.'**
+  String get invitationExpired;
+
+  /// No description provided for @invitationAlreadyUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'This invitation has already been used.'**
+  String get invitationAlreadyUsed;
+
+  /// No description provided for @invitationEmailMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with the email address that received this invitation.'**
+  String get invitationEmailMismatch;
+
+  /// No description provided for @companyCodeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The company code is invalid.'**
+  String get companyCodeInvalid;
+
+  /// No description provided for @connectionAlreadyPending.
+  ///
+  /// In en, this message translates to:
+  /// **'A connection request is already pending.'**
+  String get connectionAlreadyPending;
+
+  /// No description provided for @driverAccountAlreadyLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'This Driver record is already linked to an account.'**
+  String get driverAccountAlreadyLinked;
+
+  /// No description provided for @driverLinkRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the exact Driver record before approval.'**
+  String get driverLinkRequired;
+
+  /// No description provided for @truckQrInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The truck QR code is invalid or unavailable.'**
+  String get truckQrInvalid;
+
+  /// No description provided for @truckQrRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'This truck QR code was replaced. Scan the new label.'**
+  String get truckQrRevoked;
+
+  /// No description provided for @truckSessionConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'The Driver or truck already has a conflicting active session.'**
+  String get truckSessionConflict;
+
+  /// No description provided for @handoverRequestStale.
+  ///
+  /// In en, this message translates to:
+  /// **'This handover no longer matches the current trip assignment.'**
+  String get handoverRequestStale;
+
+  /// No description provided for @handoverAlreadyResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'This handover request was already resolved.'**
+  String get handoverAlreadyResolved;
+
+  /// No description provided for @tripAssignmentChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The trip assignment changed. Refresh and review it again.'**
+  String get tripAssignmentChanged;
+
+  /// No description provided for @noData.
+  ///
+  /// In en, this message translates to:
+  /// **'No records yet.'**
+  String get noData;
+
+  /// No description provided for @useCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Use camera'**
+  String get useCamera;
 }
 
 class _AppLocalizationsDelegate

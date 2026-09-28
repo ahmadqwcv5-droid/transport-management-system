@@ -44,6 +44,15 @@ builder.Services.AddRateLimiter(options =>
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0
         }));
+    options.AddPolicy("identity-secrets", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirst("user_id")?.Value
+            ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 12,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        }));
 });
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("postgresql");
 builder.Services.AddCors(options => options.AddPolicy("frontend", policy => policy

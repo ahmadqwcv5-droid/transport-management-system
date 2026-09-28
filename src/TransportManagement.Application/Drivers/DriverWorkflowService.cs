@@ -1,3 +1,4 @@
+using System.Text.Json;
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Application.Common;
 using TransportManagement.Application.Routing;
@@ -5,6 +6,7 @@ using TransportManagement.Application.Tracking;
 using TransportManagement.Application.Trips;
 using TransportManagement.Application.Fleet;
 using TransportManagement.Domain.Trips;
+using TransportManagement.Domain.Fleet;
 
 namespace TransportManagement.Application.Drivers;
 
@@ -60,7 +62,8 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
                         idlePosition.Speed, idlePosition.Heading, idlePosition.RecordedAt, idlePosition.IsOnline),
                     TrackingState(idlePosition), null, null, null, null, null, [], []);
             }
-            var lastTrip = await identities.GetTripAsync(session.LastTripId, cancellationToken);
+            var lastTrip = session.LastTripId.HasValue
+                ? await identities.GetTripAsync(session.LastTripId.Value, cancellationToken) : null;
             var sessionTruck = await fleet.GetTruckAsync(session.TruckId, cancellationToken);
             var sessionPhoto = await photos.MetadataAsync(session.TruckId, cancellationToken);
             var sessionPosition = await tracking.LatestPositionAsync(session.TruckId, cancellationToken);
@@ -75,7 +78,7 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
                 TrackingState(sessionPosition), mapped?.RoutePlan,
                 mapped?.RepositioningPlan, null, 0, null, ["end-vehicle-session"],
                 [new("END_VEHICLE_SESSION", true, true, null, true)],
-                new(session.Id, session.TruckId, session.LastTripId, session.StartedAt));
+                new(session.Id, session.TruckId, session.LastTripId ?? Guid.Empty, session.StartedAt));
         }
 
         var mappedTrip = TripResponseMapper.Map(trip);
@@ -147,7 +150,23 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
                 "ACTIVE_TRIP_EXISTS");
         var session = await identities.GetActiveSessionAsync(driver.Id, cancellationToken)
             ?? throw new NotFoundException("No active vehicle session was found.", "VEHICLE_SESSION_NOT_FOUND");
-        session.End("DriverEnded", clock.UtcNow);
+        var now = clock.UtcNow;
+        session.End("DriverEnded", now);
+        var data = JsonSerializer.Serialize(new
+        {
+            eventCode = "TRUCK_SESSION_ENDED",
+            sessionId = session.Id,
+            session.TruckId,
+            driverId = driver.Id,
+            reason = "DriverEnded"
+        });
+        identities.AddTruckEvent(new TruckEvent(Guid.NewGuid(),
+            currentUser.CompanyId, session.TruckId, currentUser.UserId,
+            "TruckSessionEnded", data, now));
+        identities.AddNotification(new OperationNotification(Guid.NewGuid(),
+            currentUser.CompanyId, "TruckSessionEnded", "Information",
+            null, session.TruckId, driver.Id,
+            $"TruckSessionEnded:{session.Id}", data, now));
         await identities.SaveChangesAsync(cancellationToken);
     }
 

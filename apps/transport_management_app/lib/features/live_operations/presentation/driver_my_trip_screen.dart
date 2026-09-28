@@ -6,6 +6,8 @@ import '../../dashboard/presentation/dashboard_controller.dart';
 import '../../trips/domain/trip_models.dart';
 import '../domain/live_operations_models.dart';
 import '../../../shared/widgets/truck_avatar.dart';
+import '../../memberships/presentation/membership_providers.dart';
+import '../../memberships/presentation/truck_qr_scanner.dart';
 import 'driver_workspace_map.dart';
 import 'live_operations_controller.dart';
 
@@ -38,6 +40,7 @@ class DriverMyTripScreen extends ConsumerWidget {
               onRefresh: ref
                   .read(driverTripControllerProvider.notifier)
                   .refresh,
+              onScan: () => _scanQr(context, ref),
             );
           }
           if (workspace.state == 'NO_ACTIVE_TRIP' ||
@@ -49,6 +52,7 @@ class DriverMyTripScreen extends ConsumerWidget {
               onRefresh: ref
                   .read(driverTripControllerProvider.notifier)
                   .refresh,
+              onScan: () => _scanQr(context, ref),
             );
           }
           return RefreshIndicator(
@@ -85,6 +89,16 @@ class DriverMyTripScreen extends ConsumerWidget {
                     onConfirm: () => _depart(context, ref),
                   ),
                 ],
+                const SizedBox(height: 12),
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: OutlinedButton.icon(
+                    key: const Key('scan-truck-qr'),
+                    onPressed: () => _scanQr(context, ref),
+                    icon: const Icon(Icons.qr_code_scanner),
+                    label: Text(context.l10n.scanTruckQr),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 SizedBox(
                   height: 360,
@@ -189,6 +203,140 @@ class DriverMyTripScreen extends ConsumerWidget {
             requiresConfirmation: true,
           )
         : null;
+  }
+
+  Future<void> _scanQr(BuildContext context, WidgetRef ref) async {
+    final code = TextEditingController();
+    final scanner = ref.read(truckQrScannerProvider);
+    final entered = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.scanTruckQr),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.qr_code_scanner, size: 48),
+            Text(context.l10n.manualCode),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('truck-qr-manual-code'),
+              controller: code,
+              autocorrect: false,
+              decoration: InputDecoration(labelText: context.l10n.qrCode),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.l10n.cancel),
+          ),
+          if (scanner.isSupported)
+            OutlinedButton.icon(
+              key: const Key('truck-qr-camera'),
+              onPressed: () async {
+                final scanned = await scanner.scan();
+                if (dialogContext.mounted && scanned != null) {
+                  Navigator.pop(dialogContext, scanned);
+                }
+              },
+              icon: const Icon(Icons.photo_camera_outlined),
+              label: Text(context.l10n.useCamera),
+            ),
+          FilledButton(
+            key: const Key('preview-truck-qr'),
+            onPressed: () => code.text.trim().isEmpty
+                ? null
+                : Navigator.pop(dialogContext, code.text.trim()),
+            child: Text(context.l10n.previewTruck),
+          ),
+        ],
+      ),
+    );
+    code.dispose();
+    if (entered == null || !context.mounted) return;
+    try {
+      final preview = await ref
+          .read(membershipRepositoryProvider)
+          .previewTruckQr(entered);
+      if (!context.mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(context.l10n.previewTruck),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                preview.plateNumber,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              if (preview.fleetCode != null) Text(preview.fleetCode!),
+              Text(
+                '${context.l10n.status}: '
+                '${localizedStatus(context.l10n, preview.truckStatus)}',
+              ),
+              if (preview.currentDriverName != null)
+                Text(
+                  '${context.l10n.currentDriver}: '
+                  '${preview.currentDriverName}',
+                ),
+              if (preview.tripNumber != null)
+                Text(
+                  '${context.l10n.tripNumber}: ${preview.tripNumber} · '
+                  '${localizedStatus(context.l10n, preview.tripStatus ?? '')}',
+                ),
+              if (preview.positionRecordedAt != null)
+                Text(
+                  '${context.l10n.lastPositionUpdate}: '
+                  '${_localizedDateTime(context, preview.positionRecordedAt!.toLocal())}',
+                ),
+              if (preview.requiresHandover) ...[
+                const SizedBox(height: 12),
+                Text(
+                  context.l10n.handoverApprovalRequired,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              key: const Key('confirm-truck-switch'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(context.l10n.confirmTruckSwitch),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+      final result = await ref
+          .read(membershipRepositoryProvider)
+          .confirmTruckQr(entered);
+      await ref.read(driverTripControllerProvider.notifier).refresh();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.state == 'HandoverPending'
+                  ? context.l10n.requestSent
+                  : context.l10n.actionConfirmed,
+            ),
+          ),
+        );
+      }
+    } on Object {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.genericError)));
+      }
+    }
   }
 }
 
@@ -571,14 +719,17 @@ class _WorkspaceEmptyState extends StatelessWidget {
     required this.title,
     required this.message,
     required this.onRefresh,
+    this.onScan,
   });
   final IconData icon;
   final String title, message;
   final Future<void> Function() onRefresh;
+  final VoidCallback? onScan;
   @override
   Widget build(BuildContext context) => RefreshIndicator(
     onRefresh: onRefresh,
     child: ListView(
+      key: const Key('driver-my-trip'),
       children: [
         const SizedBox(height: 150),
         Icon(icon, size: 64),
@@ -593,6 +744,17 @@ class _WorkspaceEmptyState extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Text(message, textAlign: TextAlign.center),
         ),
+        if (onScan != null) ...[
+          const SizedBox(height: 20),
+          Center(
+            child: OutlinedButton.icon(
+              key: const Key('scan-truck-qr'),
+              onPressed: onScan,
+              icon: const Icon(Icons.qr_code_scanner),
+              label: Text(context.l10n.scanTruckQr),
+            ),
+          ),
+        ],
       ],
     ),
   );

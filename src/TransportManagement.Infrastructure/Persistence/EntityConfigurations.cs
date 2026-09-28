@@ -17,6 +17,9 @@ internal sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Slug).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.ConnectionCodeHash).HasMaxLength(64);
+        builder.Property(x => x.ConnectionCodeHint).HasMaxLength(12);
+        builder.HasIndex(x => x.ConnectionCodeHash).IsUnique().HasFilter("\"ConnectionCodeHash\" IS NOT NULL");
         builder.HasIndex(x => x.Slug).IsUnique();
     }
 }
@@ -98,13 +101,10 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Email).HasMaxLength(320).IsRequired();
         builder.Property(x => x.DisplayName).HasMaxLength(200).IsRequired();
-        builder.Property(x => x.PasswordHash).HasMaxLength(200).IsRequired();
-        builder.Property(x => x.Role).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.PasswordHash).HasMaxLength(200);
         builder.Property(x => x.PreferredLocale).HasMaxLength(5).HasDefaultValue("en").IsRequired();
         builder.Property(x => x.NotificationSoundsEnabled).HasDefaultValue(true).IsRequired();
-        // Email is the login identifier and must therefore be globally unambiguous.
         builder.HasIndex(x => x.Email).IsUnique();
-        builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -131,8 +131,10 @@ internal sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refre
         builder.HasKey(x => x.Id);
         builder.Property(x => x.TokenHash).HasMaxLength(64).IsRequired();
         builder.HasIndex(x => x.TokenHash).IsUnique();
-        builder.HasIndex(x => new { x.UserId, x.ExpiresAt });
-        builder.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(x => new { x.AccountId, x.ExpiresAt });
+        builder.HasIndex(x => x.MembershipId);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<CompanyMembership>().WithMany().HasForeignKey(x => x.MembershipId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
     }
 }
@@ -271,9 +273,10 @@ internal sealed class DriverConfiguration : IEntityTypeConfiguration<Driver>
         builder.Property(x => x.Notes).HasMaxLength(2000);
         builder.HasIndex(x => x.CompanyId);
         builder.HasIndex(x => new { x.CompanyId, x.LicenseNumber }).IsUnique();
-        builder.HasIndex(x => x.UserId).IsUnique().HasFilter("\"UserId\" IS NOT NULL");
+        builder.HasIndex(x => new { x.CompanyId, x.UserId }).IsUnique()
+            .HasFilter("\"UserId\" IS NOT NULL");
         builder.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithOne().HasForeignKey<Driver>(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -284,7 +287,10 @@ internal sealed class DriverTruckSessionConfiguration : IEntityTypeConfiguration
         builder.ToTable("driver_truck_sessions");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.EndReason).HasMaxLength(200);
+        builder.Property(x => x.Source).HasMaxLength(40).IsRequired();
         builder.Property(x => x.Version).IsConcurrencyToken();
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.InitiatedByAccountId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.ApprovedByAccountId).OnDelete(DeleteBehavior.Restrict);
         builder.Ignore(x => x.IsActive);
         builder.HasIndex(x => new { x.CompanyId, x.DriverId })
             .IsUnique().HasFilter("\"EndedAt\" IS NULL");

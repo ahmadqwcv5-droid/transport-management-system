@@ -22,6 +22,7 @@ class AccountIdentityControl extends ConsumerWidget {
     tooltip: context.l10n.accountIdentity,
     onSelected: (value) {
       if (value == 'settings') context.go('/settings');
+      if (value == 'workspaces') context.go('/workspaces');
       if (value == 'logout') {
         ref.read(authControllerProvider.notifier).logout();
       }
@@ -38,13 +39,24 @@ class AccountIdentityControl extends ConsumerWidget {
                 user.operationalDisplayName,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              Text('${_role(context, user.role)} · ${user.companyName}'),
+              Text(
+                '${user.roles.map((role) => _role(context, role)).join(' / ')} · ${user.companyName}',
+              ),
               Text(user.email, style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),
       ),
       const PopupMenuDivider(),
+      PopupMenuItem(
+        value: 'workspaces',
+        child: ListTile(
+          key: const Key('switch-workspace'),
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.swap_horiz),
+          title: Text(context.l10n.switchWorkspace),
+        ),
+      ),
       PopupMenuItem(
         value: 'settings',
         child: ListTile(
@@ -86,7 +98,7 @@ class AccountIdentityControl extends ConsumerWidget {
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   Text(
-                    '${_role(context, user.role)} · ${user.companyName}',
+                    '${user.roles.map((role) => _role(context, role)).join(' / ')} · ${user.companyName}',
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),

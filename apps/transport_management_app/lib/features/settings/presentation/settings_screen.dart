@@ -1,9 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/l10n_extensions.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../auth/data/external_identity_launcher.dart';
+import '../../auth/presentation/google_web_identity_button.dart';
 import '../../live_operations/presentation/live_operations_controller.dart';
+import '../../memberships/presentation/membership_providers.dart';
 import 'operational_area_settings.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -49,7 +53,7 @@ class SettingsScreen extends ConsumerWidget {
                   context.l10n.companyName,
                   user?.companyName ?? '—',
                 ),
-                _IdentityRow(context.l10n.role, user?.role ?? '—'),
+                _IdentityRow(context.l10n.roles, user?.roles.join(', ') ?? '—'),
                 if (nonProduction)
                   _IdentityRow(context.l10n.environment, user.environmentName),
               ],
@@ -57,17 +61,111 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 12),
-        if (user?.role == 'Owner') ...[
+        if (user?.hasRole('Owner') == true) ...[
           const OperationalAreaSettings(),
           const SizedBox(height: 12),
         ],
+        if (user?.hasLocalPassword == true) ...[
+          Card(
+            child: ListTile(
+              key: const Key('change-password'),
+              leading: const Icon(Icons.password),
+              title: Text(context.l10n.changePassword),
+              subtitle: Text(context.l10n.passwordMinimumLength),
+              onTap: () => _changePassword(context, ref),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         Card(
-          child: ListTile(
-            key: const Key('change-password'),
-            leading: const Icon(Icons.password),
-            title: Text(context.l10n.changePassword),
-            subtitle: Text(context.l10n.passwordMinimumLength),
-            onTap: user == null ? null : () => _changePassword(context, ref),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.signInMethods,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                ref
+                    .watch(signInMethodsProvider)
+                    .when(
+                      loading: () => const LinearProgressIndicator(),
+                      error: (_, _) => Text(context.l10n.genericError),
+                      data: (methods) => Column(
+                        children: [
+                          for (final method in methods)
+                            ListTile(
+                              key: Key('sign-in-method-${method.provider}'),
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(
+                                method.provider == 'Google'
+                                    ? Icons.account_circle_outlined
+                                    : Icons.password,
+                              ),
+                              title: Text(method.label),
+                              subtitle: Text(
+                                method.email ?? context.l10n.linked,
+                              ),
+                              trailing: method.provider == 'Google'
+                                  ? TextButton(
+                                      onPressed: method.canUnlink
+                                          ? () async {
+                                              await ref
+                                                  .read(
+                                                    membershipRepositoryProvider,
+                                                  )
+                                                  .unlinkProvider(
+                                                    method.provider,
+                                                  );
+                                              ref.invalidate(
+                                                signInMethodsProvider,
+                                              );
+                                            }
+                                          : null,
+                                      child: Text(context.l10n.unlink),
+                                    )
+                                  : null,
+                            ),
+                          if (!methods.any(
+                            (method) => method.provider == 'Google',
+                          ))
+                            if (kIsWeb && ref.watch(googleConfiguredProvider))
+                              GoogleWebIdentityButton(
+                                clientId: const String.fromEnvironment(
+                                  'GOOGLE_WEB_CLIENT_ID',
+                                ),
+                                onIdToken: (token) async {
+                                  await ref
+                                      .read(membershipRepositoryProvider)
+                                      .linkProvider('Google', token);
+                                  ref.invalidate(signInMethodsProvider);
+                                },
+                              )
+                            else
+                              ListTile(
+                                key: const Key('link-google'),
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(
+                                  Icons.account_circle_outlined,
+                                ),
+                                title: Text(context.l10n.googleSignIn),
+                                onTap: ref
+                                        .watch(externalIdentityLauncherProvider)
+                                        .isAvailable
+                                    ? () => _linkGoogle(ref)
+                                    : null,
+                              ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.phone_android_outlined),
+                            title: Text(context.l10n.phoneComingSoon),
+                          ),
+                        ],
+                      ),
+                    ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -155,6 +253,21 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _linkGoogle(WidgetRef ref) async {
+    final credential = await ref
+        .read(externalIdentityLauncherProvider)
+        .authenticate('Google');
+    if (credential == null) return;
+    await ref
+        .read(membershipRepositoryProvider)
+        .linkProvider(
+          'Google',
+          credential.idToken,
+          nonce: credential.nonce,
+        );
+    ref.invalidate(signInMethodsProvider);
   }
 
   Future<void> _changePassword(BuildContext context, WidgetRef ref) async {

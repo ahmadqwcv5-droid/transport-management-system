@@ -69,7 +69,11 @@ public sealed class TripAssignmentService(
             throw new ConflictException("Complete the Draft and calculate its current route before assignment.", "TRIP_NOT_READY_FOR_ASSIGNMENT");
         await resolver.ActiveClientAsync(trip.ClientId, cancellationToken);
         var (truck, driver) = await AvailableResourcesAsync(trip, request, cancellationToken);
-        trip.Assign(truck.Id, driver.Id, clock.UtcNow);
+        var now = clock.UtcNow;
+        trip.Assign(truck.Id, driver.Id, now);
+        tripStore.AddParticipation(new TripDriverParticipation(Guid.NewGuid(),
+            currentUser.CompanyId, trip.Id, driver.Id, now, "Assignment",
+            TripStatus.Assigned, currentUser.UserId, null, null, now));
         events.Append(trip, "Assigned", new { truckId = truck.Id, driverId = driver.Id });
         resourceEvents.Truck(truck.Id, "TruckAssignedToTrip",
             new { tripId = trip.Id, trip.TripNumber, driverId = driver.Id });
@@ -87,7 +91,17 @@ public sealed class TripAssignmentService(
         var oldTruckId = trip.TruckId;
         var oldDriverId = trip.DriverId;
         var (truck, driver) = await AvailableResourcesAsync(trip, request, cancellationToken);
-        trip.Reassign(truck.Id, driver.Id, clock.UtcNow);
+        var now = clock.UtcNow;
+        if (oldDriverId != driver.Id)
+        {
+            var participation = await tripStore.GetActiveParticipationAsync(
+                trip.Id, cancellationToken);
+            participation?.End(now, trip.Status, null, currentUser.UserId);
+            tripStore.AddParticipation(new TripDriverParticipation(Guid.NewGuid(),
+                currentUser.CompanyId, trip.Id, driver.Id, now, "Reassignment",
+                TripStatus.Assigned, currentUser.UserId, null, null, now));
+        }
+        trip.Reassign(truck.Id, driver.Id, now);
         events.Append(trip, "Reassigned", new
             { oldTruckId, oldDriverId, newTruckId = truck.Id, newDriverId = driver.Id });
         if (oldTruckId is Guid previousTruckId)
@@ -107,7 +121,10 @@ public sealed class TripAssignmentService(
             throw new ConflictException("Only a trip awaiting dispatch can be unassigned.", "TRIP_UNASSIGN_NOT_ALLOWED");
         var oldTruckId = trip.TruckId;
         var oldDriverId = trip.DriverId;
-        trip.Unassign(clock.UtcNow);
+        var now = clock.UtcNow;
+        var participation = await tripStore.GetActiveParticipationAsync(trip.Id, cancellationToken);
+        participation?.End(now, trip.Status, null, currentUser.UserId);
+        trip.Unassign(now);
         events.Append(trip, "Unassigned", new { oldTruckId, oldDriverId });
         if (oldTruckId is Guid truckId)
             resourceEvents.Truck(truckId, "TruckUnassignedFromTrip",

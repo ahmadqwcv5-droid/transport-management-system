@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Application.Common;
@@ -9,8 +8,6 @@ namespace TransportManagement.Application.CompanyUsers;
 
 public sealed class CompanyUserService(
     ICompanyUserStore store,
-    IIdentityStore identityStore,
-    IPasswordHasher passwordHasher,
     ICurrentUser currentUser,
     IClock clock)
 {
@@ -22,85 +19,49 @@ public sealed class CompanyUserService(
         var users = await store.ListUsersAsync(role, isActive, cancellationToken);
         var result = new List<CompanyUserResponse>(users.Count);
         foreach (var user in users)
-            result.Add(Map(user, await store.GetDriverByUserAsync(user.Id, cancellationToken)));
+            result.Add(await MapAsync(user, await store.GetDriverByUserAsync(user.Id, cancellationToken), cancellationToken));
         return result;
     }
 
     public async Task<CompanyUserResponse> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         var user = await RequiredUserAsync(id, cancellationToken);
-        return Map(user, await store.GetDriverByUserAsync(user.Id, cancellationToken));
+        return await MapAsync(user, await store.GetDriverByUserAsync(user.Id, cancellationToken), cancellationToken);
     }
 
-    public async Task<CompanyUserCredentialResponse> CreateDriverAsync(
-        CreateDriverUserRequest request, CancellationToken cancellationToken)
-    {
-        var email = request.Email.Trim().ToLowerInvariant();
-        if (await identityStore.FindUserByEmailAsync(email, cancellationToken) is not null)
-            throw new ConflictException("A user with this email already exists.", "USER_EMAIL_ALREADY_EXISTS");
-
-        Driver? driver = null;
-        if (request.DriverId.HasValue)
-        {
-            driver = await store.GetDriverAsync(request.DriverId.Value, cancellationToken)
-                ?? throw new NotFoundException("Driver was not found in the current company.", "DRIVER_NOT_FOUND");
-            if (driver.UserId.HasValue)
-                throw new ConflictException("The driver already has an app account.", "DRIVER_USER_ALREADY_LINKED");
-        }
-
-        var now = clock.UtcNow;
-        var temporaryPassword = GenerateTemporaryPassword();
-        var user = new User(Guid.NewGuid(), currentUser.CompanyId, email,
-            request.DisplayName, passwordHasher.Hash(temporaryPassword), AppRoles.Driver, now);
-        store.AddUser(user);
-        driver?.LinkUser(user.Id, now);
-        AddEvent(user.Id, "UserCreated", new { role = AppRoles.Driver }, now);
-        if (driver is not null)
-            AddEvent(user.Id, "DriverLinked", new { driverId = driver.Id }, now);
-        await store.SaveChangesAsync(cancellationToken);
-        return new(Map(user, driver), temporaryPassword);
-    }
 
     public async Task<CompanyUserResponse> SetActiveAsync(Guid id,
         CompanyUserActiveRequest request, CancellationToken cancellationToken)
     {
         var user = await RequiredUserAsync(id, cancellationToken);
+        var membership = await store.GetMembershipAsync(user.Id, cancellationToken)
+            ?? throw new NotFoundException("Membership was not found.", "MEMBERSHIP_NOT_FOUND");
         if (!request.IsActive && user.Id == currentUser.UserId)
-            throw new ConflictException("You cannot deactivate your own account.", "USER_SELF_DEACTIVATION_FORBIDDEN");
+            throw new ConflictException("You cannot suspend your own membership.", "MEMBERSHIP_SELF_REVOCATION_FORBIDDEN");
         var now = clock.UtcNow;
-        if (request.IsActive) user.Reactivate(now); else user.Deactivate(now);
+        if (request.IsActive) membership.Activate(now); else membership.Suspend(now);
         if (!request.IsActive) await store.RevokeTokensAsync(user.Id, now, cancellationToken);
-        AddEvent(user.Id, request.IsActive ? "UserReactivated" : "UserDeactivated", null, now);
+        AddEvent(user.Id, request.IsActive ? "MembershipReactivated" : "MembershipSuspended", null, now);
         await store.SaveChangesAsync(cancellationToken);
-        return Map(user, await store.GetDriverByUserAsync(user.Id, cancellationToken));
+        return await MapAsync(user,
+            await store.GetDriverByUserAsync(user.Id, cancellationToken), cancellationToken);
     }
 
-    public async Task<CompanyUserCredentialResponse> ResetPasswordAsync(
-        Guid id, CancellationToken cancellationToken)
-    {
-        var user = await RequiredUserAsync(id, cancellationToken);
-        var now = clock.UtcNow;
-        var temporaryPassword = GenerateTemporaryPassword();
-        user.ResetPassword(passwordHasher.Hash(temporaryPassword), now);
-        await store.RevokeTokensAsync(user.Id, now, cancellationToken);
-        AddEvent(user.Id, "TemporaryPasswordReset", null, now);
-        await store.SaveChangesAsync(cancellationToken);
-        return new(Map(user, await store.GetDriverByUserAsync(user.Id, cancellationToken)),
-            temporaryPassword);
-    }
 
     public async Task<CompanyUserResponse> LinkAsync(Guid userId,
         LinkCompanyUserRequest request, CancellationToken cancellationToken)
     {
         var user = await RequiredUserAsync(userId, cancellationToken);
-        if (user.Role != AppRoles.Driver)
+        var roles = await store.GetRolesAsync(user.Id, cancellationToken);
+        if (!roles.Contains(AppRoles.Driver, StringComparer.Ordinal))
             throw new ConflictException("The selected user must have the Driver role.", "DRIVER_ROLE_REQUIRED");
         if (!user.IsActive)
             throw new ConflictException("An inactive user cannot be linked.", "USER_DEACTIVATED");
         var driver = await store.GetDriverAsync(request.DriverId, cancellationToken)
             ?? throw new NotFoundException("Driver was not found in the current company.", "DRIVER_NOT_FOUND");
         var existingForUser = await store.GetDriverByUserAsync(user.Id, cancellationToken);
-        if (existingForUser?.Id == driver.Id && driver.UserId == user.Id) return Map(user, driver);
+        if (existingForUser?.Id == driver.Id && driver.UserId == user.Id)
+            return await MapAsync(user, driver, cancellationToken);
         if (existingForUser is not null)
             throw new ConflictException("The user is already linked to another driver.", "DRIVER_USER_ALREADY_LINKED");
 
@@ -113,7 +74,7 @@ public sealed class CompanyUserService(
         driver.LinkUser(user.Id, now);
         AddEvent(user.Id, "DriverLinked", new { driverId = driver.Id }, now);
         await store.SaveChangesAsync(cancellationToken);
-        return Map(user, driver);
+        return await MapAsync(user, driver, cancellationToken);
     }
 
     public async Task<CompanyUserResponse> UnlinkAsync(Guid userId,
@@ -128,7 +89,7 @@ public sealed class CompanyUserService(
         trackedDriver.UnlinkUser(now);
         AddEvent(user.Id, "DriverUnlinked", new { driverId = driver.Id }, now);
         await store.SaveChangesAsync(cancellationToken);
-        return Map(user, null);
+        return await MapAsync(user, null, cancellationToken);
     }
 
     private async Task<User> RequiredUserAsync(Guid id, CancellationToken cancellationToken) =>
@@ -140,15 +101,16 @@ public sealed class CompanyUserService(
             subjectUserId, currentUser.UserId, code,
             metadata is null ? null : JsonSerializer.Serialize(metadata), now));
 
-    private static CompanyUserResponse Map(User user, Driver? driver) => new(
-        user.Id, user.Email, user.DisplayName, user.Role, user.IsActive,
-        user.NotificationSoundsEnabled, driver?.Id, driver?.FullName,
-        user.CreatedAt, user.UpdatedAt);
-
-    private static string GenerateTemporaryPassword()
+    private async Task<CompanyUserResponse> MapAsync(User user, Driver? driver,
+        CancellationToken cancellationToken)
     {
-        Span<byte> bytes = stackalloc byte[18];
-        RandomNumberGenerator.Fill(bytes);
-        return $"Tms!{Convert.ToHexString(bytes)}a7";
+        var roles = await store.GetRolesAsync(user.Id, cancellationToken);
+        var role = roles.Count == 0 ? string.Empty : roles[0];
+        var membership = await store.GetMembershipAsync(user.Id, cancellationToken);
+        return new(user.Id, user.Email, user.DisplayName, role, membership?.IsActive == true,
+            user.NotificationSoundsEnabled, driver?.Id, driver?.FullName,
+            user.CreatedAt, user.UpdatedAt, membership?.Id,
+            membership?.Status.ToString() ?? MembershipStatus.Revoked.ToString(), roles);
     }
+
 }

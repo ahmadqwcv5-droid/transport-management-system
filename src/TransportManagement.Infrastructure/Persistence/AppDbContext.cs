@@ -17,6 +17,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurren
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<CompanyMapPreference> CompanyMapPreferences => Set<CompanyMapPreference>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<CompanyMembership> CompanyMemberships => Set<CompanyMembership>();
+    public DbSet<CompanyMembershipRole> CompanyMembershipRoles => Set<CompanyMembershipRole>();
+    public DbSet<ExternalLogin> ExternalLogins => Set<ExternalLogin>();
+    public DbSet<CompanyInvitation> CompanyInvitations => Set<CompanyInvitation>();
+    public DbSet<CompanyConnectionRequest> CompanyConnectionRequests => Set<CompanyConnectionRequest>();
+    public DbSet<IdentityAuditEvent> IdentityAuditEvents => Set<IdentityAuditEvent>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<CompanyUserEvent> CompanyUserEvents => Set<CompanyUserEvent>();
     public DbSet<Client> Clients => Set<Client>();
@@ -38,6 +44,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurren
     public DbSet<TripGeofenceObservation> TripGeofenceObservations => Set<TripGeofenceObservation>();
     public DbSet<OperationNotification> OperationNotifications => Set<OperationNotification>();
     public DbSet<TruckPhoto> TruckPhotos => Set<TruckPhoto>();
+    public DbSet<TruckQrCredential> TruckQrCredentials => Set<TruckQrCredential>();
+    public DbSet<TripHandoverRequest> TripHandoverRequests => Set<TripHandoverRequest>();
+    public DbSet<TripDriverParticipation> TripDriverParticipations => Set<TripDriverParticipation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

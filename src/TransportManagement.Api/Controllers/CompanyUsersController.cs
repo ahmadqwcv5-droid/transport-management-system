@@ -1,13 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransportManagement.Application.CompanyUsers;
+using TransportManagement.Application.Memberships;
 
 namespace TransportManagement.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "owner")]
+[Authorize(Policy = "operations.manage")]
 [Route("api/company-users")]
-public sealed class CompanyUsersController(CompanyUserService service) : ControllerBase
+public sealed class CompanyUsersController(
+    CompanyUserService service, MembershipService memberships) : ControllerBase
 {
     [HttpGet]
     public Task<IReadOnlyList<CompanyUserResponse>> List([FromQuery] string? role,
@@ -19,20 +21,18 @@ public sealed class CompanyUsersController(CompanyUserService service) : Control
         service.GetAsync(id, cancellationToken);
 
     [HttpPost("drivers")]
-    public async Task<ActionResult<CompanyUserCredentialResponse>> CreateDriver(
+    public async Task<ActionResult<InvitationResponse>> CreateDriver(
         CreateDriverUserRequest request, CancellationToken cancellationToken)
     {
-        var result = await service.CreateDriverAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(Get), new { id = result.User.Id }, result);
+        var result = await memberships.CreateInvitationAsync(
+            new(request.Email, [Domain.Identity.AppRoles.Driver],
+                request.DriverId, DisplayName: request.DisplayName), cancellationToken);
+        return Created($"/api/membership-invitations/{result.Id}", result);
     }
 
     [HttpPut("{id:guid}/active")]
     public Task<CompanyUserResponse> SetActive(Guid id, CompanyUserActiveRequest request,
         CancellationToken cancellationToken) => service.SetActiveAsync(id, request, cancellationToken);
-
-    [HttpPost("{id:guid}/reset-temporary-password")]
-    public Task<CompanyUserCredentialResponse> ResetPassword(Guid id,
-        CancellationToken cancellationToken) => service.ResetPasswordAsync(id, cancellationToken);
 
     [HttpPut("{id:guid}/driver-link")]
     public Task<CompanyUserResponse> Link(Guid id, LinkCompanyUserRequest request,

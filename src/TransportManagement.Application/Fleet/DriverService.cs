@@ -63,7 +63,7 @@ public sealed class DriverService(IFleetStore store, IDriverIdentityStore identi
         var driver = await RequiredAsync(id, cancellationToken);
         var user = await identities.GetUserAsync(request.UserId, cancellationToken)
             ?? throw new NotFoundException("User was not found in the current company.", "USER_NOT_FOUND");
-        if (user.Role != Domain.Identity.AppRoles.Driver)
+        if (!await identities.AccountHasRoleAsync(user.Id, Domain.Identity.AppRoles.Driver, cancellationToken))
             throw new ConflictException("The selected user must have the Driver role.", "DRIVER_ROLE_REQUIRED");
         if (await identities.UserLinkedAsync(user.Id, driver.Id, cancellationToken))
             throw new ConflictException("The user is already linked to another driver.", "DRIVER_USER_ALREADY_LINKED");

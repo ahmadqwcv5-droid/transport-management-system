@@ -8,13 +8,18 @@ final class CompanyUser {
     required this.role,
     required this.isActive,
     required this.notificationSoundsEnabled,
+    required this.membershipStatus,
+    required this.roles,
+    this.membershipId,
     this.driverId,
     this.driverName,
   });
 
   final String id, email, displayName, role;
   final bool isActive, notificationSoundsEnabled;
-  final String? driverId, driverName;
+  final String membershipStatus;
+  final List<String> roles;
+  final String? membershipId, driverId, driverName;
 
   factory CompanyUser.fromJson(Json json) => CompanyUser(
     id: json['id'] as String,
@@ -24,6 +29,13 @@ final class CompanyUser {
     isActive: json['isActive'] as bool,
     notificationSoundsEnabled:
         json['notificationSoundsEnabled'] as bool? ?? true,
+    membershipId: json['membershipId'] as String?,
+    membershipStatus:
+        json['membershipStatus'] as String? ??
+        ((json['isActive'] as bool? ?? false) ? 'Active' : 'Suspended'),
+    roles: (json['roles'] as List<dynamic>? ?? [json['role']])
+        .whereType<String>()
+        .toList(),
     driverId: json['driverId'] as String?,
     driverName: json['driverName'] as String?,
   );

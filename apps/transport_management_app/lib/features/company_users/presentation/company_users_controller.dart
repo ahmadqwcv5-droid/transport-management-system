@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/company_users_repository.dart';
 import '../domain/company_user.dart';
+import '../../memberships/domain/membership_models.dart' show Invitation;
 
 final companyUsersRepositoryProvider = Provider<CompanyUsersRepository>(
   (ref) => CompanyUsersRepository(ref.watch(apiClientProvider)),
@@ -24,7 +25,7 @@ class CompanyUsersController extends AsyncNotifier<List<CompanyUser>> {
     state = await AsyncValue.guard(_repository.list);
   }
 
-  Future<TemporaryCredential?> create({
+  Future<Invitation?> create({
     required String email,
     required String displayName,
     String? driverId,
@@ -35,16 +36,6 @@ class CompanyUsersController extends AsyncNotifier<List<CompanyUser>> {
         displayName: displayName,
         driverId: driverId,
       );
-      await refresh();
-      return credential;
-    } on Object {
-      return null;
-    }
-  }
-
-  Future<TemporaryCredential?> reset(String id) async {
-    try {
-      final credential = await _repository.resetPassword(id);
       await refresh();
       return credential;
     } on Object {

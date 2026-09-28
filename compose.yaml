@@ -26,6 +26,9 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-transport_management};Username=${POSTGRES_USER:-transport_app};Password=${POSTGRES_PASSWORD}
       Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in .env}
+      ExternalIdentity__Google__ClientId: ${GOOGLE_SERVER_CLIENT_ID:-}
+      ExternalIdentity__Google__WebClientId: ${GOOGLE_WEB_CLIENT_ID:-}
+      ExternalIdentity__Google__AndroidClientId: ${GOOGLE_ANDROID_CLIENT_ID:-}
       DevelopmentSeed__Enabled: "true"
       DevelopmentSeed__OwnerPassword: ${DEMO_OWNER_PASSWORD:?Set DEMO_OWNER_PASSWORD in .env}
       Tracking__Provider: ${TRACKING_PROVIDER:-Simulator}

@@ -1079,3 +1079,47 @@ The implementation plan is in `docs/sprints/sprint-4.2.2`; automated, isolated
 Docker/PostgreSQL, genuine English/Arabic Firefox canvas, Owner camera, Driver
 idle/assignment/post-trip, chronology, and data-safety evidence is in
 `docs/evidence/sprint4_2_2`.
+## Sprint 4.3 global accounts and safe handover
+
+Sprint 4.3 separates the global personal account from tenant-owned business
+data. An account can hold multiple company memberships and multiple roles;
+signed access tokens select one active membership, and every request plus token
+refresh revalidates that membership. The account header exposes active company,
+roles, settings, and workspace switching. Company Driver records stay
+tenant-owned and may exist without app access.
+
+Owner/Operations access management now provides multi-role, expiring,
+single-use invitation links; exact private company-code requests; explicit
+Driver linking; suspend/reactivate/revoke; and durable audit/notification
+events. Managers no longer set or see another person's permanent password.
+Invitation and truck QR secrets are stored only as hashes.
+
+Default truck, active Driver-truck session, and trip assignment remain distinct.
+A free-truck QR/manual-code confirmation changes only the active session. An
+occupied active-trip truck creates a pending handover; approval atomically
+changes the current Driver while preserving Trip ID, truck, route/progress,
+tracking/trail, events, and immutable participation boundaries.
+
+Local login remains enabled. Google Sign-In is optional and uses the official
+Google Identity Services Web button or native platform launcher. Configure only
+public client identifiers in `.env`:
+
+```dotenv
+GOOGLE_WEB_CLIENT_ID=
+GOOGLE_ANDROID_CLIENT_ID=
+GOOGLE_SERVER_CLIENT_ID=
+```
+
+For Web, register the exact origin (for example `http://localhost:3000`) in
+Google Cloud and run Flutter with
+`--dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID`. For future Android,
+also pass `GOOGLE_ANDROID_CLIENT_ID` and `GOOGLE_SERVER_CLIENT_ID`, and
+register the application package plus signing SHA certificate. The backend
+validates issuer, signature, expiry, verified email, and one of the configured
+audiences. No OAuth client secret belongs in Flutter. When IDs are absent the
+Google action is honestly unavailable.
+
+The migration, verification commands, rollback guard, browser coverage, and
+environment limitations are recorded in
+`docs/sprints/sprint-4.3/SPRINT4_3_IMPLEMENTATION_PLAN.md` and
+`docs/evidence/sprint4_3/README.md`.

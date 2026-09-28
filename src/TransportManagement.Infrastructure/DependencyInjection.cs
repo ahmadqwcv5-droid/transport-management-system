@@ -38,6 +38,9 @@ public static class DependencyInjection
             .Validate(options => Encoding.UTF8.GetByteCount(options.SigningKey) >= 32,
                 "Jwt:SigningKey must be at least 32 bytes.")
             .ValidateOnStart();
+        services.AddOptions<ExternalIdentityOptions>()
+            .Bind(configuration.GetSection(ExternalIdentityOptions.SectionName));
+        services.AddHttpClient<IExternalIdentityVerifier, GoogleExternalIdentityVerifier>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICompanyExecutionContext, CompanyExecutionContext>();
         services.AddScoped<ICurrentUser, CurrentUser>();
@@ -46,6 +49,9 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IIdentityStore, IdentityStore>();
+        services.AddScoped<IMembershipWorkflowStore, MembershipWorkflowStore>();
+        services.AddScoped<IQrHandoverStore, QrHandoverStore>();
+        services.AddSingleton<ICompanyCodeService, CompanyCodeService>();
         services.AddScoped<ICompanyUserStore, CompanyUserStore>();
         services.AddScoped<ICompanyReader, CompanyReader>();
         services.AddScoped<ICompanyMapPreferenceStore, CompanyMapPreferenceStore>();
@@ -181,18 +187,52 @@ public static class DependencyInjection
                         .CreateLogger("TransportManagement.JwtBearer");
                     LogJwtValidationFailure(logger, context.Exception.Message, context.Exception);
                     return Task.CompletedTask;
+                },
+                OnTokenValidated = async context =>
+                {
+                    var principal = context.Principal;
+                    var membershipText = principal?.FindFirst(CustomClaims.MembershipId)?.Value;
+                    if (string.IsNullOrWhiteSpace(membershipText)) return;
+                    if (!Guid.TryParse(membershipText, out var membershipId)
+                        || !Guid.TryParse(principal?.FindFirst(CustomClaims.UserId)?.Value, out var accountId)
+                        || !Guid.TryParse(principal?.FindFirst(CustomClaims.CompanyId)?.Value, out var companyId))
+                    {
+                        context.Fail("The workspace claims are invalid.");
+                        return;
+                    }
+
+                    var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                    var membership = await db.CompanyMemberships.IgnoreQueryFilters()
+                        .AsNoTracking().SingleOrDefaultAsync(x => x.Id == membershipId
+                            && x.AccountId == accountId && x.CompanyId == companyId,
+                            context.HttpContext.RequestAborted);
+                    if (membership is null || membership.Status != Domain.Identity.MembershipStatus.Active)
+                    {
+                        context.Fail("The workspace membership is not active.");
+                        return;
+                    }
+
+                    var currentRoles = await db.CompanyMembershipRoles.IgnoreQueryFilters()
+                        .Where(x => x.MembershipId == membershipId)
+                        .Select(x => x.Role).OrderBy(x => x)
+                        .ToListAsync(context.HttpContext.RequestAborted);
+                    var claimedRoles = principal!.FindAll(System.Security.Claims.ClaimTypes.Role)
+                        .Select(x => x.Value).Distinct(StringComparer.Ordinal).OrderBy(x => x).ToList();
+                    if (!currentRoles.SequenceEqual(claimedRoles, StringComparer.Ordinal))
+                        context.Fail("The workspace roles have changed.");
                 }
             };
         });
         services.AddAuthorizationBuilder()
-            .AddPolicy("companies.read", policy => policy.RequireAuthenticatedUser())
-            .AddPolicy("companies.manage", policy => policy.RequireRole("Owner"))
-            .AddPolicy("operations.read", policy => policy.RequireRole("Owner", "Operations", "Accountant"))
-            .AddPolicy("operations.manage", policy => policy.RequireRole("Owner", "Operations"));
+            .AddPolicy("companies.read", policy => policy.RequireAuthenticatedUser()
+                .RequireClaim(CustomClaims.MembershipId))
+            .AddPolicy("companies.manage", policy => policy.RequireClaim(CustomClaims.MembershipId).RequireRole("Owner"))
+            .AddPolicy("operations.read", policy => policy.RequireClaim(CustomClaims.MembershipId).RequireRole("Owner", "Operations", "Accountant"))
+            .AddPolicy("operations.manage", policy => policy.RequireClaim(CustomClaims.MembershipId).RequireRole("Owner", "Operations"));
         services.AddAuthorizationBuilder()
-            .AddPolicy("driver.workflow", policy => policy.RequireRole("Driver"))
-            .AddPolicy("notifications.read", policy => policy.RequireRole("Owner", "Operations", "Driver"))
-            .AddPolicy("owner", policy => policy.RequireRole("Owner"));
+            .AddPolicy("driver.workflow", policy => policy.RequireClaim(CustomClaims.MembershipId).RequireRole("Driver"))
+            .AddPolicy("notifications.read", policy => policy.RequireClaim(CustomClaims.MembershipId).RequireRole("Owner", "Operations", "Driver"))
+            .AddPolicy("owner", policy => policy.RequireClaim(CustomClaims.MembershipId).RequireRole("Owner"));
 
         return services;
     }

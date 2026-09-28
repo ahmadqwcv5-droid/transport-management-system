@@ -73,9 +73,14 @@ public sealed class AuthTests(ApiFactory factory) : IClassFixture<ApiFactory>
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-            db.Users.Add(new User(Guid.NewGuid(), ApiFactory.CompanyAId, email,
-                "Password Test", hasher.Hash(oldPassword), AppRoles.Driver,
-                DateTimeOffset.UtcNow));
+            var now = DateTimeOffset.UtcNow;
+            var account = new User(Guid.NewGuid(), email, "Password Test",
+                hasher.Hash(oldPassword), now);
+            var membership = new CompanyMembership(Guid.NewGuid(), ApiFactory.CompanyAId,
+                account.Id, MembershipStatus.Active, account.Id, now);
+            db.Users.Add(account);
+            db.CompanyMemberships.Add(membership);
+            db.CompanyMembershipRoles.Add(new(ApiFactory.CompanyAId, membership.Id, AppRoles.Driver));
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         using var client = factory.CreateClient();

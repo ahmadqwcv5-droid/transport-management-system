@@ -104,6 +104,23 @@ public sealed class Trip : Entity, ITenantOwned
         Changed(now);
     }
 
+    public void HandoverDriver(Guid expectedCurrentDriverId, Guid newDriverId,
+        long expectedVersion, DateTimeOffset now)
+    {
+        EnsureVersion(expectedVersion);
+        if (!ReservesResources || TruckId is null || DriverId is null)
+            throw new DomainRuleException("The trip is not eligible for handover.",
+                "HANDOVER_REQUEST_STALE");
+        if (DriverId != expectedCurrentDriverId)
+            throw new DomainRuleException("The trip assignment changed.",
+                "TRIP_ASSIGNMENT_CHANGED");
+        if (newDriverId == Guid.Empty || newDriverId == DriverId)
+            throw new DomainRuleException("A different Driver is required.",
+                "HANDOVER_DRIVER_INVALID");
+        DriverId = newDriverId;
+        Changed(now);
+    }
+
     public void Unassign(DateTimeOffset now)
     {
         EnsureStatus(TripStatus.Assigned);

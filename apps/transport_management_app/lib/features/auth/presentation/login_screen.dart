@@ -1,9 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth_controller.dart';
+import '../data/external_identity_launcher.dart';
+import '../../memberships/presentation/membership_providers.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../l10n/l10n_extensions.dart';
+import 'google_web_identity_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -27,6 +31,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
+    final googleConfigured = ref.watch(googleConfiguredProvider);
+    final googleAvailable = ref
+        .watch(externalIdentityLauncherProvider)
+        .isAvailable;
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -113,6 +121,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               )
                             : Text(context.l10n.signIn),
                       ),
+                      const SizedBox(height: 12),
+                      if (kIsWeb && googleConfigured)
+                        GoogleWebIdentityButton(
+                          clientId: const String.fromEnvironment(
+                            'GOOGLE_WEB_CLIENT_ID',
+                          ),
+                          onIdToken: (token) async {
+                            await ref
+                                .read(authControllerProvider.notifier)
+                                .externalSignInToken('Google', token);
+                          },
+                        )
+                      else
+                        OutlinedButton.icon(
+                          key: const Key('google-sign-in'),
+                          onPressed:
+                              googleConfigured &&
+                                  googleAvailable &&
+                                  !auth.isLoading
+                              ? () => ref
+                                    .read(authControllerProvider.notifier)
+                                    .externalSignIn('Google')
+                              : null,
+                          icon: const Icon(Icons.account_circle_outlined),
+                          label: Text(context.l10n.googleSignIn),
+                        ),
+                      if (!googleConfigured || (!kIsWeb && !googleAvailable))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            context.l10n.googleNotConfigured,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
                     ],
                   ),
                 ),

@@ -68,6 +68,8 @@ public sealed class TripLifecycleService(
         var now = clock.UtcNow;
         trip.Complete(now);
         driver.ChangeStatus(DriverStatus.Available, now);
+        var participation = await tripStore.GetActiveParticipationAsync(trip.Id, cancellationToken);
+        participation?.End(now, trip.Status, null, currentUser.UserId);
         events.Append(trip, "Completed");
         resourceEvents.Truck(truck.Id, "TruckTripCompleted",
             new { tripId = trip.Id, trip.TripNumber });
@@ -88,6 +90,8 @@ public sealed class TripLifecycleService(
         var previousStatus = trip.Status;
         trip.Cancel(request.Reason, currentUser.UserId, now);
         driver?.ChangeStatus(DriverStatus.Available, now);
+        var participation = await tripStore.GetActiveParticipationAsync(trip.Id, cancellationToken);
+        participation?.End(now, trip.Status, null, currentUser.UserId);
         events.Append(trip, "Cancelled", new
             { previousStatus, reason = trip.CancellationReason });
         if (trip.TruckId is Guid truckId)

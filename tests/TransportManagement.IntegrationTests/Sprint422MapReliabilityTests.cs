@@ -194,10 +194,13 @@ public sealed class Sprint422MapReliabilityTests(ApiFactory factory) : IClassFix
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-        var user = new User(Guid.NewGuid(), ApiFactory.CompanyAId, email,
-            "Sprint 4.2.2 User", hasher.Hash(ApiFactory.Password), role,
-            DateTimeOffset.UtcNow);
+        var user = new User(Guid.NewGuid(), email, "Sprint 4.2.2 User",
+            hasher.Hash(ApiFactory.Password), DateTimeOffset.UtcNow);
         db.Users.Add(user);
+        var membership = new CompanyMembership(Guid.NewGuid(), ApiFactory.CompanyAId,
+            user.Id, MembershipStatus.Active, user.Id, DateTimeOffset.UtcNow);
+        db.CompanyMemberships.Add(membership);
+        db.CompanyMembershipRoles.Add(new(ApiFactory.CompanyAId, membership.Id, role));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return user.Id;
     }
