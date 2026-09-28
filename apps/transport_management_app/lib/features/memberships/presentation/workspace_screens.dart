@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../l10n/l10n_extensions.dart';
 import '../../auth/domain/auth_session.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../auth/presentation/google_web_identity_button.dart';
 import '../domain/membership_models.dart';
 import 'membership_providers.dart';
 
@@ -380,6 +382,17 @@ class _InvitationAcceptanceScreenState
                               helperText: context.l10n.passwordMinimumLength,
                             ),
                           ),
+                          if (kIsWeb &&
+                              ref.watch(googleConfiguredProvider).value ==
+                                  true) ...[
+                            const SizedBox(height: 12),
+                            GoogleWebIdentityButton(
+                              clientId: const String.fromEnvironment(
+                                'GOOGLE_WEB_CLIENT_ID',
+                              ),
+                              onIdToken: _acceptWithGoogle,
+                            ),
+                          ],
                         ],
                         if (_error != null) ...[
                           const SizedBox(height: 8),
@@ -418,6 +431,40 @@ class _InvitationAcceptanceScreenState
         ),
       ),
     );
+  }
+
+  Future<void> _acceptWithGoogle(String idToken) async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final signedIn = await ref
+          .read(authControllerProvider.notifier)
+          .externalSignInToken('Google', idToken);
+      if (!signedIn) {
+        final error = ref.read(authControllerProvider).error;
+        if (mounted) {
+          setState(
+            () => _error = error is ApiException
+                ? localizedErrorCode(context.l10n, error.code)
+                : context.l10n.genericError,
+          );
+        }
+        return;
+      }
+      await ref
+          .read(membershipRepositoryProvider)
+          .acceptInvitation(token: widget.token);
+      if (mounted) setState(() => _accepted = true);
+    } on ApiException catch (error) {
+      if (mounted) {
+        setState(() => _error = localizedErrorCode(context.l10n, error.code));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _accept(bool signedIn) async {

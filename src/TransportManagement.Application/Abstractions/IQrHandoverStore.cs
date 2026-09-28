@@ -9,6 +9,7 @@ public interface IQrHandoverStore
     Task<Truck?> FindTruckAsync(Guid truckId, CancellationToken cancellationToken);
     Task<Driver?> FindDriverAsync(Guid driverId, CancellationToken cancellationToken);
     Task<Driver?> FindDriverByAccountAsync(Guid accountId, CancellationToken cancellationToken);
+    Task<string?> FindAccountDisplayNameAsync(Guid accountId, CancellationToken cancellationToken);
     Task<TruckQrCredential?> FindActiveQrForTruckAsync(
         Guid truckId, CancellationToken cancellationToken);
     Task<TruckQrCredential?> FindActiveQrByHashAsync(

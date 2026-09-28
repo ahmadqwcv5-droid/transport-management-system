@@ -59,6 +59,14 @@ internal sealed class MembershipWorkflowStore(AppDbContext dbContext)
         dbContext.CompanyMemberships.SingleOrDefaultAsync(
             x => x.Id == membershipId, cancellationToken);
 
+    public Task<int> CountActiveOwnersAsync(Guid companyId,
+        CancellationToken cancellationToken) => dbContext.CompanyMemberships
+        .IgnoreQueryFilters().CountAsync(membership =>
+            membership.CompanyId == companyId && membership.Status == MembershipStatus.Active
+            && dbContext.CompanyMembershipRoles.IgnoreQueryFilters().Any(role =>
+                role.CompanyId == companyId && role.MembershipId == membership.Id
+                && role.Role == AppRoles.Owner), cancellationToken);
+
     public Task<Driver?> FindDriverAsync(Guid driverId, Guid companyId,
         CancellationToken cancellationToken) => dbContext.Drivers.IgnoreQueryFilters()
         .SingleOrDefaultAsync(x => x.Id == driverId && x.CompanyId == companyId,

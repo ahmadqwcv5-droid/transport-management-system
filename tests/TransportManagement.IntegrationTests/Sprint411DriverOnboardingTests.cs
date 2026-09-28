@@ -88,16 +88,20 @@ public sealed class Sprint411DriverOnboardingTests(ApiFactory factory) : IClassF
             TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Conflict, duplicateUser.StatusCode);
 
-        Assert.Equal(HttpStatusCode.OK, (await owner.PutAsJsonAsync(
+        var duplicateDriver = await owner.PutAsJsonAsync(
             $"/api/company-users/{secondUser}/driver-link", new { driverId = firstDriver },
-            TestContext.Current.CancellationToken)).StatusCode);
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Conflict, duplicateDriver.StatusCode);
+        Assert.Contains("DRIVER_ACCOUNT_ALREADY_LINKED",
+            await duplicateDriver.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         var users = await owner.GetJsonAsync<JsonElement[]>(
             "/api/company-users?role=Driver") ?? [];
-        Assert.Null(users.Single(x => x.GetProperty("id").GetGuid() == firstUser)
-            .GetProperty("driverId").GetString());
         Assert.Equal(firstDriver,
-            users.Single(x => x.GetProperty("id").GetGuid() == secondUser)
+            users.Single(x => x.GetProperty("id").GetGuid() == firstUser)
                 .GetProperty("driverId").GetGuid());
+        Assert.Equal(JsonValueKind.Null,
+            users.Single(x => x.GetProperty("id").GetGuid() == secondUser)
+                .GetProperty("driverId").ValueKind);
     }
 
     [Fact]

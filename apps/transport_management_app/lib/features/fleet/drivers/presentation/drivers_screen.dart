@@ -74,9 +74,11 @@ class _DriverTile extends ConsumerWidget {
   final Driver driver;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isOwner =
-        ref.watch(authControllerProvider).value?.user.role == 'Owner';
-    final users = isOwner
+    final current = ref.watch(authControllerProvider).value?.user;
+    final canManageAccounts =
+        current?.hasRole('Owner') == true ||
+        current?.hasRole('Operations') == true;
+    final users = canManageAccounts
         ? ref.watch(companyUsersControllerProvider).value ?? const []
         : const [];
     final account = users
@@ -141,8 +143,10 @@ class _DriverTile extends ConsumerWidget {
     WidgetRef ref,
     CompanyUser? account,
   ) async {
-    final isOwner =
-        ref.read(authControllerProvider).value?.user.role == 'Owner';
+    final canManageAccounts =
+        ref.read(authControllerProvider).value?.user.hasRole('Owner') == true ||
+        ref.read(authControllerProvider).value?.user.hasRole('Operations') ==
+            true;
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -172,7 +176,7 @@ class _DriverTile extends ConsumerWidget {
                     ? context.l10n.noAppAccount
                     : '${account.email} • ${account.isActive ? context.l10n.active : context.l10n.inactive}',
               ),
-              if (isOwner) ...[
+              if (canManageAccounts) ...[
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,

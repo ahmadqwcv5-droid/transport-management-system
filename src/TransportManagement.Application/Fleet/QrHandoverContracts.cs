@@ -6,6 +6,11 @@ public sealed record TruckQrCredentialResponse(
     Guid TruckId, string PlateNumber, string? FleetCode,
     string Code, string CodeHint, string QrPayload, DateTimeOffset GeneratedAt);
 
+public sealed record TruckQrStatusResponse(
+    Guid TruckId, string PlateNumber, string? FleetCode,
+    bool HasActiveCredential, string? CodeHint, DateTimeOffset? GeneratedAt,
+    string? GeneratedByDisplayName);
+
 public sealed record ResolveTruckQrRequest([param: Required] string Code);
 
 public sealed record TruckQrPreviewResponse(

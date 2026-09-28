@@ -31,7 +31,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
-    final googleConfigured = ref.watch(googleConfiguredProvider);
+    final googleConfigured = ref.watch(googleConfiguredProvider).value ?? false;
     final googleAvailable = ref
         .watch(externalIdentityLauncherProvider)
         .isAvailable;

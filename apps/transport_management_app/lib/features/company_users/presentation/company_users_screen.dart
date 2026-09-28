@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../l10n/l10n_extensions.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../../memberships/domain/membership_models.dart';
 import '../../memberships/presentation/membership_providers.dart';
 import '../../operations/presentation/operations_controller.dart';
@@ -76,6 +78,13 @@ class CompanyUsersScreen extends ConsumerWidget {
             driverId: input.driverId,
           );
       await ref.read(companyUsersControllerProvider.notifier).refresh();
+    } on ApiException catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(localizedErrorCode(context.l10n, error.code))),
+        );
+      }
+      return;
     } on Object {
       invitation = null;
     }
@@ -121,89 +130,214 @@ class _MembersTab extends ConsumerWidget {
 class _MemberTile extends ConsumerWidget {
   const _MemberTile(this.user);
   final CompanyUser user;
+  static const _roles = [
+    'Owner',
+    'Operations',
+    'Accountant',
+    'Employee',
+    'Driver',
+  ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Card(
-    margin: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
-    child: ListTile(
-      key: Key('company-user-${user.id}'),
-      leading: CircleAvatar(
-        child: Icon(user.role == 'Driver' ? Icons.badge : Icons.person),
-      ),
-      title: Text(user.displayName),
-      subtitle: Text(
-        '${user.email}\n${user.roles.join(', ')} · '
-        '${user.driverName ?? context.l10n.noDriverLinked}',
-      ),
-      isThreeLine: true,
-      trailing: Wrap(
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Chip(
-            label: Text(localizedStatus(context.l10n, user.membershipStatus)),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(authControllerProvider).value?.user;
+    final isOwner = current?.hasRole('Owner') ?? false;
+    final canLink = current?.hasRole('Operations') == true || isOwner;
+    final actions = <PopupMenuEntry<String>>[
+      if (isOwner)
+        PopupMenuItem(value: 'roles', child: Text(context.l10n.roles)),
+      if (isOwner)
+        PopupMenuItem(
+          value: 'status',
+          child: Text(
+            user.membershipStatus == 'Active'
+                ? context.l10n.suspend
+                : context.l10n.reactivate,
           ),
-          PopupMenuButton<String>(
-            onSelected: (action) async {
-              final controller = ref.read(
-                companyUsersControllerProvider.notifier,
-              );
-              if (action == 'status' && user.membershipId != null) {
-                final status = user.membershipStatus == 'Active'
-                    ? 'Suspended'
-                    : 'Active';
-                await ref
-                    .read(membershipRepositoryProvider)
-                    .setMembershipStatus(user.membershipId!, status);
-                await controller.refresh();
-              } else if (action == 'revoke' && user.membershipId != null) {
-                final confirmed = await _confirm(
-                  context,
-                  context.l10n.revoke,
-                  context.l10n.confirm,
-                );
-                if (confirmed) {
-                  await ref
-                      .read(membershipRepositoryProvider)
-                      .setMembershipStatus(user.membershipId!, 'Revoked');
-                  await controller.refresh();
-                }
-              } else if (action == 'unlink') {
-                final confirmed = await _confirm(
-                  context,
-                  context.l10n.unlinkDriverAccount,
-                  context.l10n.unlinkDriverAccountConfirmation,
-                );
-                if (confirmed) {
-                  await controller.unlink(user.id);
-                  ref.read(operationsControllerProvider.notifier).reload();
-                }
-              }
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'status',
-                child: Text(
-                  user.membershipStatus == 'Active'
-                      ? context.l10n.suspend
-                      : context.l10n.reactivate,
-                ),
+        ),
+      if (isOwner && user.membershipStatus != 'Revoked')
+        PopupMenuItem(value: 'revoke', child: Text(context.l10n.revoke)),
+      if (canLink && user.roles.contains('Driver') && user.driverId == null)
+        PopupMenuItem(
+          value: 'link',
+          child: Text(context.l10n.linkExistingAccount),
+        ),
+      if (canLink && user.driverId != null)
+        PopupMenuItem(
+          value: 'unlink',
+          child: Text(context.l10n.unlinkDriverAccount),
+        ),
+    ];
+    return Card(
+      margin: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
+      child: ListTile(
+        key: Key('company-user-${user.id}'),
+        leading: CircleAvatar(
+          child: Icon(
+            user.roles.contains('Driver') ? Icons.badge : Icons.person,
+          ),
+        ),
+        title: Text(user.displayName),
+        subtitle: Text(
+          '${user.email}\n${user.roles.join(', ')} - '
+          '${user.driverName ?? context.l10n.noDriverLinked}',
+        ),
+        isThreeLine: true,
+        trailing: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Chip(
+              label: Text(localizedStatus(context.l10n, user.membershipStatus)),
+            ),
+            if (actions.isNotEmpty)
+              PopupMenuButton<String>(
+                onSelected: (action) => _selected(context, ref, action),
+                itemBuilder: (_) => actions,
               ),
-              if (user.membershipStatus != 'Revoked')
-                PopupMenuItem(
-                  value: 'revoke',
-                  child: Text(context.l10n.revoke),
-                ),
-              if (user.driverId != null)
-                PopupMenuItem(
-                  value: 'unlink',
-                  child: Text(context.l10n.unlinkDriverAccount),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selected(
+    BuildContext context,
+    WidgetRef ref,
+    String action,
+  ) async {
+    try {
+      if (action == 'roles') {
+        final roles = await _roleInput(context);
+        if (roles == null) return;
+        await ref
+            .read(companyUsersRepositoryProvider)
+            .updateRoles(user.id, roles);
+      } else if (action == 'status' && user.membershipId != null) {
+        final status = user.membershipStatus == 'Active'
+            ? 'Suspended'
+            : 'Active';
+        await ref
+            .read(membershipRepositoryProvider)
+            .setMembershipStatus(user.membershipId!, status);
+      } else if (action == 'revoke' && user.membershipId != null) {
+        final confirmed = await _confirm(
+          context,
+          context.l10n.revoke,
+          context.l10n.confirm,
+        );
+        if (!confirmed) return;
+        await ref
+            .read(membershipRepositoryProvider)
+            .setMembershipStatus(user.membershipId!, 'Revoked');
+      } else if (action == 'link') {
+        final driverId = await _driverInput(context, ref);
+        if (driverId == null) return;
+        await ref.read(companyUsersRepositoryProvider).link(user.id, driverId);
+      } else if (action == 'unlink') {
+        final confirmed = await _confirm(
+          context,
+          context.l10n.unlinkDriverAccount,
+          context.l10n.unlinkDriverAccountConfirmation,
+        );
+        if (!confirmed) return;
+        await ref.read(companyUsersRepositoryProvider).unlink(user.id);
+      } else {
+        return;
+      }
+      await Future.wait([
+        ref.read(companyUsersControllerProvider.notifier).refresh(),
+        ref.read(operationsControllerProvider.notifier).reload(),
+      ]);
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.savedSuccessfully)));
+      }
+    } on ApiException catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(localizedErrorCode(context.l10n, error.code))),
+        );
+      }
+    }
+  }
+
+  Future<List<String>?> _roleInput(BuildContext context) async {
+    final selected = user.roles.toSet();
+    return showDialog<List<String>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(context.l10n.roles),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final role in _roles)
+                CheckboxListTile(
+                  key: Key('member-role-$role'),
+                  value: selected.contains(role),
+                  title: Text(role),
+                  onChanged: (checked) => setState(() {
+                    if (checked == true) {
+                      selected.add(role);
+                    } else {
+                      selected.remove(role);
+                    }
+                  }),
                 ),
             ],
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              key: const Key('save-member-roles'),
+              onPressed: selected.isEmpty
+                  ? null
+                  : () =>
+                        Navigator.pop(dialogContext, selected.toList()..sort()),
+              child: Text(context.l10n.save),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
+
+  Future<String?> _driverInput(BuildContext context, WidgetRef ref) {
+    final drivers =
+        ref
+            .read(operationsControllerProvider)
+            .value
+            ?.drivers
+            .where((driver) => driver.isActive && driver.userId == null)
+            .toList() ??
+        const [];
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(context.l10n.selectDriver),
+        children: drivers.isEmpty
+            ? [
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(context.l10n.noUnlinkedDriverAccounts),
+                ),
+              ]
+            : drivers
+                  .map(
+                    (driver) => SimpleDialogOption(
+                      key: Key('link-driver-${driver.id}'),
+                      onPressed: () => Navigator.pop(dialogContext, driver.id),
+                      child: Text(driver.fullName),
+                    ),
+                  )
+                  .toList(),
+      ),
+    );
+  }
 }
 
 class _InvitationsTab extends ConsumerWidget {
@@ -662,6 +796,15 @@ class _InvitationDialogState extends ConsumerState<_InvitationDialog> {
   Widget build(BuildContext context) {
     final drivers =
         ref.watch(operationsControllerProvider).value?.drivers ?? const [];
+    final isOwner =
+        ref.watch(authControllerProvider).value?.user.hasRole('Owner') == true;
+    final availableRoles = [
+      if (isOwner) 'Owner',
+      'Operations',
+      'Accountant',
+      'Employee',
+      'Driver',
+    ];
     return AlertDialog(
       title: Text(context.l10n.invitePerson),
       content: SizedBox(
@@ -698,7 +841,7 @@ class _InvitationDialogState extends ConsumerState<_InvitationDialog> {
               ),
               Wrap(
                 spacing: 8,
-                children: ['Owner', 'Operations', 'Accountant', 'Driver']
+                children: availableRoles
                     .map(
                       (role) => FilterChip(
                         key: Key('invitation-role-$role'),

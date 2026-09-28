@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../l10n/l10n_extensions.dart';
 import '../../dashboard/presentation/dashboard_controller.dart';
 import '../../trips/domain/trip_models.dart';
@@ -96,7 +97,7 @@ class DriverMyTripScreen extends ConsumerWidget {
                     key: const Key('scan-truck-qr'),
                     onPressed: () => _scanQr(context, ref),
                     icon: const Icon(Icons.qr_code_scanner),
-                    label: Text(context.l10n.scanTruckQr),
+                    label: Text(context.l10n.manualCode),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -211,7 +212,11 @@ class DriverMyTripScreen extends ConsumerWidget {
     final entered = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(context.l10n.scanTruckQr),
+        title: Text(
+          scanner.isSupported
+              ? context.l10n.scanTruckQr
+              : context.l10n.manualCode,
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -330,11 +335,11 @@ class DriverMyTripScreen extends ConsumerWidget {
           ),
         );
       }
-    } on Object {
+    } on ApiException catch (error) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.l10n.genericError)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(localizedErrorCode(context.l10n, error.code))),
+        );
       }
     }
   }
@@ -751,7 +756,7 @@ class _WorkspaceEmptyState extends StatelessWidget {
               key: const Key('scan-truck-qr'),
               onPressed: onScan,
               icon: const Icon(Icons.qr_code_scanner),
-              label: Text(context.l10n.scanTruckQr),
+              label: Text(context.l10n.manualCode),
             ),
           ),
         ],

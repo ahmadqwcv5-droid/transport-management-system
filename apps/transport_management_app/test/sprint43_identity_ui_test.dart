@@ -86,6 +86,23 @@ void main() {
     expect(handover.requestingDriverName, 'Driver B');
   });
 
+  test('QR status model exposes metadata without a reusable secret', () {
+    final status = TruckQrStatus.fromJson({
+      'truckId': 'truck-1',
+      'plateNumber': '34 SAFE 431',
+      'fleetCode': 'F-431',
+      'hasActiveCredential': true,
+      'codeHint': 'last-eight',
+      'generatedAt': '2026-09-28T12:00:00Z',
+      'generatedByDisplayName': 'Owner A',
+    });
+
+    expect(status.hasActiveCredential, isTrue);
+    expect(status.codeHint, 'last-eight');
+    expect(status.generatedByDisplayName, 'Owner A');
+    expect(status.generatedAt, isNotNull);
+  });
+
   testWidgets('local login remains available and Google is honestly disabled', (
     tester,
   ) async {
@@ -117,7 +134,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          googleConfiguredProvider.overrideWithValue(true),
+          googleConfiguredProvider.overrideWith((_) async => true),
           externalIdentityLauncherProvider.overrideWithValue(
             const _FakeExternalLauncher(),
           ),
@@ -170,6 +187,20 @@ void main() {
         'INVITATION_EMAIL_MISMATCH',
       ),
       'سجّل الدخول بالبريد الذي استلم الدعوة.',
+    );
+    expect(
+      localizedErrorCode(
+        AppLocalizations.of(captured)!,
+        'LAST_ACTIVE_OWNER_REQUIRED',
+      ),
+      isNot(AppLocalizations.of(captured)!.genericError),
+    );
+    expect(
+      localizedErrorCode(
+        AppLocalizations.of(captured)!,
+        'DRIVER_UNLINK_ACTIVE_SESSION',
+      ),
+      isNot(AppLocalizations.of(captured)!.genericError),
     );
   });
 

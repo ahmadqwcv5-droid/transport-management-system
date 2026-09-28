@@ -29,6 +29,7 @@ services:
       ExternalIdentity__Google__ClientId: ${GOOGLE_SERVER_CLIENT_ID:-}
       ExternalIdentity__Google__WebClientId: ${GOOGLE_WEB_CLIENT_ID:-}
       ExternalIdentity__Google__AndroidClientId: ${GOOGLE_ANDROID_CLIENT_ID:-}
+      Frontend__PublicBaseUrl: ${FRONTEND_PUBLIC_BASE_URL:-http://localhost:3000}
       DevelopmentSeed__Enabled: "true"
       DevelopmentSeed__OwnerPassword: ${DEMO_OWNER_PASSWORD:?Set DEMO_OWNER_PASSWORD in .env}
       Tracking__Provider: ${TRACKING_PROVIDER:-Simulator}

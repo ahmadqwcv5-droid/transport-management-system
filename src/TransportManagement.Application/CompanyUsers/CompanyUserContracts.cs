@@ -9,6 +9,8 @@ public sealed record CreateDriverUserRequest(
 
 public sealed record CompanyUserActiveRequest(bool IsActive);
 public sealed record LinkCompanyUserRequest(Guid DriverId);
+public sealed record UpdateCompanyUserRolesRequest(
+    [param: Required, MinLength(1)] IReadOnlyList<string> Roles);
 
 public sealed record CompanyUserResponse(
     Guid Id, string Email, string DisplayName, string Role, bool IsActive,

@@ -127,7 +127,7 @@ public sealed class CompanyConnectionsController(MembershipService service) : Co
 
 [ApiController]
 [Route("api/memberships")]
-[Authorize(Policy = "operations.manage")]
+[Authorize(Policy = "owner")]
 public sealed class MembershipsController(MembershipService service) : ControllerBase
 {
     [HttpPut("{id:guid}/status")]

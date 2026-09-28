@@ -1,10 +1,14 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../../../core/network/api_exception.dart';
 import '../../../../l10n/l10n_extensions.dart';
 import '../../../clients/domain/client_models.dart';
 import '../../../operations/presentation/mutation_refresh_coordinator.dart';
@@ -13,6 +17,7 @@ import '../../../operations/presentation/operations_view.dart';
 import '../../domain/fleet_models.dart';
 import 'trucks_screen.dart';
 import '../../../../shared/widgets/truck_avatar.dart';
+import '../../../memberships/domain/membership_models.dart';
 import '../../../memberships/presentation/membership_providers.dart';
 
 class TruckDetailsScreen extends ConsumerWidget {
@@ -35,6 +40,10 @@ class TruckDetailsScreen extends ConsumerWidget {
               _Header(details.truck),
               const SizedBox(height: 12),
               _Profile(details.truck),
+              if (canManageOperations(ref)) ...[
+                const SizedBox(height: 12),
+                _QrCredentialCard(details.truck),
+              ],
               const SizedBox(height: 12),
               _Position(details.latestPosition),
               const SizedBox(height: 12),
@@ -98,13 +107,6 @@ class _Header extends ConsumerWidget {
           icon: const Icon(Icons.no_photography_outlined),
           tooltip: context.l10n.removeTruckPhoto,
           onPressed: () => _removePhoto(context, ref),
-        ),
-      if (canManageOperations(ref))
-        IconButton(
-          key: const Key('truck-qr-label'),
-          icon: const Icon(Icons.qr_code_2),
-          tooltip: context.l10n.qrCode,
-          onPressed: () => _showTruckQr(context, ref, truck),
         ),
       if (canManageOperations(ref))
         IconButton(
@@ -472,44 +474,145 @@ Widget _line(String label, String? value) => Padding(
   child: Text('$label: ${value ?? '—'}'),
 );
 
-Future<void> _showTruckQr(
+class _QrCredentialCard extends ConsumerStatefulWidget {
+  const _QrCredentialCard(this.truck);
+  final Truck truck;
+
+  @override
+  ConsumerState<_QrCredentialCard> createState() => _QrCredentialCardState();
+}
+
+class _QrCredentialCardState extends ConsumerState<_QrCredentialCard> {
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = ref.watch(truckQrStatusProvider(widget.truck.id));
+    return Card(
+      key: const Key('truck-qr-status-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: status.when(
+          loading: () => const LinearProgressIndicator(),
+          error: (error, _) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.l10n.truckQrStatus,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Text(
+                error is ApiException
+                    ? localizedErrorCode(context.l10n, error.code)
+                    : context.l10n.genericError,
+              ),
+              TextButton.icon(
+                onPressed: () =>
+                    ref.invalidate(truckQrStatusProvider(widget.truck.id)),
+                icon: const Icon(Icons.refresh),
+                label: Text(context.l10n.retry),
+              ),
+            ],
+          ),
+          data: (value) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.l10n.truckQrStatus,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                value.hasActiveCredential
+                    ? context.l10n.truckQrActiveHint(value.codeHint ?? '')
+                    : context.l10n.truckQrNotGenerated,
+              ),
+              if (value.generatedAt != null)
+                Text(value.generatedAt!.toLocal().toString()),
+              if (value.generatedByDisplayName != null)
+                Text(
+                  '${context.l10n.generatedBy}: '
+                  '${value.generatedByDisplayName}',
+                ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                key: const Key('generate-truck-qr'),
+                onPressed: _busy ? null : () => _generate(value),
+                icon: _busy
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.qr_code_2),
+                label: Text(
+                  value.hasActiveCredential
+                      ? context.l10n.regenerateTruckQr
+                      : context.l10n.generateTruckQr,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _generate(TruckQrStatus status) async {
+    if (status.hasActiveCredential) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(context.l10n.regenerateTruckQr),
+          content: Text(context.l10n.truckQrExplanation),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(context.l10n.confirm),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    setState(() => _busy = true);
+    try {
+      final credential = await ref
+          .read(membershipRepositoryProvider)
+          .regenerateTruckQr(widget.truck.id);
+      ref.invalidate(truckQrStatusProvider(widget.truck.id));
+      if (mounted) await _showGeneratedQrDialog(context, credential);
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(localizedErrorCode(context.l10n, error.code))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+}
+
+Future<void> _showGeneratedQrDialog(
   BuildContext context,
-  WidgetRef ref,
-  Truck truck,
+  TruckQrCredential credential,
 ) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(context.l10n.regenerateTruckQr),
-      content: Text(context.l10n.truckQrExplanation),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, false),
-          child: Text(context.l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(dialogContext, true),
-          child: Text(context.l10n.confirm),
-        ),
-      ],
-    ),
-  );
-  if (confirmed != true) return;
-  final credential = await ref
-      .read(membershipRepositoryProvider)
-      .regenerateTruckQr(truck.id);
-  if (!context.mounted) return;
+  final repaintKey = GlobalKey();
   await showDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (dialogContext) => AlertDialog(
-      title: Text('${context.l10n.qrCode} · ${credential.plateNumber}'),
+      title: Text('${context.l10n.qrCode} - ${credential.plateNumber}'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             RepaintBoundary(
-              key: const Key('printable-truck-qr'),
+              key: repaintKey,
               child: ColoredBox(
                 color: Colors.white,
                 child: Padding(
@@ -536,6 +639,12 @@ Future<void> _showTruckQr(
           icon: const Icon(Icons.copy),
           label: Text(context.l10n.copy),
         ),
+        TextButton.icon(
+          key: const Key('download-truck-qr-png'),
+          onPressed: () => _saveQrPng(repaintKey, credential.plateNumber),
+          icon: const Icon(Icons.download),
+          label: Text(context.l10n.downloadPng),
+        ),
         FilledButton(
           onPressed: () => Navigator.pop(dialogContext),
           child: Text(context.l10n.done),
@@ -543,4 +652,28 @@ Future<void> _showTruckQr(
       ],
     ),
   );
+}
+
+Future<void> _saveQrPng(GlobalKey repaintKey, String plateNumber) async {
+  final boundary =
+      repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+  if (boundary == null) return;
+  final image = await boundary.toImage(pixelRatio: 3);
+  final data = await image.toByteData(format: ui.ImageByteFormat.png);
+  if (data == null) return;
+  final safePlate = plateNumber.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+  final fileName = '${safePlate}_truck_qr.png';
+  final location = await getSaveLocation(
+    suggestedName: fileName,
+    acceptedTypeGroups: const [
+      XTypeGroup(label: 'PNG image', extensions: ['png']),
+    ],
+  );
+  if (location == null) return;
+  final file = XFile.fromData(
+    data.buffer.asUint8List(),
+    mimeType: 'image/png',
+    name: fileName,
+  );
+  await file.saveTo(location.path);
 }

@@ -27,6 +27,7 @@ public interface IMembershipWorkflowStore
         Guid companyId, Guid accountId, CancellationToken cancellationToken);
     Task<CompanyMembership?> FindCompanyMembershipAsync(
         Guid membershipId, CancellationToken cancellationToken);
+    Task<int> CountActiveOwnersAsync(Guid companyId, CancellationToken cancellationToken);
     Task<Driver?> FindDriverAsync(Guid driverId, Guid companyId, CancellationToken cancellationToken);
     void AddInvitation(CompanyInvitation invitation);
     void AddConnectionRequest(CompanyConnectionRequest request);

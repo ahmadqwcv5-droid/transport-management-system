@@ -43,6 +43,8 @@ class CompanyUsersController extends AsyncNotifier<List<CompanyUser>> {
     }
   }
 
+  Future<bool> updateRoles(String id, List<String> roles) =>
+      _mutate(() => _repository.updateRoles(id, roles));
   Future<bool> setActive(String id, bool active) =>
       _mutate(() => _repository.setActive(id, active));
   Future<bool> link(String userId, String driverId) =>

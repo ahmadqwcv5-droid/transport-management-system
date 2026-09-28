@@ -41,6 +41,9 @@ final class CompanyUsersRepository {
     }
   }
 
+  Future<void> updateRoles(String id, List<String> roles) =>
+      _send('PUT', '/api/company-users/$id/roles', {'roles': roles});
+
   Future<void> setActive(String id, bool active) =>
       _send('PUT', '/api/company-users/$id/active', {'isActive': active});
 

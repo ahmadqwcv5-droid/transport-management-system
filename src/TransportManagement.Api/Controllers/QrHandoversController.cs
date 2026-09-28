@@ -9,6 +9,11 @@ namespace TransportManagement.Api.Controllers;
 [Authorize(Policy = "operations.manage")]
 public sealed class TruckQrController(QrHandoverService service) : ControllerBase
 {
+    [HttpGet]
+    public Task<TruckQrStatusResponse> Status(
+        Guid truckId, CancellationToken cancellationToken) =>
+        service.GetQrStatusAsync(truckId, cancellationToken);
+
     [HttpPost("regenerate")]
     public Task<TruckQrCredentialResponse> Regenerate(
         Guid truckId, CancellationToken cancellationToken) =>

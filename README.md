@@ -1123,3 +1123,119 @@ The migration, verification commands, rollback guard, browser coverage, and
 environment limitations are recorded in
 `docs/sprints/sprint-4.3/SPRINT4_3_IMPLEMENTATION_PLAN.md` and
 `docs/evidence/sprint4_3/README.md`.
+
+
+## Sprint 4.3.1 account, Driver, QR, and invitation stabilization
+
+Sprint 4.3.1 completes the user-facing management workflows around the Sprint
+4.3 identity model. Owners can edit every membership role while last-Owner,
+self-demotion, and linked-Driver safeguards preserve access and operations.
+Owner and Operations users can link an accepted Driver-role membership to an
+eligible tenant Driver without stealing another account's link, and unsafe
+unlinking is rejected while a trip, vehicle session, or handover depends on it.
+
+Truck details now shows non-secret QR status and provides explicit Generate or
+Regenerate actions. The one-time dialog renders the QR, permits copying its
+manual code, and exports a PNG. Historical raw codes remain unrecoverable by
+design. Driver Web currently advertises **Enter truck code**, accepts either
+the raw value or a full `tms-truck://qr/...` payload, and does not claim camera
+support.
+
+Invitation creation returns a directly usable Flutter hash URL based on
+`FRONTEND_PUBLIC_BASE_URL`. Google controls are shown only when both the
+platform client ID and backend provider are configured, and invitation
+acceptance now includes Continue with Google. Local email/password login
+remains supported.
+
+### Run Sprint 4.3.1 locally
+
+From the repository root, keep the retained project and volumes intact:
+
+```bash
+docker compose -p tms-smoke up -d --build
+docker compose -p tms-smoke ps
+curl --fail http://localhost:5080/health
+```
+
+Do not use `down -v`. The frontend invitation origin defaults to
+`http://localhost:3000`; set this in `.env` when another public origin is
+required:
+
+```dotenv
+FRONTEND_PUBLIC_BASE_URL=http://localhost:3000
+```
+
+Run Flutter Web on that same registered Google origin:
+
+```bash
+cd apps/transport_management_app
+../../.tooling/flutter/bin/flutter pub get
+../../.tooling/flutter/bin/flutter run \
+  -d web-server \
+  --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty \
+  --dart-define=ENABLE_SIMULATOR_CONTROLS=true \
+  --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID"
+```
+
+Open `http://localhost:3000` in Firefox. Manual acceptance should cover role
+editing, delayed Driver linking, blocked unsafe unlinking, invitation opening
+in a private profile, QR generation/download and manual-code entry, local
+login/logout, and Google login/invitation acceptance.
+
+### Validate Sprint 4.3.1
+
+Run the automated suites from the repository root:
+
+```bash
+.tooling/dotnet/dotnet build TransportManagement.slnx -c Release
+.tooling/dotnet/dotnet test TransportManagement.slnx -c Release --no-build
+
+cd apps/transport_management_app
+../../.tooling/flutter/bin/flutter analyze
+../../.tooling/flutter/bin/flutter test
+../../.tooling/flutter/bin/flutter build web \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID"
+```
+
+For fresh-profile Firefox smoke tests, start the driver in one terminal:
+
+```bash
+geckodriver --port 4444
+```
+
+Then run from `apps/transport_management_app`:
+
+```bash
+../../.tooling/flutter/bin/flutter drive \
+  --driver=test_driver/integration_test.dart \
+  --target=integration_test/auth_smoke_test.dart \
+  -d web-server \
+  --browser-name=firefox \
+  --driver-port=4444 \
+  --headless \
+  --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=E2E_EMAIL=owner@demo.local \
+  --dart-define=E2E_PASSWORD="$DEMO_OWNER_PASSWORD"
+
+../../.tooling/flutter/bin/flutter drive \
+  --driver=test_driver/integration_test.dart \
+  --target=integration_test/google_provider_smoke_test.dart \
+  -d web-server \
+  --browser-name=firefox \
+  --driver-port=4444 \
+  --headless \
+  --web-port=3000 \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID"
+```
+
+The second test proves that the live configured backend and Google Web control
+agree on availability. Completing account selection, consent, and the returned
+identity token is intentionally a visible, human-driven Firefox step.
+
+The full implementation record and sanitized evidence are in
+`docs/sprints/sprint-4.3.1` and `docs/evidence/sprint4_3_1`.

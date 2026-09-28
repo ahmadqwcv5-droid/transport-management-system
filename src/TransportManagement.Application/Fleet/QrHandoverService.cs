@@ -15,6 +15,18 @@ public sealed class QrHandoverService(
     ICurrentUser currentUser,
     IClock clock)
 {
+    public async Task<TruckQrStatusResponse> GetQrStatusAsync(
+        Guid truckId, CancellationToken cancellationToken)
+    {
+        var truck = await RequiredTruckAsync(truckId, cancellationToken);
+        var credential = await store.FindActiveQrForTruckAsync(truckId, cancellationToken);
+        var generatedBy = credential is null ? null
+            : await store.FindAccountDisplayNameAsync(
+                credential.GeneratedByAccountId, cancellationToken);
+        return new(truck.Id, truck.PlateNumber, truck.FleetCode, credential is not null,
+            credential?.CodeHint, credential?.GeneratedAt, generatedBy);
+    }
+
     public async Task<TruckQrCredentialResponse> GenerateQrAsync(
         Guid truckId, CancellationToken cancellationToken)
     {
@@ -26,15 +38,17 @@ public sealed class QrHandoverService(
         var credential = new TruckQrCredential(Guid.NewGuid(), currentUser.CompanyId,
             truckId, Hash(code), code[^8..], currentUser.UserId, now);
         store.AddQr(credential);
+        var eventName = current is null ? "TruckQrGenerated" : "TruckQrRegenerated";
+        var eventCode = current is null ? "TRUCK_QR_GENERATED" : "TRUCK_QR_REGENERATED";
         store.AddTruckEvent(new TruckEvent(Guid.NewGuid(), currentUser.CompanyId,
-            truckId, currentUser.UserId, "TruckQrRegenerated",
+            truckId, currentUser.UserId, eventName,
             JsonSerializer.Serialize(new { credentialId = credential.Id }), now));
         store.AddNotification(new OperationNotification(Guid.NewGuid(),
-            currentUser.CompanyId, "TruckQrRegenerated", "Information",
-            null, truck.Id, null, $"TruckQrRegenerated:{credential.Id}",
+            currentUser.CompanyId, eventName, "Information",
+            null, truck.Id, null, eventName + ":" + credential.Id,
             JsonSerializer.Serialize(new
             {
-                eventCode = "TRUCK_QR_REGENERATED",
+                eventCode,
                 credentialId = credential.Id,
                 truckId = truck.Id,
                 truck.PlateNumber
@@ -357,7 +371,7 @@ public sealed class QrHandoverService(
         string rawCode, CancellationToken cancellationToken)
     {
         var credential = await store.FindActiveQrByHashAsync(
-            Hash(rawCode), cancellationToken)
+            Hash(NormalizeCode(rawCode)), cancellationToken)
             ?? throw new NotFoundException("Truck QR code was not found.",
                 "TRUCK_QR_INVALID");
         var truck = await RequiredTruckAsync(credential.TruckId, cancellationToken);
@@ -398,6 +412,19 @@ public sealed class QrHandoverService(
             trip.Status.ToString(), handover.Status.ToString(), handover.Reason,
             handover.ResolutionReason, handover.ExpectedTripVersion,
             handover.ExpiresAt, handover.CreatedAt, handover.ResolvedAt);
+    }
+
+    private static string NormalizeCode(string value)
+    {
+        var normalized = value.Trim();
+        const string prefix = "tms-truck://qr/";
+        if (normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            normalized = normalized[prefix.Length..].Trim();
+        if (string.IsNullOrWhiteSpace(normalized)
+            || normalized.Contains((char)47) || normalized.Any(char.IsWhiteSpace))
+            throw new DomainRuleException("The truck QR code is invalid.",
+                "TRUCK_QR_INVALID");
+        return normalized;
     }
 
     private static string GenerateSecret()

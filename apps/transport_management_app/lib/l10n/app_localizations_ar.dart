@@ -2151,4 +2151,57 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get useCamera => 'استخدام الكاميرا';
+
+  @override
+  String get externalAccountLinkRequired =>
+      'سجّل الدخول بكلمة المرور الحالية ثم اربط Google من الإعدادات.';
+
+  @override
+  String get ownerRoleRequiresOwner => 'يمكن للمالك فقط منح دور المالك.';
+
+  @override
+  String get lastActiveOwnerRequired =>
+      'يجب أن تحتفظ الشركة بمالك نشط واحد على الأقل.';
+
+  @override
+  String get selfOwnerRemovalForbidden => 'لا يمكنك إزالة دور المالك عن حسابك.';
+
+  @override
+  String get driverRoleLinked => 'افصل ملف السائق قبل إزالة دور السائق.';
+
+  @override
+  String get driverUnlinkActiveTrip =>
+      'أكمل الرحلة النشطة أو سلّمها قبل فصل هذا السائق.';
+
+  @override
+  String get driverUnlinkActiveSession =>
+      'أنه جلسة الشاحنة النشطة قبل فصل هذا السائق.';
+
+  @override
+  String get driverUnlinkPendingHandover =>
+      'عالج طلب التسليم المعلق قبل فصل هذا السائق.';
+
+  @override
+  String get truckQrStatus => 'بيانات QR للشاحنة';
+
+  @override
+  String get truckQrNotGenerated => 'لم يتم إنشاء بيانات QR نشطة.';
+
+  @override
+  String truckQrActiveHint(String hint) {
+    return 'بيانات نشطة تنتهي بـ $hint';
+  }
+
+  @override
+  String get generatedBy => 'أنشأه';
+
+  @override
+  String get generateTruckQr => 'إنشاء QR للشاحنة';
+
+  @override
+  String get downloadPng => 'تنزيل PNG';
+
+  @override
+  String get truckQrRegenerationConflict =>
+      'تغير QR للشاحنة في الوقت نفسه. حدّث الصفحة وأنشئه مجدداً.';
 }

@@ -97,6 +97,9 @@ final class MembershipRepository {
   Future<void> setMembershipStatus(String id, String status) =>
       _empty('PUT', '/api/memberships/$id/status', {'status': status});
 
+  Future<TruckQrStatus> truckQrStatus(String truckId) =>
+      _get('/api/trucks/$truckId/qr', TruckQrStatus.fromJson);
+
   Future<TruckQrCredential> regenerateTruckQr(String truckId) => _post(
     '/api/trucks/$truckId/qr/regenerate',
     null,

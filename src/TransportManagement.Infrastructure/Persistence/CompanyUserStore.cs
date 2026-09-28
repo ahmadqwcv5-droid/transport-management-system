@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Domain.Fleet;
 using TransportManagement.Domain.Identity;
+using TransportManagement.Domain.Trips;
 
 namespace TransportManagement.Infrastructure.Persistence;
 
@@ -35,6 +36,18 @@ internal sealed class CompanyUserStore(AppDbContext dbContext) : ICompanyUserSto
             role => role.MembershipId, (_, role) => role.Role)
         .OrderBy(x => x).ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<CompanyMembershipRole>> GetRoleEntitiesAsync(
+        Guid membershipId, CancellationToken cancellationToken) =>
+        await dbContext.CompanyMembershipRoles.Where(x => x.MembershipId == membershipId)
+            .OrderBy(x => x.Role).ToListAsync(cancellationToken);
+
+    public Task<int> CountActiveOwnersAsync(CancellationToken cancellationToken) =>
+        dbContext.CompanyMemberships.CountAsync(membership =>
+            membership.Status == MembershipStatus.Active
+            && dbContext.CompanyMembershipRoles.Any(role =>
+                role.MembershipId == membership.Id && role.Role == AppRoles.Owner),
+            cancellationToken);
+
     public Task<User?> GetUserAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Users.SingleOrDefaultAsync(x => x.Id == id
             && dbContext.CompanyMemberships.Any(membership =>
@@ -50,6 +63,29 @@ internal sealed class CompanyUserStore(AppDbContext dbContext) : ICompanyUserSto
         CancellationToken cancellationToken) => dbContext.Drivers.AnyAsync(x =>
             x.UserId == userId && (!excludingDriverId.HasValue || x.Id != excludingDriverId),
             cancellationToken);
+
+    public Task<bool> HasActiveTripAsync(Guid driverId,
+        CancellationToken cancellationToken) => dbContext.Trips.AnyAsync(x =>
+            x.DriverId == driverId && (x.Status == TripStatus.Assigned
+                || x.Status == TripStatus.EnRouteToPickup || x.Status == TripStatus.AtPickup
+                || x.Status == TripStatus.Started || x.Status == TripStatus.InTransit
+                || x.Status == TripStatus.AtDelivery || x.Status == TripStatus.Delivered),
+            cancellationToken);
+
+    public Task<bool> HasActiveSessionAsync(Guid driverId,
+        CancellationToken cancellationToken) => dbContext.DriverTruckSessions.AnyAsync(x =>
+            x.DriverId == driverId && x.EndedAt == null, cancellationToken);
+
+    public Task<bool> HasPendingHandoverAsync(Guid driverId,
+        CancellationToken cancellationToken) => dbContext.TripHandoverRequests.AnyAsync(x =>
+            (x.CurrentDriverId == driverId || x.RequestingDriverId == driverId)
+            && x.Status == TripHandoverStatus.Pending, cancellationToken);
+
+    public void AddRoles(IEnumerable<CompanyMembershipRole> roles) =>
+        dbContext.CompanyMembershipRoles.AddRange(roles);
+
+    public void RemoveRoles(IEnumerable<CompanyMembershipRole> roles) =>
+        dbContext.CompanyMembershipRoles.RemoveRange(roles);
 
     public void AddEvent(CompanyUserEvent userEvent) => dbContext.CompanyUserEvents.Add(userEvent);
 

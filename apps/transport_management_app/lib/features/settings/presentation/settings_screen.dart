@@ -130,7 +130,9 @@ class SettingsScreen extends ConsumerWidget {
                           if (!methods.any(
                             (method) => method.provider == 'Google',
                           ))
-                            if (kIsWeb && ref.watch(googleConfiguredProvider))
+                            if (kIsWeb &&
+                                ref.watch(googleConfiguredProvider).value ==
+                                    true)
                               GoogleWebIdentityButton(
                                 clientId: const String.fromEnvironment(
                                   'GOOGLE_WEB_CLIENT_ID',
@@ -150,7 +152,8 @@ class SettingsScreen extends ConsumerWidget {
                                   Icons.account_circle_outlined,
                                 ),
                                 title: Text(context.l10n.googleSignIn),
-                                onTap: ref
+                                onTap:
+                                    ref
                                         .watch(externalIdentityLauncherProvider)
                                         .isAvailable
                                     ? () => _linkGoogle(ref)
@@ -262,11 +265,7 @@ class SettingsScreen extends ConsumerWidget {
     if (credential == null) return;
     await ref
         .read(membershipRepositoryProvider)
-        .linkProvider(
-          'Google',
-          credential.idToken,
-          nonce: credential.nonce,
-        );
+        .linkProvider('Google', credential.idToken, nonce: credential.nonce);
     ref.invalidate(signInMethodsProvider);
   }
 

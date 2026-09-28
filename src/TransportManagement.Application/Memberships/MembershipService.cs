@@ -14,6 +14,7 @@ public sealed class MembershipService(
     IMembershipWorkflowStore store,
     IIdentityStore identities,
     ICompanyCodeService companyCodes,
+    IInvitationLinkBuilder invitationLinks,
     IPasswordHasher passwordHasher,
     ICurrentUser currentUser,
     IClock clock)
@@ -32,6 +33,10 @@ public sealed class MembershipService(
         CreateInvitationRequest request, CancellationToken cancellationToken)
     {
         var roles = ValidateRoles(request.Roles);
+        if (roles.Contains(AppRoles.Owner, StringComparer.Ordinal)
+            && !currentUser.IsInRole(AppRoles.Owner))
+            throw new ForbiddenException(
+                "Only an Owner can invite another Owner.", "OWNER_ROLE_REQUIRES_OWNER");
         var email = request.Email.Trim().ToLowerInvariant();
         var existing = await store.ListInvitationsAsync(cancellationToken);
         if (existing.Any(x => x.Email == email
@@ -73,7 +78,7 @@ public sealed class MembershipService(
             }, now);
         await store.SaveChangesAsync(cancellationToken);
         return await MapInvitationAsync(invitation,
-            $"/accept-invitation?token={Uri.EscapeDataString(rawToken)}", cancellationToken);
+            invitationLinks.BuildAcceptanceUrl(rawToken), cancellationToken);
     }
 
     public async Task<InvitationResponse> PreviewInvitationAsync(
@@ -429,6 +434,13 @@ public sealed class MembershipService(
             && request.Status is "Suspended" or "Revoked")
             throw new ConflictException("You cannot remove your current membership.",
                 "MEMBERSHIP_SELF_REVOCATION_FORBIDDEN");
+        var currentRoles = await identities.ListMembershipRolesAsync(
+            membership.Id, cancellationToken);
+        if (membership.IsActive && request.Status is "Suspended" or "Revoked"
+            && currentRoles.Contains(AppRoles.Owner, StringComparer.Ordinal)
+            && await store.CountActiveOwnersAsync(membership.CompanyId, cancellationToken) <= 1)
+            throw new ConflictException("The company must retain an active Owner.",
+                "LAST_ACTIVE_OWNER_REQUIRED");
         var now = clock.UtcNow;
         switch (request.Status)
         {

@@ -96,6 +96,33 @@ final class CompanySummary {
   );
 }
 
+final class TruckQrStatus {
+  const TruckQrStatus({
+    required this.truckId,
+    required this.plateNumber,
+    required this.hasActiveCredential,
+    this.fleetCode,
+    this.codeHint,
+    this.generatedAt,
+    this.generatedByDisplayName,
+  });
+  final String truckId, plateNumber;
+  final bool hasActiveCredential;
+  final String? fleetCode, codeHint, generatedByDisplayName;
+  final DateTime? generatedAt;
+  factory TruckQrStatus.fromJson(Json json) => TruckQrStatus(
+    truckId: json['truckId'] as String,
+    plateNumber: json['plateNumber'] as String,
+    fleetCode: json['fleetCode'] as String?,
+    hasActiveCredential: json['hasActiveCredential'] as bool,
+    codeHint: json['codeHint'] as String?,
+    generatedAt: json['generatedAt'] == null
+        ? null
+        : DateTime.parse(json['generatedAt'] as String),
+    generatedByDisplayName: json['generatedByDisplayName'] as String?,
+  );
+}
+
 final class TruckQrCredential {
   const TruckQrCredential({
     required this.truckId,

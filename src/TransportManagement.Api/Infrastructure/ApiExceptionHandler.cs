@@ -22,6 +22,7 @@ internal sealed class ApiExceptionHandler(
         var status = exception switch
         {
             AuthenticationException => StatusCodes.Status401Unauthorized,
+            ForbiddenException => StatusCodes.Status403Forbidden,
             NotFoundException => StatusCodes.Status404NotFound,
             ConflictException => StatusCodes.Status409Conflict,
             ProviderException => StatusCodes.Status503ServiceUnavailable,
@@ -35,6 +36,7 @@ internal sealed class ApiExceptionHandler(
         var code = exception switch
         {
             ConflictException conflict => conflict.Code,
+            ForbiddenException forbidden => forbidden.Code,
             ProviderException provider => provider.Code,
             NotFoundException notFound => notFound.Code,
             DomainRuleException domain => domain.Code,
@@ -51,6 +53,7 @@ internal sealed class ApiExceptionHandler(
                 {
                     400 => "Business rule validation failed",
                     401 => "Authentication failed",
+                    403 => "Operation forbidden",
                     404 => "Resource not found",
                     409 => "Operation conflict",
                     503 => "External provider unavailable",

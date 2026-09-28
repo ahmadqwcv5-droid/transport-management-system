@@ -38,6 +38,17 @@ public static class DependencyInjection
             .Validate(options => Encoding.UTF8.GetByteCount(options.SigningKey) >= 32,
                 "Jwt:SigningKey must be at least 32 bytes.")
             .ValidateOnStart();
+        services.AddOptions<FrontendOptions>()
+            .Bind(configuration.GetSection(FrontendOptions.SectionName))
+            .Validate(options => Uri.TryCreate(options.PublicBaseUrl, UriKind.Absolute, out var uri)
+                && uri.Scheme is "http" or "https"
+                && string.IsNullOrEmpty(uri.Query) && string.IsNullOrEmpty(uri.Fragment),
+                "Frontend:PublicBaseUrl must be an absolute HTTP(S) URL without query or fragment.")
+            .Validate(options => !environment.IsProduction()
+                || (Uri.TryCreate(options.PublicBaseUrl, UriKind.Absolute, out var uri)
+                    && !uri.IsLoopback),
+                "Frontend:PublicBaseUrl cannot be loopback in Production.")
+            .ValidateOnStart();
         services.AddOptions<ExternalIdentityOptions>()
             .Bind(configuration.GetSection(ExternalIdentityOptions.SectionName));
         services.AddHttpClient<IExternalIdentityVerifier, GoogleExternalIdentityVerifier>();
@@ -50,6 +61,7 @@ public static class DependencyInjection
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IIdentityStore, IdentityStore>();
         services.AddScoped<IMembershipWorkflowStore, MembershipWorkflowStore>();
+        services.AddSingleton<IInvitationLinkBuilder, InvitationLinkBuilder>();
         services.AddScoped<IQrHandoverStore, QrHandoverStore>();
         services.AddSingleton<ICompanyCodeService, CompanyCodeService>();
         services.AddScoped<ICompanyUserStore, CompanyUserStore>();

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using TransportManagement.Application.Abstractions;
+using TransportManagement.Application.Common;
 using TransportManagement.Domain.Fleet;
 using TransportManagement.Domain.Tracking;
 using TransportManagement.Domain.Trips;
@@ -21,6 +23,11 @@ internal sealed class QrHandoverStore(AppDbContext dbContext) : IQrHandoverStore
     public Task<Driver?> FindDriverByAccountAsync(Guid accountId,
         CancellationToken cancellationToken) => dbContext.Drivers
         .SingleOrDefaultAsync(x => x.UserId == accountId, cancellationToken);
+
+    public Task<string?> FindAccountDisplayNameAsync(Guid accountId,
+        CancellationToken cancellationToken) => dbContext.Users.AsNoTracking()
+        .Where(x => x.Id == accountId).Select(x => x.DisplayName)
+        .SingleOrDefaultAsync(cancellationToken);
 
     public Task<TruckQrCredential?> FindActiveQrForTruckAsync(
         Guid truckId, CancellationToken cancellationToken) => dbContext.TruckQrCredentials
@@ -101,6 +108,21 @@ internal sealed class QrHandoverStore(AppDbContext dbContext) : IQrHandoverStore
     public void AddNotification(OperationNotification notification) =>
         dbContext.OperationNotifications.Add(notification);
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken) =>
-        dbContext.SaveChangesAsync(cancellationToken);
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "IX_truck_qr_credentials_CompanyId_TruckId"
+        })
+        {
+            throw new ConflictException(
+                "The truck QR credential changed concurrently. Refresh and try again.",
+                "TRUCK_QR_REGENERATION_CONFLICT", exception);
+        }
+    }
 }

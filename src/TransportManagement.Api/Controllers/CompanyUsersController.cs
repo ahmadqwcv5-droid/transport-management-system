@@ -30,6 +30,12 @@ public sealed class CompanyUsersController(
         return Created($"/api/membership-invitations/{result.Id}", result);
     }
 
+    [Authorize(Policy = "owner")]
+    [HttpPut("{id:guid}/roles")]
+    public Task<CompanyUserResponse> UpdateRoles(Guid id, UpdateCompanyUserRolesRequest request,
+        CancellationToken cancellationToken) => service.UpdateRolesAsync(id, request, cancellationToken);
+
+    [Authorize(Policy = "owner")]
     [HttpPut("{id:guid}/active")]
     public Task<CompanyUserResponse> SetActive(Guid id, CompanyUserActiveRequest request,
         CancellationToken cancellationToken) => service.SetActiveAsync(id, request, cancellationToken);
