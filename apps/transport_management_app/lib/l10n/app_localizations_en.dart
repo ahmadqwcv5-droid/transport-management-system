@@ -2230,4 +2230,160 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get truckQrRegenerationConflict =>
       'The truck QR changed at the same time. Refresh and generate it again.';
+
+  @override
+  String get showPassword => 'Show password';
+
+  @override
+  String get hidePassword => 'Hide password';
+
+  @override
+  String get pendingInvitations => 'Pending invitations';
+
+  @override
+  String get invitationHistory => 'Invitation history';
+
+  @override
+  String get qrPreparing => 'Preparing QR image…';
+
+  @override
+  String get qrRenderFailed =>
+      'The credential was created, but the QR image could not be prepared. Copy the manual code or retry displaying it.';
+
+  @override
+  String get retryQrDisplay => 'Retry QR display';
+
+  @override
+  String get qrOneTimeRecovery =>
+      'This one-time manual code remains available on this page until you close or successfully display it.';
+
+  @override
+  String get truckQrManualCode => 'Manual truck code';
+
+  @override
+  String get notificationCategoryTrip => 'Trip';
+
+  @override
+  String get notificationCategoryFleet => 'Fleet';
+
+  @override
+  String get notificationCategoryPeopleAccess => 'People & Access';
+
+  @override
+  String get notificationCategorySecurity => 'Security';
+
+  @override
+  String get notificationCategorySystem => 'System';
+
+  @override
+  String get notificationInvitationCreated => 'Company invitation created';
+
+  @override
+  String get notificationInvitationAccepted => 'Company invitation accepted';
+
+  @override
+  String get notificationInvitationDeclined => 'Company invitation declined';
+
+  @override
+  String get notificationInvitationRevoked => 'Company invitation revoked';
+
+  @override
+  String get notificationInvitationExpired => 'Company invitation expired';
+
+  @override
+  String get notificationConnectionRequested => 'Company connection requested';
+
+  @override
+  String get notificationConnectionApproved => 'Company connection approved';
+
+  @override
+  String get notificationConnectionRejected => 'Company connection rejected';
+
+  @override
+  String get notificationConnectionCancelled => 'Company connection cancelled';
+
+  @override
+  String get notificationMembershipActivated => 'Membership activated';
+
+  @override
+  String get notificationMembershipSuspended => 'Membership suspended';
+
+  @override
+  String get notificationMembershipRevoked => 'Membership revoked';
+
+  @override
+  String get notificationMembershipRolesUpdated => 'Membership roles updated';
+
+  @override
+  String get notificationDriverLinked => 'Driver account linked';
+
+  @override
+  String get notificationDriverUnlinked => 'Driver account unlinked';
+
+  @override
+  String get notificationQrGenerated => 'Truck QR generated';
+
+  @override
+  String get notificationQrRegenerated => 'Truck QR regenerated';
+
+  @override
+  String get notificationSessionStarted => 'Truck session started';
+
+  @override
+  String get notificationSessionEnded => 'Truck session ended';
+
+  @override
+  String get notificationSessionSwitched => 'Truck session switched';
+
+  @override
+  String get notificationDefaultDriverChanged => 'Default Driver changed';
+
+  @override
+  String get notificationHandoverRequested => 'Driver handover requested';
+
+  @override
+  String get notificationHandoverPending => 'Driver handover pending';
+
+  @override
+  String get notificationHandoverApproved => 'Driver handover approved';
+
+  @override
+  String get notificationHandoverRejected => 'Driver handover rejected';
+
+  @override
+  String get notificationExternalLoginLinked => 'External sign-in linked';
+
+  @override
+  String get notificationExternalLoginUnlinked => 'External sign-in unlinked';
+
+  @override
+  String get notificationPasswordChanged => 'Password changed';
+
+  @override
+  String get notificationSystemEvent => 'System notification';
+
+  @override
+  String notificationEventDetail(String action, String identity) {
+    return '$action: $identity.';
+  }
+
+  @override
+  String notificationUnknownType(String type) {
+    return 'A system event was recorded ($type).';
+  }
+
+  @override
+  String get roleOwner => 'Owner';
+
+  @override
+  String get roleOperations => 'Operations';
+
+  @override
+  String get roleAccountant => 'Accountant';
+
+  @override
+  String get roleEmployee => 'Employee';
+
+  @override
+  String get roleDriver => 'Driver';
 }

@@ -89,6 +89,9 @@ internal sealed class CompanyUserStore(AppDbContext dbContext) : ICompanyUserSto
 
     public void AddEvent(CompanyUserEvent userEvent) => dbContext.CompanyUserEvents.Add(userEvent);
 
+    public void AddNotification(OperationNotification notification) =>
+        dbContext.OperationNotifications.Add(notification);
+
     public async Task RevokeTokensAsync(Guid userId, DateTimeOffset now,
         CancellationToken cancellationToken)
     {

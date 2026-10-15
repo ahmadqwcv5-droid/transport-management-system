@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,11 +13,65 @@ import '../../operations/presentation/operations_controller.dart';
 import '../domain/company_user.dart';
 import 'company_users_controller.dart';
 
-class CompanyUsersScreen extends ConsumerWidget {
+class CompanyUsersScreen extends ConsumerStatefulWidget {
   const CompanyUsersScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => DefaultTabController(
+  ConsumerState<CompanyUsersScreen> createState() => _CompanyUsersScreenState();
+}
+
+class _CompanyUsersScreenState extends ConsumerState<CompanyUsersScreen>
+    with WidgetsBindingObserver {
+  static const refreshInterval = Duration(seconds: 5);
+  Timer? _timer;
+  bool _refreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_refreshAll());
+    });
+    _timer = Timer.periodic(refreshInterval, (_) {
+      if (mounted) unawaited(_refreshAll());
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_refreshAll());
+  }
+
+  bool get _visible =>
+      ModalRoute.of(context)?.isCurrent == true &&
+      TickerMode.valuesOf(context).enabled;
+
+  Future<void> _refreshAll() async {
+    if (!_visible || _refreshing) return;
+    _refreshing = true;
+    try {
+      await ref.read(companyUsersControllerProvider.notifier).refresh();
+      await Future.wait([
+        ref.refresh(invitationsProvider.future),
+        ref.refresh(pendingConnectionsProvider.future),
+        ref.refresh(handoversProvider.future),
+        ref.read(operationsControllerProvider.notifier).reload(),
+      ]);
+    } finally {
+      _refreshing = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => DefaultTabController(
     length: 4,
     child: Column(
       children: [
@@ -31,7 +87,7 @@ class CompanyUsersScreen extends ConsumerWidget {
               ),
               FilledButton.icon(
                 key: const Key('create-driver-user'),
-                onPressed: () => _invite(context, ref),
+                onPressed: () => _invite(context),
                 icon: const Icon(Icons.person_add_alt_1),
                 label: Text(context.l10n.invitePerson),
               ),
@@ -61,7 +117,7 @@ class CompanyUsersScreen extends ConsumerWidget {
     ),
   );
 
-  Future<void> _invite(BuildContext context, WidgetRef ref) async {
+  Future<void> _invite(BuildContext context) async {
     final input = await showDialog<_InvitationInput>(
       context: context,
       builder: (_) => const _InvitationDialog(),
@@ -77,7 +133,7 @@ class CompanyUsersScreen extends ConsumerWidget {
             roles: input.roles,
             driverId: input.driverId,
           );
-      await ref.read(companyUsersControllerProvider.notifier).refresh();
+      await _refreshAll();
     } on ApiException catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -88,7 +144,6 @@ class CompanyUsersScreen extends ConsumerWidget {
     } on Object {
       invitation = null;
     }
-    ref.invalidate(invitationsProvider);
     if (context.mounted && invitation != null) {
       await _showInvitationLink(context, invitation);
     } else if (context.mounted) {
@@ -346,8 +401,10 @@ class _InvitationsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => RefreshIndicator(
     onRefresh: () async {
-      ref.invalidate(invitationsProvider);
-      ref.invalidate(companyCodeProvider);
+      await Future.wait([
+        ref.refresh(invitationsProvider.future),
+        ref.refresh(companyCodeProvider.future),
+      ]);
     },
     child: ListView(
       padding: const EdgeInsets.all(16),
@@ -363,64 +420,83 @@ class _InvitationsTab extends ConsumerWidget {
             .when(
               loading: () => const LinearProgressIndicator(),
               error: (_, _) => Text(context.l10n.genericError),
-              data: (items) => items.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(context.l10n.noData),
-                    )
-                  : Column(
-                      children: items
-                          .map(
-                            (item) => Card(
-                              child: ListTile(
-                                key: Key('invitation-${item.id}'),
-                                leading: const Icon(Icons.mail_outline),
-                                title: Text(item.email),
-                                subtitle: Text(
-                                  '${item.roles.join(', ')} · '
-                                  '${localizedStatus(context.l10n, item.status)}\n'
-                                  '${context.l10n.expiresAt}: '
-                                  '${MaterialLocalizations.of(context).formatMediumDate(item.expiresAt.toLocal())}',
-                                ),
-                                isThreeLine: true,
-                                trailing: PopupMenuButton<String>(
-                                  onSelected: (action) async {
-                                    if (action == 'copy' &&
-                                        item.acceptancePath != null) {
-                                      await Clipboard.setData(
-                                        ClipboardData(
-                                          text: item.acceptancePath!,
-                                        ),
-                                      );
-                                    } else if (action == 'revoke') {
-                                      await ref
-                                          .read(membershipRepositoryProvider)
-                                          .revokeInvitation(item.id);
-                                      ref.invalidate(invitationsProvider);
-                                    }
-                                  },
-                                  itemBuilder: (_) => [
-                                    if (item.acceptancePath != null)
-                                      PopupMenuItem(
-                                        value: 'copy',
-                                        child: Text(
-                                          context.l10n.copyInvitationLink,
-                                        ),
-                                      ),
-                                    if (item.status == 'Pending')
-                                      PopupMenuItem(
-                                        value: 'revoke',
-                                        child: Text(context.l10n.revoke),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
+              data: (items) => InvitationLifecycleList(items),
             ),
       ],
+    ),
+  );
+}
+
+class InvitationLifecycleList extends ConsumerWidget {
+  const InvitationLifecycleList(this.items, {super.key});
+  final List<Invitation> items;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pending = items.where((item) => item.status == 'Pending').toList();
+    final history = items.where((item) => item.status != 'Pending').toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          context.l10n.pendingInvitations,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        if (pending.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(context.l10n.noData),
+          )
+        else
+          ...pending.map((item) => _InvitationLifecycleTile(item)),
+        if (history.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            context.l10n.invitationHistory,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          ...history.map((item) => _InvitationLifecycleTile(item)),
+        ],
+      ],
+    );
+  }
+}
+
+class _InvitationLifecycleTile extends ConsumerWidget {
+  const _InvitationLifecycleTile(this.item);
+  final Invitation item;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Card(
+    child: ListTile(
+      key: Key('invitation-${item.id}'),
+      leading: const Icon(Icons.mail_outline),
+      title: Text(item.email),
+      subtitle: Text(
+        '${item.roles.map((role) => localizedRole(context.l10n, role)).join(', ')} · '
+        '${localizedStatus(context.l10n, item.status)}\n'
+        '${context.l10n.expiresAt}: '
+        '${MaterialLocalizations.of(context).formatMediumDate(item.expiresAt.toLocal())}',
+      ),
+      isThreeLine: true,
+      trailing: item.status == 'Pending'
+          ? PopupMenuButton<String>(
+              onSelected: (action) async {
+                if (action == 'revoke') {
+                  await ref
+                      .read(membershipRepositoryProvider)
+                      .revokeInvitation(item.id);
+                  final _ = await ref.refresh(invitationsProvider.future);
+                }
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'revoke',
+                  child: Text(context.l10n.revoke),
+                ),
+              ],
+            )
+          : null,
     ),
   );
 }
@@ -923,6 +999,7 @@ Future<void> _showInvitationLink(BuildContext context, Invitation invitation) =>
             label: Text(context.l10n.copyInvitationLink),
           ),
           FilledButton(
+            key: const Key('invitation-link-done'),
             onPressed: () => Navigator.pop(dialogContext),
             child: Text(context.l10n.done),
           ),

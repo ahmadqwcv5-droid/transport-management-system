@@ -18,7 +18,8 @@ public sealed record InvitationAcceptRequest(
     [param: Required] string Token,
     [param: EmailAddress, MaxLength(320)] string? Email = null,
     [param: MaxLength(200)] string? DisplayName = null,
-    [param: MinLength(12), MaxLength(200)] string? Password = null);
+    [param: MinLength(12), MaxLength(200)] string? Password = null,
+    [param: RegularExpression("^(en|ar)$")] string? PreferredLocale = null);
 
 public sealed record InvitationDecisionRequest([param: Required] string Token);
 

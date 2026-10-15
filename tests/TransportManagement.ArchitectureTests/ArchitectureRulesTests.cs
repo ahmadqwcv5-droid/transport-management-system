@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using TransportManagement.Application.Abstractions;
 using TransportManagement.Domain.Common;
@@ -140,6 +141,19 @@ public sealed class ArchitectureRulesTests
         Assert.Contains("flutter_riverpod:", pubspec, StringComparison.Ordinal);
         foreach (var forbidden in new[] { "provider:", "bloc:", "flutter_bloc:", "get:", "mobx:", "redux:" })
             Assert.DoesNotContain($"\n  {forbidden}", pubspec, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NotificationContractFixtureMatchesDomainAllowlist()
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(
+            Root, "docs/contracts/operation_notification_types.json")));
+        var fixture = document.RootElement.GetProperty("emittedTypes")
+            .EnumerateArray().Select(value => value.GetString()!)
+            .Order(StringComparer.Ordinal).ToArray();
+        var domain = TransportManagement.Domain.Trips.OperationNotificationTypes.All
+            .Order(StringComparer.Ordinal).ToArray();
+        Assert.Equal(domain, fixture);
     }
 
     [Fact]

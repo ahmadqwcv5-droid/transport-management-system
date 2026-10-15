@@ -5,7 +5,7 @@ import '../../../core/network/api_exception.dart';
 import '../domain/company_user.dart';
 import '../../memberships/domain/membership_models.dart' show Invitation;
 
-final class CompanyUsersRepository {
+class CompanyUsersRepository {
   CompanyUsersRepository(this._client);
   final ApiClient _client;
 

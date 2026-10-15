@@ -121,6 +121,7 @@ public sealed class MembershipService(
                 ? invitation.Email.Split('@')[0] : request.DisplayName.Trim();
             account = new User(Guid.NewGuid(), invitation.Email, displayName,
                 passwordHasher.Hash(request.Password), now);
+            account.ChangePreferredLocale(request.PreferredLocale ?? "en", now);
             identities.AddUser(account);
             accountCreated = true;
         }
@@ -166,7 +167,12 @@ public sealed class MembershipService(
                 eventCode = "COMPANY_INVITATION_ACCEPTED",
                 invitationId = invitation.Id,
                 accountId = account.Id,
-                invitation.DriverId
+                invitation.Email,
+                account.DisplayName,
+                roles,
+                invitation.DriverId,
+                eventAt = now,
+                navigationTarget = "/company-users"
             }, now);
         await store.SaveChangesAsync(cancellationToken);
         var company = await identities.FindCompanyByIdAsync(invitation.CompanyId, cancellationToken);
@@ -195,7 +201,12 @@ public sealed class MembershipService(
                 eventCode = "COMPANY_INVITATION_DECLINED",
                 invitationId = invitation.Id,
                 accountId = account.Id,
-                invitation.DriverId
+                invitation.Email,
+                account.DisplayName,
+                roles = ParseRoles(invitation.RolesJson),
+                invitation.DriverId,
+                eventAt = clock.UtcNow,
+                navigationTarget = "/company-users"
             }, clock.UtcNow);
         await store.SaveChangesAsync(cancellationToken);
     }
@@ -214,7 +225,11 @@ public sealed class MembershipService(
             {
                 eventCode = "COMPANY_INVITATION_REVOKED",
                 invitationId = invitation.Id,
-                invitation.DriverId
+                invitation.Email,
+                roles = ParseRoles(invitation.RolesJson),
+                invitation.DriverId,
+                eventAt = clock.UtcNow,
+                navigationTarget = "/company-users"
             }, clock.UtcNow);
         await store.SaveChangesAsync(cancellationToken);
     }
@@ -289,7 +304,12 @@ public sealed class MembershipService(
             {
                 eventCode = "COMPANY_CONNECTION_REQUESTED",
                 requestId = connection.Id,
-                accountId = account.Id
+                accountId = account.Id,
+                account.Email,
+                account.DisplayName,
+                roles = ParseRoles(connection.RequestedRolesJson),
+                eventAt = clock.UtcNow,
+                navigationTarget = "/company-users"
             }, clock.UtcNow);
         await store.SaveChangesAsync(cancellationToken);
         return await MapConnectionAsync(connection, cancellationToken);
@@ -324,6 +344,8 @@ public sealed class MembershipService(
             ?? throw new NotFoundException("Connection request was not found.",
                 "CONNECTION_REQUEST_NOT_FOUND");
         var now = clock.UtcNow;
+        var account = await identities.FindUserByIdAsync(
+            connection.AccountId, cancellationToken);
         var membership = await store.FindMembershipAsync(
             connection.CompanyId, connection.AccountId, cancellationToken);
         if (membership is null)
@@ -370,7 +392,12 @@ public sealed class MembershipService(
                 eventCode = "COMPANY_CONNECTION_APPROVED",
                 requestId = connection.Id,
                 connection.AccountId,
-                request.DriverId
+                email = account?.Email,
+                displayName = account?.DisplayName,
+                roles,
+                request.DriverId,
+                eventAt = now,
+                navigationTarget = "/company-users"
             }, now);
         await store.SaveChangesAsync(cancellationToken);
         return await MapConnectionAsync(connection, cancellationToken);
@@ -383,6 +410,8 @@ public sealed class MembershipService(
         var connection = await store.FindCompanyRequestAsync(requestId, cancellationToken)
             ?? throw new NotFoundException("Connection request was not found.",
                 "CONNECTION_REQUEST_NOT_FOUND");
+        var account = await identities.FindUserByIdAsync(
+            connection.AccountId, cancellationToken);
         connection.Reject(currentUser.UserId, request.Reason, clock.UtcNow);
         identities.AddIdentityAudit(new IdentityAuditEvent(Guid.NewGuid(),
             connection.CompanyId, connection.AccountId, currentUser.UserId,
@@ -394,7 +423,12 @@ public sealed class MembershipService(
                 eventCode = "COMPANY_CONNECTION_REJECTED",
                 requestId = connection.Id,
                 connection.AccountId,
-                request.Reason
+                email = account?.Email,
+                displayName = account?.DisplayName,
+                roles = ParseRoles(connection.RequestedRolesJson),
+                request.Reason,
+                eventAt = clock.UtcNow,
+                navigationTarget = "/company-users"
             }, clock.UtcNow);
         await store.SaveChangesAsync(cancellationToken);
         return await MapConnectionAsync(connection, cancellationToken);
@@ -407,6 +441,8 @@ public sealed class MembershipService(
             requestId, currentUser.UserId, cancellationToken)
             ?? throw new NotFoundException("Connection request was not found.",
                 "CONNECTION_REQUEST_NOT_FOUND");
+        var account = await identities.FindUserByIdAsync(
+            connection.AccountId, cancellationToken);
         connection.Cancel(clock.UtcNow);
         identities.AddIdentityAudit(new IdentityAuditEvent(Guid.NewGuid(),
             connection.CompanyId, connection.AccountId, connection.AccountId,
@@ -417,7 +453,12 @@ public sealed class MembershipService(
             {
                 eventCode = "COMPANY_CONNECTION_CANCELLED",
                 requestId = connection.Id,
-                connection.AccountId
+                connection.AccountId,
+                email = account?.Email,
+                displayName = account?.DisplayName,
+                roles = ParseRoles(connection.RequestedRolesJson),
+                eventAt = clock.UtcNow,
+                navigationTarget = "/company-users"
             }, clock.UtcNow);
         await store.SaveChangesAsync(cancellationToken);
         return await MapConnectionAsync(connection, cancellationToken);
@@ -455,13 +496,20 @@ public sealed class MembershipService(
         identities.AddIdentityAudit(new IdentityAuditEvent(Guid.NewGuid(),
             membership.CompanyId, membership.AccountId, currentUser.UserId,
             $"Membership{request.Status}", null, now));
+        var account = await identities.FindUserByIdAsync(
+            membership.AccountId, cancellationToken);
         Notify(membership.CompanyId, $"Membership{request.Status}", "Warning",
             membership.Id, null, new
             {
                 eventCode = $"MEMBERSHIP_{request.Status.ToUpperInvariant()}",
                 membershipId = membership.Id,
-                membership.AccountId
-            }, now);
+                membership.AccountId,
+                email = account?.Email,
+                displayName = account?.DisplayName,
+                roles = currentRoles,
+                eventAt = now,
+                navigationTarget = "/company-users"
+            }, now, membership.Version);
         await store.SaveChangesAsync(cancellationToken);
         var company = await identities.FindCompanyByIdAsync(
             membership.CompanyId, cancellationToken);
@@ -485,7 +533,11 @@ public sealed class MembershipService(
                 {
                     eventCode = "COMPANY_INVITATION_EXPIRED",
                     invitationId = invitation.Id,
-                    invitation.DriverId
+                    invitation.Email,
+                    roles = ParseRoles(invitation.RolesJson),
+                    invitation.DriverId,
+                    eventAt = clock.UtcNow,
+                    navigationTarget = "/company-users"
                 }, clock.UtcNow);
             await store.SaveChangesAsync(cancellationToken);
             throw new DomainRuleException("The invitation has expired.", "INVITATION_EXPIRED");
@@ -510,7 +562,9 @@ public sealed class MembershipService(
             driverName = (await store.FindDriverAsync(invitation.DriverId.Value,
                 invitation.CompanyId, cancellationToken))?.FullName;
         return new(invitation.Id, invitation.Email, ParseRoles(invitation.RolesJson),
-            invitation.DriverId, driverName, invitation.Status.ToString(),
+            invitation.DriverId, driverName,
+            invitation.Status == CompanyInvitationStatus.Pending && invitation.IsExpired(clock.UtcNow)
+                ? "Expired" : invitation.Status.ToString(),
             invitation.ExpiresAt, acceptancePath);
     }
 
@@ -543,10 +597,14 @@ public sealed class MembershipService(
         JsonSerializer.Deserialize<string[]>(json) ?? [];
 
     private void Notify(Guid companyId, string type, string severity,
-        Guid eventId, Guid? driverId, object data, DateTimeOffset now)
+        Guid eventId, Guid? driverId, object data, DateTimeOffset now,
+        long? eventVersion = null)
     {
+        var eventKey = eventVersion.HasValue
+            ? $"{type}:{eventId}:v{eventVersion.Value}"
+            : $"{type}:{eventId}";
         store.AddNotification(new OperationNotification(Guid.NewGuid(), companyId,
-            type, severity, null, null, driverId, $"{type}:{eventId}",
+            type, severity, null, null, driverId, eventKey,
             JsonSerializer.Serialize(data), now));
     }
 

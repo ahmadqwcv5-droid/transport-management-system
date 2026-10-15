@@ -8,6 +8,7 @@ import '../data/live_operations_repository.dart';
 import '../domain/live_operations_models.dart';
 import '../audio/notification_audio.dart';
 import '../audio/notification_audio_contract.dart';
+import 'notification_snapshot_text.dart';
 
 final liveOperationsRepositoryProvider = Provider<LiveOperationsRepository>(
   (ref) => LiveOperationsRepository(ref.watch(apiClientProvider)),
@@ -113,25 +114,25 @@ final notificationControllerProvider =
 /// Tracks persisted notification IDs across polling cycles. Hydration only
 /// establishes the baseline; it never treats historical items as live alerts.
 final class NotificationDeliveryTracker {
-  final Set<String> _seenIds = {};
+  final Set<String> _seenKeys = {};
 
   void hydrate(Iterable<OperationNotification> notifications) {
-    _seenIds
+    _seenKeys
       ..clear()
-      ..addAll(notifications.map((item) => item.id));
+      ..addAll(notifications.map((item) => item.eventKey ?? item.id));
   }
 
   List<OperationNotification> takeUnseen(
     Iterable<OperationNotification> notifications,
   ) {
     final unseen = notifications
-        .where((item) => _seenIds.add(item.id))
+        .where((item) => _seenKeys.add(item.eventKey ?? item.id))
         .toList();
     unseen.sort((a, b) => a.createdAt.compareTo(b.createdAt));
     return unseen;
   }
 
-  void clear() => _seenIds.clear();
+  void clear() => _seenKeys.clear();
 }
 
 class NotificationController extends AsyncNotifier<NotificationPage> {
@@ -178,7 +179,11 @@ class NotificationController extends AsyncNotifier<NotificationPage> {
       for (final notification in unseen) {
         await ref
             .read(operationalAlertControllerProvider.notifier)
-            .enqueue(notification, soundEnabled: enabled);
+            .enqueue(
+              notification,
+              soundEnabled:
+                  enabled && notificationTypeIsActionable(notification.type),
+            );
       }
     } on Object {
       // Retain the last good notification projection during polling failures.

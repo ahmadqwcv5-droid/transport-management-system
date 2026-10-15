@@ -1,14 +1,11 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_selector/file_selector.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/qr/qr_png_encoder.dart';
 import '../../../../l10n/l10n_extensions.dart';
 import '../../../clients/domain/client_models.dart';
 import '../../../operations/presentation/mutation_refresh_coordinator.dart';
@@ -474,6 +471,8 @@ Widget _line(String label, String? value) => Padding(
   child: Text('$label: ${value ?? '—'}'),
 );
 
+enum QrCredentialUiState { idle, generating, preparing, ready, failed }
+
 class _QrCredentialCard extends ConsumerStatefulWidget {
   const _QrCredentialCard(this.truck);
   final Truck truck;
@@ -483,7 +482,13 @@ class _QrCredentialCard extends ConsumerStatefulWidget {
 }
 
 class _QrCredentialCardState extends ConsumerState<_QrCredentialCard> {
-  bool _busy = false;
+  QrCredentialUiState _flow = QrCredentialUiState.idle;
+  TruckQrCredential? _recoverableCredential;
+  String? _renderError;
+
+  bool get _busy =>
+      _flow == QrCredentialUiState.generating ||
+      _flow == QrCredentialUiState.preparing;
 
   @override
   Widget build(BuildContext context) {
@@ -535,21 +540,31 @@ class _QrCredentialCardState extends ConsumerState<_QrCredentialCard> {
                   '${value.generatedByDisplayName}',
                 ),
               const SizedBox(height: 12),
-              FilledButton.icon(
-                key: const Key('generate-truck-qr'),
-                onPressed: _busy ? null : () => _generate(value),
-                icon: _busy
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.qr_code_2),
-                label: Text(
-                  value.hasActiveCredential
-                      ? context.l10n.regenerateTruckQr
-                      : context.l10n.generateTruckQr,
+              if (_flow == QrCredentialUiState.failed &&
+                  _recoverableCredential != null)
+                _QrRenderRecovery(
+                  credential: _recoverableCredential!,
+                  error: _renderError ?? context.l10n.qrRenderFailed,
+                  onRetry: _busy ? null : _retryDisplay,
+                )
+              else
+                FilledButton.icon(
+                  key: const Key('generate-truck-qr'),
+                  onPressed: _busy ? null : () => _generate(value),
+                  icon: _busy
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.qr_code_2),
+                  label: Text(
+                    _flow == QrCredentialUiState.preparing
+                        ? context.l10n.qrPreparing
+                        : value.hasActiveCredential
+                        ? context.l10n.regenerateTruckQr
+                        : context.l10n.generateTruckQr,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -558,6 +573,7 @@ class _QrCredentialCardState extends ConsumerState<_QrCredentialCard> {
   }
 
   Future<void> _generate(TruckQrStatus status) async {
+    if (_busy) return;
     if (status.hasActiveCredential) {
       final confirmed = await showDialog<bool>(
         context: context,
@@ -576,57 +592,183 @@ class _QrCredentialCardState extends ConsumerState<_QrCredentialCard> {
           ],
         ),
       );
-      if (confirmed != true) return;
+      if (confirmed != true || !mounted) return;
     }
-    setState(() => _busy = true);
+
+    setState(() {
+      _flow = QrCredentialUiState.generating;
+      _recoverableCredential = null;
+      _renderError = null;
+    });
     try {
       final credential = await ref
           .read(membershipRepositoryProvider)
           .regenerateTruckQr(widget.truck.id);
+      if (credential.code.trim().isEmpty ||
+          credential.qrPayload.trim().isEmpty) {
+        throw StateError('The QR credential response is incomplete.');
+      }
+      if (!mounted) return;
+      setState(() => _recoverableCredential = credential);
       ref.invalidate(truckQrStatusProvider(widget.truck.id));
-      if (mounted) await _showGeneratedQrDialog(context, credential);
+      await _prepareAndShow(credential);
     } on ApiException catch (error) {
       if (mounted) {
+        setState(() => _flow = QrCredentialUiState.idle);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(localizedErrorCode(context.l10n, error.code))),
         );
       }
+    } on Object {
+      if (mounted && _recoverableCredential == null) {
+        setState(() {
+          _flow = QrCredentialUiState.idle;
+          _renderError = null;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.genericError)));
+      }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted &&
+          _flow != QrCredentialUiState.failed &&
+          _flow != QrCredentialUiState.ready) {
+        setState(() => _flow = QrCredentialUiState.idle);
+      }
+    }
+  }
+
+  Future<void> _retryDisplay() async {
+    final credential = _recoverableCredential;
+    if (credential == null || _busy) return;
+    await _prepareAndShow(credential);
+  }
+
+  Future<void> _prepareAndShow(TruckQrCredential credential) async {
+    if (!mounted) return;
+    setState(() {
+      _flow = QrCredentialUiState.preparing;
+      _renderError = null;
+    });
+    try {
+      final bytes = await ref
+          .read(qrPngEncoderProvider)
+          .encode(credential.qrPayload);
+      if (bytes.isEmpty) throw StateError('The QR PNG is empty.');
+      if (!mounted) return;
+      setState(() => _flow = QrCredentialUiState.ready);
+      await showGeneratedQrDialog(context, credential, bytes);
+      if (mounted) {
+        setState(() {
+          _flow = QrCredentialUiState.idle;
+          _recoverableCredential = null;
+          _renderError = null;
+        });
+      }
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _flow = QrCredentialUiState.failed;
+        _renderError = context.l10n.qrRenderFailed;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.qrRenderFailed)));
     }
   }
 }
 
-Future<void> _showGeneratedQrDialog(
+class _QrRenderRecovery extends StatelessWidget {
+  const _QrRenderRecovery({
+    required this.credential,
+    required this.error,
+    required this.onRetry,
+  });
+
+  final TruckQrCredential credential;
+  final String error;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.errorContainer,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(error, key: const Key('qr-render-error')),
+          const SizedBox(height: 8),
+          Text(context.l10n.qrOneTimeRecovery),
+          SelectableText(
+            credential.code,
+            key: const Key('recoverable-qr-manual-code'),
+          ),
+          Wrap(
+            spacing: 8,
+            children: [
+              TextButton.icon(
+                onPressed: () =>
+                    Clipboard.setData(ClipboardData(text: credential.code)),
+                icon: const Icon(Icons.copy),
+                label: Text(context.l10n.copy),
+              ),
+              FilledButton.icon(
+                key: const Key('retry-qr-display'),
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: Text(context.l10n.retryQrDisplay),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Future<void> showGeneratedQrDialog(
   BuildContext context,
   TruckQrCredential credential,
+  Uint8List pngBytes,
 ) async {
-  final repaintKey = GlobalKey();
   await showDialog<void>(
     context: context,
-    barrierDismissible: false,
+    barrierDismissible: true,
     builder: (dialogContext) => AlertDialog(
       title: Text('${context.l10n.qrCode} - ${credential.plateNumber}'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RepaintBoundary(
-              key: repaintKey,
-              child: ColoredBox(
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: QrImageView(
-                    data: credential.qrPayload,
-                    size: 240,
-                    semanticsLabel:
-                        '${context.l10n.qrCode} ${credential.plateNumber}',
-                  ),
+            ColoredBox(
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Image.memory(
+                  pngBytes,
+                  key: const Key('generated-truck-qr-image'),
+                  width: 240,
+                  height: 240,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.none,
+                  semanticLabel:
+                      '${context.l10n.qrCode} ${credential.plateNumber}',
                 ),
               ),
             ),
-            SelectableText(credential.code),
+            const SizedBox(height: 8),
+            Text(
+              context.l10n.truckQrManualCode,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            SelectableText(
+              credential.code,
+              key: const Key('generated-truck-qr-code'),
+            ),
             const SizedBox(height: 8),
             Text(context.l10n.truckQrExplanation),
           ],
@@ -641,11 +783,22 @@ Future<void> _showGeneratedQrDialog(
         ),
         TextButton.icon(
           key: const Key('download-truck-qr-png'),
-          onPressed: () => _saveQrPng(repaintKey, credential.plateNumber),
+          onPressed: () async {
+            try {
+              await _saveQrPng(pngBytes, credential.plateNumber);
+            } on Object {
+              if (dialogContext.mounted) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  SnackBar(content: Text(dialogContext.l10n.genericError)),
+                );
+              }
+            }
+          },
           icon: const Icon(Icons.download),
           label: Text(context.l10n.downloadPng),
         ),
         FilledButton(
+          key: const Key('close-truck-qr-dialog'),
           onPressed: () => Navigator.pop(dialogContext),
           child: Text(context.l10n.done),
         ),
@@ -654,13 +807,8 @@ Future<void> _showGeneratedQrDialog(
   );
 }
 
-Future<void> _saveQrPng(GlobalKey repaintKey, String plateNumber) async {
-  final boundary =
-      repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-  if (boundary == null) return;
-  final image = await boundary.toImage(pixelRatio: 3);
-  final data = await image.toByteData(format: ui.ImageByteFormat.png);
-  if (data == null) return;
+Future<void> _saveQrPng(Uint8List bytes, String plateNumber) async {
+  if (bytes.isEmpty) throw StateError('The QR PNG is empty.');
   final safePlate = plateNumber.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
   final fileName = '${safePlate}_truck_qr.png';
   final location = await getSaveLocation(
@@ -670,10 +818,6 @@ Future<void> _saveQrPng(GlobalKey repaintKey, String plateNumber) async {
     ],
   );
   if (location == null) return;
-  final file = XFile.fromData(
-    data.buffer.asUint8List(),
-    mimeType: 'image/png',
-    name: fileName,
-  );
+  final file = XFile.fromData(bytes, mimeType: 'image/png', name: fileName);
   await file.saveTo(location.path);
 }

@@ -51,5 +51,5 @@ public sealed class NotificationService(INotificationStore store,
 
     private static NotificationResponse Map(Domain.Trips.OperationNotification x) =>
         new(x.Id, x.Type, x.Severity, x.TripId, x.TruckId, x.DriverId,
-            x.DataJson, x.CreatedAt, x.ReadAt);
+            x.EventKey, x.DataJson, x.CreatedAt, x.ReadAt);
 }

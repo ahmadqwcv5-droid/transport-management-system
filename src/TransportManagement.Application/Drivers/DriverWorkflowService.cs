@@ -158,7 +158,10 @@ public sealed class DriverWorkflowService(IDriverIdentityStore identities,
             sessionId = session.Id,
             session.TruckId,
             driverId = driver.Id,
-            reason = "DriverEnded"
+            driverName = driver.FullName,
+            reason = "DriverEnded",
+            eventAt = now,
+            navigationTarget = "/my-trip"
         });
         identities.AddTruckEvent(new TruckEvent(Guid.NewGuid(),
             currentUser.CompanyId, session.TruckId, currentUser.UserId,

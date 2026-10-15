@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/presentation/auth_controller.dart';
+import '../../memberships/domain/membership_models.dart' show Invitation;
 import '../data/company_users_repository.dart';
 import '../domain/company_user.dart';
-import '../../memberships/domain/membership_models.dart' show Invitation;
 
 final companyUsersRepositoryProvider = Provider<CompanyUsersRepository>(
   (ref) => CompanyUsersRepository(ref.watch(apiClientProvider)),
@@ -15,14 +17,34 @@ final companyUsersControllerProvider =
     );
 
 class CompanyUsersController extends AsyncNotifier<List<CompanyUser>> {
+  Future<void>? _refreshOperation;
+  bool _refreshAgain = false;
+
   CompanyUsersRepository get _repository =>
       ref.read(companyUsersRepositoryProvider);
 
   @override
   Future<List<CompanyUser>> build() => _repository.list();
 
-  Future<void> refresh() async {
-    state = await AsyncValue.guard(_repository.list);
+  /// Coalesces concurrent refresh requests and never publishes a response when
+  /// a newer refresh was requested while it was in flight.
+  Future<void> refresh() {
+    _refreshAgain = true;
+    return _refreshOperation ??= _drainRefreshes().whenComplete(() {
+      _refreshOperation = null;
+    });
+  }
+
+  Future<void> _drainRefreshes() async {
+    while (_refreshAgain) {
+      _refreshAgain = false;
+      try {
+        final items = await _repository.list();
+        if (!_refreshAgain) state = AsyncData(items);
+      } on Object catch (error, stackTrace) {
+        if (!_refreshAgain) state = AsyncError(error, stackTrace);
+      }
+    }
   }
 
   Future<Invitation?> create({

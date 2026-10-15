@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'features/auth/presentation/auth_controller.dart';
+import 'features/auth/presentation/anonymous_locale_controller.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/clients/presentation/clients_screen.dart';
 import 'features/clients/presentation/client_details_screen.dart';
@@ -176,8 +177,18 @@ class TransportManagementApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final preferredLocale =
-        ref.watch(authControllerProvider).value?.user.preferredLocale ?? 'en';
+    final accountLocale = ref
+        .watch(authControllerProvider)
+        .value
+        ?.user
+        .preferredLocale;
+    final anonymousLocale =
+        ref.watch(anonymousLocaleControllerProvider).value ??
+        resolveAnonymousLocale(
+          null,
+          WidgetsBinding.instance.platformDispatcher.locales,
+        );
+    final preferredLocale = accountLocale ?? anonymousLocale;
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       debugShowCheckedModeBanner: false,

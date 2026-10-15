@@ -266,8 +266,12 @@ public sealed class AuthService(
         user.ResetPassword(passwordHasher.Hash(request.NewPassword), now);
         await store.RevokeAllUserTokensAsync(user.Id, now, cancellationToken);
         if (currentUser.CompanyId != Guid.Empty)
+        {
             store.AddUserEvent(new CompanyUserEvent(Guid.NewGuid(), currentUser.CompanyId,
                 user.Id, user.Id, "PasswordChanged", null, now));
+            AddSecurityNotification(user.Id, "PasswordChanged",
+                "PASSWORD_CHANGED", "Local");
+        }
         await store.SaveChangesAsync(cancellationToken);
     }
 

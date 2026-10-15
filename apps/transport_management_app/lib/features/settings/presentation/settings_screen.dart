@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/l10n_extensions.dart';
+import '../../../shared/widgets/app_password_field.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/data/external_identity_launcher.dart';
 import '../../auth/presentation/google_web_identity_button.dart';
@@ -282,27 +283,24 @@ class SettingsScreen extends ConsumerWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
+              AppPasswordField(
+                key: const Key('current-password'),
                 controller: current,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: context.l10n.currentPassword,
-                ),
+                labelText: context.l10n.currentPassword,
+                autofillHints: const [AutofillHints.password],
               ),
-              TextField(
+              AppPasswordField(
+                key: const Key('new-password'),
                 controller: next,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: context.l10n.newPassword,
-                  helperText: context.l10n.passwordMinimumLength,
-                ),
+                labelText: context.l10n.newPassword,
+                helperText: context.l10n.passwordMinimumLength,
+                autofillHints: const [AutofillHints.newPassword],
               ),
-              TextField(
+              AppPasswordField(
+                key: const Key('confirm-new-password'),
                 controller: confirmation,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: context.l10n.confirmNewPassword,
-                ),
+                labelText: context.l10n.confirmNewPassword,
+                autofillHints: const [AutofillHints.newPassword],
               ),
               if (validationError != null)
                 Text(

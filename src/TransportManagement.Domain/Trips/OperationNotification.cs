@@ -11,6 +11,7 @@ public sealed class OperationNotification : Entity, ITenantOwned
         string? dataJson, DateTimeOffset now) : base(id, now)
     {
         if (string.IsNullOrWhiteSpace(type) || type.Length > 80
+            || !OperationNotificationTypes.All.Contains(type)
             || string.IsNullOrWhiteSpace(eventKey) || eventKey.Length > 200)
             throw new DomainRuleException("Notification identity is invalid.");
         if (dataJson?.Length > 4000)

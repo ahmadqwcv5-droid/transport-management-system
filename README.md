@@ -1239,3 +1239,73 @@ identity token is intentionally a visible, human-driven Firefox step.
 
 The full implementation record and sanitized evidence are in
 `docs/sprints/sprint-4.3.1` and `docs/evidence/sprint4_3_1`.
+
+## Sprint 4.3.2 invitation, QR, and notification reliability
+
+Company Users now converges while visible and after focus restoration using a
+serialized latest-wins refresh coordinator. Pending invitations remain
+separate from memberships, so creating an invitation never presents a person
+as an accepted member. Acceptance in another browser becomes visible within
+10 seconds without manually refreshing, including roles and linked Driver.
+
+Public login/invitation routes have a locally persisted English/Arabic
+selector. Arabic switches the whole public surface to RTL without requiring an
+account or backend write. Authenticated account locale remains authoritative;
+after logout the anonymous preference resumes. One reusable password field now
+provides hidden-by-default, independently controlled, localized show/hide
+semantics on login, invitation acceptance, invitation creation, and password
+change surfaces.
+
+Truck QR generation now prepares and validates deterministic PNG bytes before
+opening a fixed-size real dialog. A render/download failure always clears busy
+state, retains the one-time manual credential for an explicit retry, and never
+regenerates automatically. Explicit regeneration revokes the prior hash. The
+same validated bytes drive the visible QR and PNG download.
+
+Operational notifications use a checked-in canonical emitted-type contract
+and one exhaustive English/Arabic presentation registry. People, Security,
+Fleet, and Trip events have distinct safe titles, bodies, identities, and
+navigation targets; an unknown event is neutral System content and never a
+fabricated trip warning. Initial hydration is silent and polling deduplicates
+sound requests.
+
+### Validate Sprint 4.3.2
+
+Keep the retained Compose project and volumes intact:
+
+```bash
+docker compose -p tms-smoke up -d --build
+docker compose -p tms-smoke ps
+curl --fail http://localhost:5080/health
+```
+
+Run the standard gates:
+
+```bash
+.tooling/dotnet/dotnet build TransportManagement.slnx -c Release --no-restore
+.tooling/dotnet/dotnet test TransportManagement.slnx --no-restore
+.tooling/dotnet/dotnet ef migrations has-pending-model-changes \
+  --project src/TransportManagement.Infrastructure \
+  --startup-project src/TransportManagement.Api --no-build
+
+cd apps/transport_management_app
+../../.tooling/flutter/bin/flutter analyze
+../../.tooling/flutter/bin/flutter test
+../../.tooling/flutter/bin/flutter build web --release \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty \
+  --dart-define=ENABLE_SIMULATOR_CONTROLS=true
+```
+
+Manual acceptance must use two genuinely isolated browser profiles for Owner
+and invitee/Driver. Verify pending-before-member behavior, Arabic RTL and
+password visibility before acceptance, no-reload Owner convergence, QR
+download/regeneration/old-code rejection, categorized localized notifications,
+and independent logout. Do not retain screenshots of QR codes, invitation
+links, passwords, tokens, or raw notification JSON. Google control readiness
+does not prove Google login: account selection and consent require a real
+interactive human run.
+
+The complete observed evidence, cleanup audit, and limitations are in
+`docs/evidence/sprint4_3_2/README.md`; the implementation record is in
+`docs/sprints/sprint-4.3.2/SPRINT4_3_2_IMPLEMENTATION_PLAN.md`.

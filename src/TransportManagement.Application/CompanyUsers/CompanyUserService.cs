@@ -3,6 +3,7 @@ using TransportManagement.Application.Abstractions;
 using TransportManagement.Application.Common;
 using TransportManagement.Domain.Fleet;
 using TransportManagement.Domain.Identity;
+using TransportManagement.Domain.Trips;
 
 namespace TransportManagement.Application.CompanyUsers;
 
@@ -74,6 +75,8 @@ public sealed class CompanyUserService(
         await store.RevokeTokensAsync(user.Id, now, cancellationToken);
         AddEvent(user.Id, "MembershipRolesUpdated",
             new { previousRoles = existingNames, roles }, now);
+        AddNotification(user, "MembershipRolesUpdated", now,
+            details: new { previousRoles = existingNames, roles });
         await store.SaveChangesAsync(cancellationToken);
         return await MapAsync(user,
             await store.GetDriverByUserAsync(user.Id, cancellationToken), cancellationToken);
@@ -96,7 +99,10 @@ public sealed class CompanyUserService(
         var now = clock.UtcNow;
         if (request.IsActive) membership.Activate(now); else membership.Suspend(now);
         if (!request.IsActive) await store.RevokeTokensAsync(user.Id, now, cancellationToken);
-        AddEvent(user.Id, request.IsActive ? "MembershipReactivated" : "MembershipSuspended", null, now);
+        var eventType = request.IsActive
+            ? "MembershipReactivated" : "MembershipSuspended";
+        AddEvent(user.Id, eventType, null, now);
+        AddNotification(user, eventType, now);
         await store.SaveChangesAsync(cancellationToken);
         return await MapAsync(user,
             await store.GetDriverByUserAsync(user.Id, cancellationToken), cancellationToken);
@@ -135,6 +141,7 @@ public sealed class CompanyUserService(
         }
         driver.LinkUser(user.Id, now);
         AddEvent(user.Id, "DriverLinked", new { driverId = driver.Id }, now);
+        AddNotification(user, "DriverLinked", now, driver.Id, driver.FullName);
         await store.SaveChangesAsync(cancellationToken);
         return await MapAsync(user, driver, cancellationToken);
     }
@@ -159,6 +166,7 @@ public sealed class CompanyUserService(
                 "The Driver has a pending handover.", "DRIVER_UNLINK_PENDING_HANDOVER", now, cancellationToken);
         trackedDriver.UnlinkUser(now);
         AddEvent(user.Id, "DriverUnlinked", new { driverId = driver.Id }, now);
+        AddNotification(user, "DriverUnlinked", now, driver.Id, driver.FullName);
         await store.SaveChangesAsync(cancellationToken);
         return await MapAsync(user, null, cancellationToken);
     }
@@ -180,6 +188,24 @@ public sealed class CompanyUserService(
         store.AddEvent(new CompanyUserEvent(Guid.NewGuid(), currentUser.CompanyId,
             subjectUserId, currentUser.UserId, code,
             metadata is null ? null : JsonSerializer.Serialize(metadata), now));
+
+    private void AddNotification(User user, string type, DateTimeOffset now,
+        Guid? driverId = null, string? driverName = null, object? details = null) =>
+        store.AddNotification(new OperationNotification(Guid.NewGuid(),
+            currentUser.CompanyId, type, "Information", null, null, driverId,
+            $"{type}:{user.Id}:{now.UtcTicks}", JsonSerializer.Serialize(new
+            {
+                eventCode = type,
+                accountId = user.Id,
+                user.Email,
+                user.DisplayName,
+                driverId,
+                driverName,
+                actorAccountId = currentUser.UserId,
+                eventAt = now,
+                navigationTarget = "/company-users",
+                details
+            }), now));
 
     private async Task<CompanyUserResponse> MapAsync(User user, Driver? driver,
         CancellationToken cancellationToken)

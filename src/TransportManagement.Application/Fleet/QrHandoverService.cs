@@ -38,6 +38,8 @@ public sealed class QrHandoverService(
         var credential = new TruckQrCredential(Guid.NewGuid(), currentUser.CompanyId,
             truckId, Hash(code), code[^8..], currentUser.UserId, now);
         store.AddQr(credential);
+        var actorDisplayName = await store.FindAccountDisplayNameAsync(
+            currentUser.UserId, cancellationToken);
         var eventName = current is null ? "TruckQrGenerated" : "TruckQrRegenerated";
         var eventCode = current is null ? "TRUCK_QR_GENERATED" : "TRUCK_QR_REGENERATED";
         store.AddTruckEvent(new TruckEvent(Guid.NewGuid(), currentUser.CompanyId,
@@ -51,7 +53,11 @@ public sealed class QrHandoverService(
                 eventCode,
                 credentialId = credential.Id,
                 truckId = truck.Id,
-                truck.PlateNumber
+                truck.PlateNumber,
+                truck.FleetCode,
+                actorDisplayName,
+                eventAt = now,
+                navigationTarget = $"/trucks/{truck.Id}"
             }), now));
         await store.SaveChangesAsync(cancellationToken);
         return new(truck.Id, truck.PlateNumber, truck.FleetCode, code,
@@ -139,7 +145,10 @@ public sealed class QrHandoverService(
             currentUser.CompanyId, "TruckSessionStarted", "Information",
             trip?.Id, truck.Id, driver.Id, $"TruckSessionStarted:{session.Id}",
             JsonSerializer.Serialize(new { eventCode = "TRUCK_SESSION_STARTED",
-                sessionId = session.Id, truck.PlateNumber, source = "DriverQrScan" }),
+                sessionId = session.Id, truck.PlateNumber, truck.FleetCode,
+                driverName = driver.FullName, source = "DriverQrScan",
+                eventAt = clock.UtcNow,
+                navigationTarget = trip is null ? $"/trucks/{truck.Id}" : $"/trips/{trip.Id}" }),
             clock.UtcNow));
         await store.SaveChangesAsync(cancellationToken);
         return new("SessionStarted", truck.Id, driver.Id, session.Id, null, trip?.Id);
@@ -277,14 +286,19 @@ public sealed class QrHandoverService(
         var metadata = JsonSerializer.Serialize(new
         {
             requestId = handover.Id,
+            trip.TripNumber,
             previousDriverId = oldDriver.Id,
+            previousDriverName = oldDriver.FullName,
             newDriverId = newDriver.Id,
+            newDriverName = newDriver.FullName,
             initiatorAccountId = handover.RequestedByAccountId,
             approverAccountId = currentUser.UserId,
             handover.TruckId,
             phase = trip.Status.ToString(),
             reason = request.Reason,
-            positionId = position?.Id
+            positionId = position?.Id,
+            eventAt = now,
+            navigationTarget = $"/trips/{trip.Id}"
         });
         store.AddTripEvent(new TripEvent(Guid.NewGuid(), currentUser.CompanyId,
             trip.Id, "DriverHandoverApproved", now, currentUser.UserId,
@@ -310,7 +324,9 @@ public sealed class QrHandoverService(
             handover.TripId, handover.TruckId, handover.RequestingDriverId,
             $"DriverHandoverRejected:{handover.Id}",
             JsonSerializer.Serialize(new { eventCode = "HANDOVER_REJECTED",
-                requestId = handover.Id, request.Reason }), clock.UtcNow));
+                requestId = handover.Id, tripNumber = trip?.TripNumber,
+                request.Reason, eventAt = clock.UtcNow,
+                navigationTarget = $"/trips/{handover.TripId}" }), clock.UtcNow));
         if (trip is not null)
             store.AddTripEvent(new TripEvent(Guid.NewGuid(), currentUser.CompanyId,
                 trip.Id, "DriverHandoverRejected", clock.UtcNow,
@@ -327,6 +343,7 @@ public sealed class QrHandoverService(
         var metadata = JsonSerializer.Serialize(new
         {
             requestId = handover.Id,
+            trip.TripNumber,
             handover.CurrentDriverId,
             handover.RequestingDriverId,
             handover.TruckId,

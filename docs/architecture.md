@@ -842,3 +842,45 @@ Migration `20260927152730_Sprint43GlobalAccountsMembershipsAndHandover`
 preserves account IDs/password hashes and backfills one active membership plus
 the legacy role, Driver link, and refresh-token scope. Its Down path refuses a
 lossy collapse if new multi-membership or multi-role relationships exist.
+
+## ADR-034: Public identity UX, recoverable QR presentation, and canonical notifications
+
+**Status:** Accepted
+
+Company-user convergence is a visible-screen concern, not a mutation-side
+assumption. One serialized latest-wins coordinator refreshes members,
+invitations, connections, and handovers immediately after local mutation, on
+foreground restoration, and at a bounded interval no slower than 10 seconds.
+Generation checks prevent an older response from replacing newer state, and
+widget/tab identity is preserved. Invitations and memberships remain distinct
+projections: an invitation cannot become a member row until acceptance commits.
+
+Anonymous locale is locally owned and resolves saved supported locale, then a
+supported platform locale, then English. Public language controls update the
+whole application direction immediately without a server call. Once signed in,
+the account's server locale is authoritative; logout restores the anonymous
+choice. Password input is one reusable stateful component whose visibility,
+focus, value, autofill hints, tooltip, and semantics are local to each field.
+
+QR presentation is an explicit state machine: idle, generating, preparing,
+ready, or failed. The backend credential mutation occurs once. The client
+encodes the exact one-time payload to validated PNG bytes before presenting a
+fixed-size image and reuses those bytes for download. Preparation, rendering,
+download, dismissal, and disposal failures clear busy/modal state. A failed
+preparation retains the in-memory response for explicit retry/manual-code
+recovery and must never trigger implicit regeneration. Only the explicit
+Regenerate command revokes the old credential and creates a new one.
+
+Operation notification types are a canonical backend contract enforced by
+tests against Flutter's exhaustive presentation registry. Each known type maps
+to category, localized title/body, identity, severity, icon/color, navigation,
+and attention policy. Backend snapshots contain only allowlisted
+language-neutral display values and entity identifiers; secrets, passwords,
+invitation/QR tokens, OAuth tokens, and raw JSON are forbidden from UI. Unknown
+types render as neutral System events. Initial hydration establishes the seen
+set silently, so historical notifications cannot replay sound.
+
+Membership lifecycle notification keys include the membership version. This
+preserves durable idempotency for one transition while allowing later valid
+suspend/reactivate cycles without violating the company/event-key uniqueness
+constraint.

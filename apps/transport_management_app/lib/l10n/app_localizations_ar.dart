@@ -2204,4 +2204,161 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get truckQrRegenerationConflict =>
       'تغير QR للشاحنة في الوقت نفسه. حدّث الصفحة وأنشئه مجدداً.';
+
+  @override
+  String get showPassword => 'إظهار كلمة المرور';
+
+  @override
+  String get hidePassword => 'إخفاء كلمة المرور';
+
+  @override
+  String get pendingInvitations => 'الدعوات المعلقة';
+
+  @override
+  String get invitationHistory => 'سجل الدعوات';
+
+  @override
+  String get qrPreparing => 'جارٍ تجهيز صورة QR…';
+
+  @override
+  String get qrRenderFailed =>
+      'تم إنشاء بيانات الاعتماد، لكن تعذر تجهيز صورة QR. انسخ الرمز اليدوي أو أعد محاولة العرض.';
+
+  @override
+  String get retryQrDisplay => 'إعادة محاولة عرض QR';
+
+  @override
+  String get qrOneTimeRecovery =>
+      'يبقى هذا الرمز اليدوي المعروض مرة واحدة متاحاً في هذه الصفحة حتى إغلاقها أو نجاح عرضه.';
+
+  @override
+  String get truckQrManualCode => 'رمز الشاحنة اليدوي';
+
+  @override
+  String get notificationCategoryTrip => 'الرحلة';
+
+  @override
+  String get notificationCategoryFleet => 'الأسطول';
+
+  @override
+  String get notificationCategoryPeopleAccess => 'الأشخاص والوصول';
+
+  @override
+  String get notificationCategorySecurity => 'الأمان';
+
+  @override
+  String get notificationCategorySystem => 'النظام';
+
+  @override
+  String get notificationInvitationCreated => 'تم إنشاء دعوة شركة';
+
+  @override
+  String get notificationInvitationAccepted => 'تم قبول دعوة الشركة';
+
+  @override
+  String get notificationInvitationDeclined => 'تم رفض دعوة الشركة';
+
+  @override
+  String get notificationInvitationRevoked => 'تم إلغاء دعوة الشركة';
+
+  @override
+  String get notificationInvitationExpired => 'انتهت صلاحية دعوة الشركة';
+
+  @override
+  String get notificationConnectionRequested => 'تم طلب الاتصال بالشركة';
+
+  @override
+  String get notificationConnectionApproved =>
+      'تمت الموافقة على الاتصال بالشركة';
+
+  @override
+  String get notificationConnectionRejected => 'تم رفض الاتصال بالشركة';
+
+  @override
+  String get notificationConnectionCancelled => 'تم إلغاء طلب الاتصال بالشركة';
+
+  @override
+  String get notificationMembershipActivated => 'تم تفعيل العضوية';
+
+  @override
+  String get notificationMembershipSuspended => 'تم تعليق العضوية';
+
+  @override
+  String get notificationMembershipRevoked => 'تم إلغاء العضوية';
+
+  @override
+  String get notificationMembershipRolesUpdated => 'تم تحديث أدوار العضوية';
+
+  @override
+  String get notificationDriverLinked => 'تم ربط حساب السائق';
+
+  @override
+  String get notificationDriverUnlinked => 'تم فصل حساب السائق';
+
+  @override
+  String get notificationQrGenerated => 'تم إنشاء QR للشاحنة';
+
+  @override
+  String get notificationQrRegenerated => 'تم إعادة إنشاء QR للشاحنة';
+
+  @override
+  String get notificationSessionStarted => 'بدأت جلسة الشاحنة';
+
+  @override
+  String get notificationSessionEnded => 'انتهت جلسة الشاحنة';
+
+  @override
+  String get notificationSessionSwitched => 'تم تبديل جلسة الشاحنة';
+
+  @override
+  String get notificationDefaultDriverChanged => 'تم تغيير السائق الافتراضي';
+
+  @override
+  String get notificationHandoverRequested => 'تم طلب تسليم السائق';
+
+  @override
+  String get notificationHandoverPending => 'طلب تسليم السائق معلق';
+
+  @override
+  String get notificationHandoverApproved => 'تمت الموافقة على تسليم السائق';
+
+  @override
+  String get notificationHandoverRejected => 'تم رفض تسليم السائق';
+
+  @override
+  String get notificationExternalLoginLinked => 'تم ربط تسجيل الدخول الخارجي';
+
+  @override
+  String get notificationExternalLoginUnlinked => 'تم فصل تسجيل الدخول الخارجي';
+
+  @override
+  String get notificationPasswordChanged => 'تم تغيير كلمة المرور';
+
+  @override
+  String get notificationSystemEvent => 'إشعار نظام';
+
+  @override
+  String notificationEventDetail(String action, String identity) {
+    return '$action: $identity.';
+  }
+
+  @override
+  String notificationUnknownType(String type) {
+    return 'تم تسجيل حدث في النظام ($type).';
+  }
+
+  @override
+  String get roleOwner => 'المالك';
+
+  @override
+  String get roleOperations => 'العمليات';
+
+  @override
+  String get roleAccountant => 'المحاسب';
+
+  @override
+  String get roleEmployee => 'الموظف';
+
+  @override
+  String get roleDriver => 'السائق';
 }

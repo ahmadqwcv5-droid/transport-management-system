@@ -4195,6 +4195,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The truck QR changed at the same time. Refresh and generate it again.'**
   String get truckQrRegenerationConflict;
+
+  /// No description provided for @showPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get showPassword;
+
+  /// No description provided for @hidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get hidePassword;
+
+  /// No description provided for @pendingInvitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending invitations'**
+  String get pendingInvitations;
+
+  /// No description provided for @invitationHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation history'**
+  String get invitationHistory;
+
+  /// No description provided for @qrPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing QR image…'**
+  String get qrPreparing;
+
+  /// No description provided for @qrRenderFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The credential was created, but the QR image could not be prepared. Copy the manual code or retry displaying it.'**
+  String get qrRenderFailed;
+
+  /// No description provided for @retryQrDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry QR display'**
+  String get retryQrDisplay;
+
+  /// No description provided for @qrOneTimeRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'This one-time manual code remains available on this page until you close or successfully display it.'**
+  String get qrOneTimeRecovery;
+
+  /// No description provided for @truckQrManualCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual truck code'**
+  String get truckQrManualCode;
+
+  /// No description provided for @notificationCategoryTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip'**
+  String get notificationCategoryTrip;
+
+  /// No description provided for @notificationCategoryFleet.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet'**
+  String get notificationCategoryFleet;
+
+  /// No description provided for @notificationCategoryPeopleAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'People & Access'**
+  String get notificationCategoryPeopleAccess;
+
+  /// No description provided for @notificationCategorySecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get notificationCategorySecurity;
+
+  /// No description provided for @notificationCategorySystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get notificationCategorySystem;
+
+  /// No description provided for @notificationInvitationCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Company invitation created'**
+  String get notificationInvitationCreated;
+
+  /// No description provided for @notificationInvitationAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Company invitation accepted'**
+  String get notificationInvitationAccepted;
+
+  /// No description provided for @notificationInvitationDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Company invitation declined'**
+  String get notificationInvitationDeclined;
+
+  /// No description provided for @notificationInvitationRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Company invitation revoked'**
+  String get notificationInvitationRevoked;
+
+  /// No description provided for @notificationInvitationExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Company invitation expired'**
+  String get notificationInvitationExpired;
+
+  /// No description provided for @notificationConnectionRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Company connection requested'**
+  String get notificationConnectionRequested;
+
+  /// No description provided for @notificationConnectionApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Company connection approved'**
+  String get notificationConnectionApproved;
+
+  /// No description provided for @notificationConnectionRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Company connection rejected'**
+  String get notificationConnectionRejected;
+
+  /// No description provided for @notificationConnectionCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Company connection cancelled'**
+  String get notificationConnectionCancelled;
+
+  /// No description provided for @notificationMembershipActivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Membership activated'**
+  String get notificationMembershipActivated;
+
+  /// No description provided for @notificationMembershipSuspended.
+  ///
+  /// In en, this message translates to:
+  /// **'Membership suspended'**
+  String get notificationMembershipSuspended;
+
+  /// No description provided for @notificationMembershipRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Membership revoked'**
+  String get notificationMembershipRevoked;
+
+  /// No description provided for @notificationMembershipRolesUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Membership roles updated'**
+  String get notificationMembershipRolesUpdated;
+
+  /// No description provided for @notificationDriverLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver account linked'**
+  String get notificationDriverLinked;
+
+  /// No description provided for @notificationDriverUnlinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver account unlinked'**
+  String get notificationDriverUnlinked;
+
+  /// No description provided for @notificationQrGenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck QR generated'**
+  String get notificationQrGenerated;
+
+  /// No description provided for @notificationQrRegenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck QR regenerated'**
+  String get notificationQrRegenerated;
+
+  /// No description provided for @notificationSessionStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck session started'**
+  String get notificationSessionStarted;
+
+  /// No description provided for @notificationSessionEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck session ended'**
+  String get notificationSessionEnded;
+
+  /// No description provided for @notificationSessionSwitched.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck session switched'**
+  String get notificationSessionSwitched;
+
+  /// No description provided for @notificationDefaultDriverChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Default Driver changed'**
+  String get notificationDefaultDriverChanged;
+
+  /// No description provided for @notificationHandoverRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver handover requested'**
+  String get notificationHandoverRequested;
+
+  /// No description provided for @notificationHandoverPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver handover pending'**
+  String get notificationHandoverPending;
+
+  /// No description provided for @notificationHandoverApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver handover approved'**
+  String get notificationHandoverApproved;
+
+  /// No description provided for @notificationHandoverRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver handover rejected'**
+  String get notificationHandoverRejected;
+
+  /// No description provided for @notificationExternalLoginLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'External sign-in linked'**
+  String get notificationExternalLoginLinked;
+
+  /// No description provided for @notificationExternalLoginUnlinked.
+  ///
+  /// In en, this message translates to:
+  /// **'External sign-in unlinked'**
+  String get notificationExternalLoginUnlinked;
+
+  /// No description provided for @notificationPasswordChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed'**
+  String get notificationPasswordChanged;
+
+  /// No description provided for @notificationSystemEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'System notification'**
+  String get notificationSystemEvent;
+
+  /// No description provided for @notificationEventDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'{action}: {identity}.'**
+  String notificationEventDetail(String action, String identity);
+
+  /// No description provided for @notificationUnknownType.
+  ///
+  /// In en, this message translates to:
+  /// **'A system event was recorded ({type}).'**
+  String notificationUnknownType(String type);
+
+  /// No description provided for @roleOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get roleOwner;
+
+  /// No description provided for @roleOperations.
+  ///
+  /// In en, this message translates to:
+  /// **'Operations'**
+  String get roleOperations;
+
+  /// No description provided for @roleAccountant.
+  ///
+  /// In en, this message translates to:
+  /// **'Accountant'**
+  String get roleAccountant;
+
+  /// No description provided for @roleEmployee.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee'**
+  String get roleEmployee;
+
+  /// No description provided for @roleDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver'**
+  String get roleDriver;
 }
 
 class _AppLocalizationsDelegate

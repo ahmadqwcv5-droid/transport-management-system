@@ -91,9 +91,13 @@ class _NotificationTile extends ConsumerWidget {
           ? Icons.notifications_active
           : Icons.notifications_none,
     ),
-    title: Text(_title(context, notification.type)),
+    title: Text(notificationTypeTitle(context, notification.type)),
     subtitle: Text(
       [
+        notificationCategoryLabel(
+          context,
+          notificationTypeCategory(notification.type),
+        ),
         if (notification.type == 'TripAssignedToDriver')
           context.l10n.assignmentRequiresDeparture,
         notificationSnapshotDetail(context, notification),
@@ -127,26 +131,10 @@ class _NotificationTile extends ConsumerWidget {
     }
     if (!context.mounted) return;
     final role = ref.read(authControllerProvider).value?.user.role;
-    if (role == 'Driver') {
-      ref.invalidate(driverTripControllerProvider);
-      context.go('/my-trip');
-    } else if (notification.tripId != null) {
-      context.go('/trips/${notification.tripId}');
-    } else if (notification.truckId != null) {
-      context.go('/trucks/${notification.truckId}');
-    }
+    final destination = notificationDestination(notification, role: role);
+    if (destination == '/my-trip') ref.invalidate(driverTripControllerProvider);
+    if (destination != null) context.go(destination);
   }
-
-  String _title(BuildContext context, String type) => switch (type) {
-    'TruckArrivedAtPickup' => context.l10n.notificationArrivedPickup,
-    'TruckArrivedAtDelivery' => context.l10n.notificationArrivedDelivery,
-    'DriverConfirmedDeparture' => context.l10n.notificationDepartureConfirmed,
-    'DriverConfirmedDelivery' => context.l10n.notificationDeliveryConfirmed,
-    'TripAssignedToDriver' => context.l10n.notificationTripAssigned,
-    'TruckBecameOffline' => context.l10n.notificationTruckOffline,
-    'TruckPositionBecameStale' => context.l10n.notificationPositionStale,
-    _ => context.l10n.operationalUpdate,
-  };
 
   String _formatTime(String value) {
     final date = DateTime.tryParse(value)?.toLocal();

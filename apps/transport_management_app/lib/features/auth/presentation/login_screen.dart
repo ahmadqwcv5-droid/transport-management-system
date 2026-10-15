@@ -7,6 +7,8 @@ import '../data/external_identity_launcher.dart';
 import '../../memberships/presentation/membership_providers.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../l10n/l10n_extensions.dart';
+import '../../../shared/widgets/app_password_field.dart';
+import '../../../shared/widgets/public_language_control.dart';
 import 'google_web_identity_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -49,6 +51,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      const Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: PublicLanguageControl(),
+                      ),
+                      const SizedBox(height: 16),
                       Icon(
                         Icons.local_shipping_outlined,
                         size: 52,
@@ -81,15 +88,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             : context.l10n.required,
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      AppPasswordField(
                         key: const Key('login-password'),
                         controller: _password,
-                        obscureText: true,
+                        labelText: context.l10n.password,
                         autofillHints: const [AutofillHints.password],
-                        decoration: InputDecoration(
-                          labelText: context.l10n.password,
-                          prefixIcon: const Icon(Icons.lock_outline),
-                        ),
                         validator: (value) => (value?.length ?? 0) >= 8
                             ? null
                             : context.l10n.required,

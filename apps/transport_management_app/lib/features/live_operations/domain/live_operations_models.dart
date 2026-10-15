@@ -11,12 +11,13 @@ final class OperationNotification {
     this.tripId,
     this.truckId,
     this.driverId,
+    this.eventKey,
     this.dataJson,
     this.readAt,
   });
 
   final String id, type, severity, createdAt;
-  final String? tripId, truckId, driverId, dataJson, readAt;
+  final String? tripId, truckId, driverId, eventKey, dataJson, readAt;
   bool get isUnread => readAt == null;
 
   factory OperationNotification.fromJson(Json json) => OperationNotification(
@@ -27,6 +28,7 @@ final class OperationNotification {
     tripId: json['tripId'] as String?,
     truckId: json['truckId'] as String?,
     driverId: json['driverId'] as String?,
+    eventKey: json['eventKey'] as String?,
     dataJson: json['dataJson'] as String?,
     readAt: json['readAt'] as String?,
   );

@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../l10n/l10n_extensions.dart';
+import '../../../shared/widgets/app_password_field.dart';
+import '../../../shared/widgets/public_language_control.dart';
+import '../../auth/presentation/anonymous_locale_controller.dart';
 import '../../auth/domain/auth_session.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/google_web_identity_button.dart';
@@ -303,7 +306,15 @@ class _InvitationAcceptanceScreenState
   Widget build(BuildContext context) {
     final signedIn = ref.watch(authControllerProvider).value != null;
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.invitationAccept)),
+      appBar: AppBar(
+        title: Text(context.l10n.invitationAccept),
+        actions: const [
+          Padding(
+            padding: EdgeInsetsDirectional.only(end: 12),
+            child: PublicLanguageControl(),
+          ),
+        ],
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -321,6 +332,7 @@ class _InvitationAcceptanceScreenState
                 final invitation = snapshot.data!;
                 if (_accepted) {
                   return Card(
+                    key: const Key('invitation-accepted-state'),
                     child: ListTile(
                       leading: const Icon(Icons.check_circle_outline),
                       title: Text(context.l10n.invitationAccepted),
@@ -345,7 +357,8 @@ class _InvitationAcceptanceScreenState
                         const SizedBox(height: 8),
                         Text(invitation.email),
                         Text(
-                          '${context.l10n.roles}: ${invitation.roles.join(', ')}',
+                          '${context.l10n.roles}: '
+                          '${invitation.roles.map((role) => localizedRole(context.l10n, role)).join(', ')}',
                         ),
                         if (invitation.driverName != null)
                           Text(invitation.driverName!),
@@ -373,14 +386,12 @@ class _InvitationAcceptanceScreenState
                             ),
                           ),
                           const SizedBox(height: 12),
-                          TextField(
+                          AppPasswordField(
                             key: const Key('invitation-password'),
                             controller: _password,
-                            obscureText: true,
-                            decoration: InputDecoration(
-                              labelText: context.l10n.password,
-                              helperText: context.l10n.passwordMinimumLength,
-                            ),
+                            labelText: context.l10n.password,
+                            helperText: context.l10n.passwordMinimumLength,
+                            autofillHints: const [AutofillHints.newPassword],
                           ),
                           if (kIsWeb &&
                               ref.watch(googleConfiguredProvider).value ==
@@ -487,6 +498,9 @@ class _InvitationAcceptanceScreenState
             email: signedIn ? null : _email.text,
             displayName: signedIn ? null : _name.text,
             password: signedIn ? null : _password.text,
+            preferredLocale: signedIn
+                ? null
+                : ref.read(anonymousLocaleControllerProvider).value ?? 'en',
           );
       if (mounted) setState(() => _accepted = true);
     } on ApiException catch (error) {

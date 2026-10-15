@@ -51,6 +51,15 @@ String localizedStatus(AppLocalizations l10n, String value) => switch (value) {
   _ => value,
 };
 
+String localizedRole(AppLocalizations l10n, String value) => switch (value) {
+  'Owner' => l10n.roleOwner,
+  'Operations' => l10n.roleOperations,
+  'Accountant' => l10n.roleAccountant,
+  'Employee' => l10n.roleEmployee,
+  'Driver' => l10n.roleDriver,
+  _ => value,
+};
+
 String localizedErrorCode(
   AppLocalizations l10n,
   String? code,

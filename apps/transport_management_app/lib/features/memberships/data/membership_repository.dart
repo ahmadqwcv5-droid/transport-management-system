@@ -43,11 +43,13 @@ final class MembershipRepository {
     String? email,
     String? displayName,
     String? password,
+    String? preferredLocale,
   }) => _empty('POST', '/api/invitations/accept', {
     'token': token,
     'email': ?email,
     'displayName': ?displayName,
     'password': ?password,
+    'preferredLocale': ?preferredLocale,
   });
 
   Future<void> declineInvitation(String token) =>

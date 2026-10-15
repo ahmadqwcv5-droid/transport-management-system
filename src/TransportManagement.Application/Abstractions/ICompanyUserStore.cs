@@ -25,6 +25,7 @@ public interface ICompanyUserStore
     void AddRoles(IEnumerable<CompanyMembershipRole> roles);
     void RemoveRoles(IEnumerable<CompanyMembershipRole> roles);
     void AddEvent(CompanyUserEvent userEvent);
+    void AddNotification(TransportManagement.Domain.Trips.OperationNotification notification);
     Task RevokeTokensAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken);
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }

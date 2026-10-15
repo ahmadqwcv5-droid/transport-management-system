@@ -250,6 +250,13 @@ class _OperationalAlertCard extends ConsumerWidget {
                   ),
                 ],
               ),
+              Text(
+                notificationCategoryLabel(
+                  context,
+                  notificationTypeCategory(notification.type),
+                ),
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
               Text(_message(context, notification)),
               if (_identity(notification).isNotEmpty) ...[
                 const SizedBox(height: 4),
@@ -291,14 +298,14 @@ class _OperationalAlertCard extends ConsumerWidget {
                         .value
                         ?.user
                         .role;
-                    if (role == 'Driver') {
+                    final destination = notificationDestination(
+                      notification,
+                      role: role,
+                    );
+                    if (destination == '/my-trip') {
                       ref.invalidate(driverTripControllerProvider);
-                      context.go('/my-trip');
-                    } else if (notification.tripId != null) {
-                      context.go('/trips/${notification.tripId}');
-                    } else if (notification.truckId != null) {
-                      context.go('/trucks/${notification.truckId}');
                     }
+                    if (destination != null) context.go(destination);
                   },
                   child: Text(
                     notification.type == 'TripAssignedToDriver'
@@ -314,25 +321,10 @@ class _OperationalAlertCard extends ConsumerWidget {
     );
   }
 
-  static IconData _icon(String type) => switch (type) {
-    'TruckArrivedAtPickup' || 'TruckArrivedAtDelivery' => Icons.location_on,
-    'DriverConfirmedDelivery' => Icons.task_alt,
-    'TripAssignedToDriver' => Icons.assignment_ind_outlined,
-    'TruckBecameOffline' => Icons.signal_wifi_connected_no_internet_4,
-    'TruckPositionBecameStale' => Icons.update_disabled,
-    _ => Icons.notifications_active,
-  };
+  static IconData _icon(String type) => notificationTypeIcon(type);
 
-  static String _title(BuildContext context, String type) => switch (type) {
-    'TruckArrivedAtPickup' => context.l10n.notificationArrivedPickup,
-    'TruckArrivedAtDelivery' => context.l10n.notificationArrivedDelivery,
-    'DriverConfirmedDeparture' => context.l10n.notificationDepartureConfirmed,
-    'DriverConfirmedDelivery' => context.l10n.notificationDeliveryConfirmed,
-    'TripAssignedToDriver' => context.l10n.notificationTripAssigned,
-    'TruckBecameOffline' => context.l10n.notificationTruckOffline,
-    'TruckPositionBecameStale' => context.l10n.notificationPositionStale,
-    _ => context.l10n.operationalUpdate,
-  };
+  static String _title(BuildContext context, String type) =>
+      notificationTypeTitle(context, type);
 
   static String _message(
     BuildContext context,
