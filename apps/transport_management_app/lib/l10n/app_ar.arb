@@ -994,5 +994,20 @@
   "enterFullScreen": "ملء الشاشة",
   "exitFullScreen": "الخروج من ملء الشاشة",
   "collapseFleetList": "طي قائمة الأسطول",
-  "expandFleetList": "توسيع قائمة الأسطول"
+  "expandFleetList": "توسيع قائمة الأسطول",
+  "atlasCommandCenter": "مركز القيادة التشغيلي",
+  "atlasLiveOperations": "حالة الأسطول المباشرة من مساحة العمل الحالية",
+  "connectedVehicles": "متصلة",
+  "movingVehicles": "متحركة",
+  "attentionItems": "تحتاج الانتباه",
+  "filterConnected": "متصلة",
+  "filterAttention": "تحتاج الانتباه",
+  "operationalExceptions": "الاستثناءات التشغيلية",
+  "noOperationalExceptions": "لا توجد استثناءات تشغيلية حالياً",
+  "filteredFleetEmpty": "لا توجد مركبات مطابقة لهذا المرشح",
+  "selectedVehicle": "المركبة المحددة",
+  "openTruck": "فتح الشاحنة",
+  "openTrip": "فتح الرحلة",
+  "partialOperationalData": "بعض القيم التشغيلية غير متاحة. تُعرض البيانات المباشرة المتوفرة.",
+  "mapStage": "خريطة الأسطول المباشرة"
 }

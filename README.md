@@ -46,6 +46,17 @@ not map simulator mutation endpoints or include simulator controls in the Web
 bundle. See [the design-system guide](docs/design-system.md) and
 [Sprint 4.4 evidence](docs/evidence/sprint4_4/README.md).
 
+Sprint 4.4.2 applies the Atlas Pulse V2 visual preset to the Owner and
+Operations command surfaces. The dashboard now uses a dense responsive fleet
+dock, truthful KPI ribbon, stable MapLibre stage, synchronized vehicle
+inspector, and active-trip/exception rail. Arabic RTL and English LTR share the
+same operational state, reduced-motion preferences remove nonessential
+transitions, and loading, partial, empty, unavailable, and retry states remain
+distinct from real zero values. Light CRUD screens and all Driver screens stay
+on the existing light product preset; Atlas Pulse is intentionally adopted one
+operational surface at a time. See
+[Sprint 4.4.2 evidence](docs/evidence/sprint4_4_2/README.md).
+
 ## Architecture
 
 The backend is a modular monolith using Clean Architecture with lightweight DDD and CQRS principles:

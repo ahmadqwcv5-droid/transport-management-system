@@ -4633,6 +4633,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Expand fleet list'**
   String get expandFleetList;
+
+  /// No description provided for @atlasCommandCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Operational command center'**
+  String get atlasCommandCenter;
+
+  /// No description provided for @atlasLiveOperations.
+  ///
+  /// In en, this message translates to:
+  /// **'Live fleet state from the current workspace'**
+  String get atlasLiveOperations;
+
+  /// No description provided for @connectedVehicles.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get connectedVehicles;
+
+  /// No description provided for @movingVehicles.
+  ///
+  /// In en, this message translates to:
+  /// **'Moving'**
+  String get movingVehicles;
+
+  /// No description provided for @attentionItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Attention'**
+  String get attentionItems;
+
+  /// No description provided for @filterConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get filterConnected;
+
+  /// No description provided for @filterAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Attention'**
+  String get filterAttention;
+
+  /// No description provided for @operationalExceptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Operational exceptions'**
+  String get operationalExceptions;
+
+  /// No description provided for @noOperationalExceptions.
+  ///
+  /// In en, this message translates to:
+  /// **'No current operational exceptions'**
+  String get noOperationalExceptions;
+
+  /// No description provided for @filteredFleetEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No vehicles match this filter'**
+  String get filteredFleetEmpty;
+
+  /// No description provided for @selectedVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected vehicle'**
+  String get selectedVehicle;
+
+  /// No description provided for @openTruck.
+  ///
+  /// In en, this message translates to:
+  /// **'Open truck'**
+  String get openTruck;
+
+  /// No description provided for @partialOperationalData.
+  ///
+  /// In en, this message translates to:
+  /// **'Some operational values are unavailable. Available live data is shown.'**
+  String get partialOperationalData;
+
+  /// No description provided for @mapStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Live fleet map'**
+  String get mapStage;
 }
 
 class _AppLocalizationsDelegate

@@ -2436,4 +2436,48 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get expandFleetList => 'توسيع قائمة الأسطول';
+
+  @override
+  String get atlasCommandCenter => 'مركز القيادة التشغيلي';
+
+  @override
+  String get atlasLiveOperations =>
+      'حالة الأسطول المباشرة من مساحة العمل الحالية';
+
+  @override
+  String get connectedVehicles => 'متصلة';
+
+  @override
+  String get movingVehicles => 'متحركة';
+
+  @override
+  String get attentionItems => 'تحتاج الانتباه';
+
+  @override
+  String get filterConnected => 'متصلة';
+
+  @override
+  String get filterAttention => 'تحتاج الانتباه';
+
+  @override
+  String get operationalExceptions => 'الاستثناءات التشغيلية';
+
+  @override
+  String get noOperationalExceptions => 'لا توجد استثناءات تشغيلية حالياً';
+
+  @override
+  String get filteredFleetEmpty => 'لا توجد مركبات مطابقة لهذا المرشح';
+
+  @override
+  String get selectedVehicle => 'المركبة المحددة';
+
+  @override
+  String get openTruck => 'فتح الشاحنة';
+
+  @override
+  String get partialOperationalData =>
+      'بعض القيم التشغيلية غير متاحة. تُعرض البيانات المباشرة المتوفرة.';
+
+  @override
+  String get mapStage => 'خريطة الأسطول المباشرة';
 }

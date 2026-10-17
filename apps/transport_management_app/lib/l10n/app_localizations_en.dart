@@ -2461,4 +2461,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get expandFleetList => 'Expand fleet list';
+
+  @override
+  String get atlasCommandCenter => 'Operational command center';
+
+  @override
+  String get atlasLiveOperations =>
+      'Live fleet state from the current workspace';
+
+  @override
+  String get connectedVehicles => 'Connected';
+
+  @override
+  String get movingVehicles => 'Moving';
+
+  @override
+  String get attentionItems => 'Attention';
+
+  @override
+  String get filterConnected => 'Connected';
+
+  @override
+  String get filterAttention => 'Attention';
+
+  @override
+  String get operationalExceptions => 'Operational exceptions';
+
+  @override
+  String get noOperationalExceptions => 'No current operational exceptions';
+
+  @override
+  String get filteredFleetEmpty => 'No vehicles match this filter';
+
+  @override
+  String get selectedVehicle => 'Selected vehicle';
+
+  @override
+  String get openTruck => 'Open truck';
+
+  @override
+  String get partialOperationalData =>
+      'Some operational values are unavailable. Available live data is shown.';
+
+  @override
+  String get mapStage => 'Live fleet map';
 }

@@ -994,5 +994,20 @@
   "enterFullScreen": "Full screen",
   "exitFullScreen": "Exit full screen",
   "collapseFleetList": "Collapse fleet list",
-  "expandFleetList": "Expand fleet list"
+  "expandFleetList": "Expand fleet list",
+  "atlasCommandCenter": "Operational command center",
+  "atlasLiveOperations": "Live fleet state from the current workspace",
+  "connectedVehicles": "Connected",
+  "movingVehicles": "Moving",
+  "attentionItems": "Attention",
+  "filterConnected": "Connected",
+  "filterAttention": "Attention",
+  "operationalExceptions": "Operational exceptions",
+  "noOperationalExceptions": "No current operational exceptions",
+  "filteredFleetEmpty": "No vehicles match this filter",
+  "selectedVehicle": "Selected vehicle",
+  "openTruck": "Open truck",
+  "openTrip": "Open trip",
+  "partialOperationalData": "Some operational values are unavailable. Available live data is shown.",
+  "mapStage": "Live fleet map"
 }

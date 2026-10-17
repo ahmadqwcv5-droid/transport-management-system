@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../app_design_tokens.dart';
 
-enum AppStateKind { empty, loading, error, offline, stale, success }
+enum AppStateKind {
+  empty,
+  loading,
+  error,
+  offline,
+  stale,
+  partial,
+  unavailable,
+  success,
+}
 
 class AppStatePanel extends StatelessWidget {
   const AppStatePanel({
@@ -31,6 +40,14 @@ class AppStatePanel extends StatelessWidget {
         context.tokens.offline,
       ),
       AppStateKind.stale => (Icons.schedule_outlined, context.tokens.stale),
+      AppStateKind.partial => (
+        Icons.pending_actions_outlined,
+        context.tokens.warning,
+      ),
+      AppStateKind.unavailable => (
+        Icons.not_interested_outlined,
+        context.tokens.disabled,
+      ),
       AppStateKind.success => (
         Icons.check_circle_outline,
         context.tokens.success,

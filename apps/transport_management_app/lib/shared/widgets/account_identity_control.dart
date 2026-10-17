@@ -10,11 +10,13 @@ class AccountIdentityControl extends ConsumerWidget {
   const AccountIdentityControl({
     required this.user,
     required this.wide,
+    this.onDarkSurface = false,
     super.key,
   });
 
   final CurrentUser user;
   final bool wide;
+  final bool onDarkSurface;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => PopupMenuButton<String>(
@@ -82,6 +84,10 @@ class AccountIdentityControl extends ConsumerWidget {
         children: [
           CircleAvatar(
             radius: 17,
+            backgroundColor: onDarkSurface
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: .18)
+                : null,
+            foregroundColor: onDarkSurface ? Colors.white : null,
             child: Text(_initials(user.operationalDisplayName)),
           ),
           if (wide) ...[
@@ -95,18 +101,25 @@ class AccountIdentityControl extends ConsumerWidget {
                   Text(
                     user.operationalDisplayName,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelLarge,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: onDarkSurface ? Colors.white : null,
+                    ),
                   ),
                   Text(
                     '${user.roles.map((role) => _role(context, role)).join(' / ')} · ${user.companyName}',
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: onDarkSurface ? Colors.white70 : null,
+                    ),
                   ),
                 ],
               ),
             ),
           ],
-          const Icon(Icons.arrow_drop_down),
+          Icon(
+            Icons.arrow_drop_down,
+            color: onDarkSurface ? Colors.white70 : null,
+          ),
         ],
       ),
     ),

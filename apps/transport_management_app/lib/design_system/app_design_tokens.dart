@@ -25,6 +25,15 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
     required this.tripCancelled,
     required this.mapRoute,
     required this.mapTrail,
+    required this.commandBackground,
+    required this.commandSurface,
+    required this.commandSurfaceSecondary,
+    required this.commandBorder,
+    required this.commandText,
+    required this.commandTextMuted,
+    required this.commandAccent,
+    required this.routePlanned,
+    required this.routeTravelled,
     required this.space1,
     required this.space2,
     required this.space3,
@@ -38,6 +47,10 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
     required this.elevationMedium,
     required this.controlHeight,
     required this.minimumTouchTarget,
+    required this.borderThin,
+    required this.iconSmall,
+    required this.iconMedium,
+    required this.iconLarge,
     required this.compactBreakpoint,
     required this.expandedBreakpoint,
     required this.maximumContentWidth,
@@ -66,6 +79,15 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
     tripCancelled: Color(0xFFD92D20),
     mapRoute: Color(0xFF175CD3),
     mapTrail: Color(0xFF12B76A),
+    commandBackground: Color(0xFF04131C),
+    commandSurface: Color(0xFF071D28),
+    commandSurfaceSecondary: Color(0xFF092531),
+    commandBorder: Color(0xFF164151),
+    commandText: Color(0xFFEDF9FB),
+    commandTextMuted: Color(0xFF7F9EAA),
+    commandAccent: Color(0xFF53D7C8),
+    routePlanned: Color(0xFF71A7FF),
+    routeTravelled: Color(0xFF53D7C8),
     space1: 4,
     space2: 8,
     space3: 12,
@@ -79,6 +101,10 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
     elevationMedium: 4,
     controlHeight: 48,
     minimumTouchTarget: 48,
+    borderThin: 1,
+    iconSmall: 16,
+    iconMedium: 20,
+    iconLarge: 24,
     compactBreakpoint: 600,
     expandedBreakpoint: 1024,
     maximumContentWidth: 1440,
@@ -106,6 +132,15 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
   final Color tripCancelled;
   final Color mapRoute;
   final Color mapTrail;
+  final Color commandBackground;
+  final Color commandSurface;
+  final Color commandSurfaceSecondary;
+  final Color commandBorder;
+  final Color commandText;
+  final Color commandTextMuted;
+  final Color commandAccent;
+  final Color routePlanned;
+  final Color routeTravelled;
   final double space1;
   final double space2;
   final double space3;
@@ -119,6 +154,10 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
   final double elevationMedium;
   final double controlHeight;
   final double minimumTouchTarget;
+  final double borderThin;
+  final double iconSmall;
+  final double iconMedium;
+  final double iconLarge;
   final double compactBreakpoint;
   final double expandedBreakpoint;
   final double maximumContentWidth;
@@ -147,6 +186,15 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
     Color? tripCancelled,
     Color? mapRoute,
     Color? mapTrail,
+    Color? commandBackground,
+    Color? commandSurface,
+    Color? commandSurfaceSecondary,
+    Color? commandBorder,
+    Color? commandText,
+    Color? commandTextMuted,
+    Color? commandAccent,
+    Color? routePlanned,
+    Color? routeTravelled,
     double? space1,
     double? space2,
     double? space3,
@@ -160,6 +208,10 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
     double? elevationMedium,
     double? controlHeight,
     double? minimumTouchTarget,
+    double? borderThin,
+    double? iconSmall,
+    double? iconMedium,
+    double? iconLarge,
     double? compactBreakpoint,
     double? expandedBreakpoint,
     double? maximumContentWidth,
@@ -186,6 +238,16 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
     tripCancelled: tripCancelled ?? this.tripCancelled,
     mapRoute: mapRoute ?? this.mapRoute,
     mapTrail: mapTrail ?? this.mapTrail,
+    commandBackground: commandBackground ?? this.commandBackground,
+    commandSurface: commandSurface ?? this.commandSurface,
+    commandSurfaceSecondary:
+        commandSurfaceSecondary ?? this.commandSurfaceSecondary,
+    commandBorder: commandBorder ?? this.commandBorder,
+    commandText: commandText ?? this.commandText,
+    commandTextMuted: commandTextMuted ?? this.commandTextMuted,
+    commandAccent: commandAccent ?? this.commandAccent,
+    routePlanned: routePlanned ?? this.routePlanned,
+    routeTravelled: routeTravelled ?? this.routeTravelled,
     space1: space1 ?? this.space1,
     space2: space2 ?? this.space2,
     space3: space3 ?? this.space3,
@@ -199,6 +261,10 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
     elevationMedium: elevationMedium ?? this.elevationMedium,
     controlHeight: controlHeight ?? this.controlHeight,
     minimumTouchTarget: minimumTouchTarget ?? this.minimumTouchTarget,
+    borderThin: borderThin ?? this.borderThin,
+    iconSmall: iconSmall ?? this.iconSmall,
+    iconMedium: iconMedium ?? this.iconMedium,
+    iconLarge: iconLarge ?? this.iconLarge,
     compactBreakpoint: compactBreakpoint ?? this.compactBreakpoint,
     expandedBreakpoint: expandedBreakpoint ?? this.expandedBreakpoint,
     maximumContentWidth: maximumContentWidth ?? this.maximumContentWidth,
@@ -232,6 +298,18 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
       tripCancelled: color(tripCancelled, other.tripCancelled),
       mapRoute: color(mapRoute, other.mapRoute),
       mapTrail: color(mapTrail, other.mapTrail),
+      commandBackground: color(commandBackground, other.commandBackground),
+      commandSurface: color(commandSurface, other.commandSurface),
+      commandSurfaceSecondary: color(
+        commandSurfaceSecondary,
+        other.commandSurfaceSecondary,
+      ),
+      commandBorder: color(commandBorder, other.commandBorder),
+      commandText: color(commandText, other.commandText),
+      commandTextMuted: color(commandTextMuted, other.commandTextMuted),
+      commandAccent: color(commandAccent, other.commandAccent),
+      routePlanned: color(routePlanned, other.routePlanned),
+      routeTravelled: color(routeTravelled, other.routeTravelled),
       space1: number(space1, other.space1),
       space2: number(space2, other.space2),
       space3: number(space3, other.space3),
@@ -245,6 +323,10 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
       elevationMedium: number(elevationMedium, other.elevationMedium),
       controlHeight: number(controlHeight, other.controlHeight),
       minimumTouchTarget: number(minimumTouchTarget, other.minimumTouchTarget),
+      borderThin: number(borderThin, other.borderThin),
+      iconSmall: number(iconSmall, other.iconSmall),
+      iconMedium: number(iconMedium, other.iconMedium),
+      iconLarge: number(iconLarge, other.iconLarge),
       compactBreakpoint: number(compactBreakpoint, other.compactBreakpoint),
       expandedBreakpoint: number(expandedBreakpoint, other.expandedBreakpoint),
       maximumContentWidth: number(

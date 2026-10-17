@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-10-17T09:59:39.836Z",
+  "engine": "Chromium",
+  "isolatedBrowserContexts": 2,
+  "linkedDisposableDriverVerified": true,
+  "driverScreens": [
+    "Today",
+    "My Truck",
+    "My Trips",
+    "Profile/Settings"
+  ],
+  "ownerRemainedAuthenticatedAfterDriverLogout": true,
+  "ownerPollingContinuedAfterDriverLogout": true,
+  "driverPollingStoppedAfterLogout": true,
+  "driverWorkspaceResponsesBeforeLogout": 6,
+  "fixtureCleanupRequired": false,
+  "fixtureCleanupCompleted": true
+}

@@ -127,6 +127,103 @@ class AppDesignPreset {
       ),
     );
   }
+
+  /// Dark operational theme used only by the Owner/Operations command center.
+  /// Light CRUD and Driver surfaces continue to use [theme].
+  ThemeData commandCenterTheme(Locale locale) {
+    final scheme = const ColorScheme.dark().copyWith(
+      primary: tokens.commandAccent,
+      onPrimary: tokens.commandBackground,
+      secondary: tokens.routePlanned,
+      surface: tokens.commandSurface,
+      onSurface: tokens.commandText,
+      error: tokens.danger,
+      outline: tokens.commandBorder,
+    );
+    final base = ThemeData(
+      colorScheme: scheme,
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      visualDensity: VisualDensity.compact,
+    );
+    final typography = base.textTheme.apply(
+      fontFamily: locale.languageCode == 'ar' ? 'NotoSansArabic' : 'NotoSans',
+      bodyColor: tokens.commandText,
+      displayColor: tokens.commandText,
+    );
+    return base.copyWith(
+      scaffoldBackgroundColor: tokens.commandBackground,
+      textTheme: typography.copyWith(
+        headlineSmall: typography.headlineSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+        titleLarge: typography.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+        titleMedium: typography.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        labelLarge: typography.labelLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      extensions: [tokens, motion],
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: tokens.commandSurface,
+        surfaceTintColor: Colors.transparent,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusSmall),
+          side: BorderSide(
+            color: tokens.commandBorder,
+            width: tokens.borderThin,
+          ),
+        ),
+      ),
+      dividerTheme: DividerThemeData(
+        color: tokens.commandBorder,
+        thickness: tokens.borderThin,
+      ),
+      chipTheme: base.chipTheme.copyWith(
+        backgroundColor: tokens.commandSurfaceSecondary,
+        selectedColor: tokens.commandAccent.withValues(alpha: .16),
+        side: BorderSide(color: tokens.commandBorder),
+        labelStyle: TextStyle(color: tokens.commandText),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusSmall),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: tokens.commandText,
+          minimumSize: Size.square(tokens.minimumTouchTarget),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: Size(0, tokens.controlHeight),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens.radiusSmall),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: tokens.commandText,
+          side: BorderSide(color: tokens.commandBorder),
+          minimumSize: Size(0, tokens.controlHeight),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens.radiusSmall),
+          ),
+        ),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: tokens.commandAccent,
+        linearTrackColor: tokens.commandSurfaceSecondary,
+      ),
+    );
+  }
 }
 
 final appDesignPresetProvider = Provider<AppDesignPreset>(

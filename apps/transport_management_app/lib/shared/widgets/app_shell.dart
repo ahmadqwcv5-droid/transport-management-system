@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../design_system/app_breakpoints.dart';
+import '../../design_system/app_design_tokens.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../l10n/l10n_extensions.dart';
 import '../../features/live_operations/presentation/live_operations_controller.dart';
@@ -113,6 +114,9 @@ class AppShell extends ConsumerWidget {
           authenticatedUser?.hasRole('Operations') == true;
       final hasDriver = authenticatedUser?.hasRole('Driver') == true;
       final isDriverOnly = hasDriver && !isManager;
+      final tokens = context.tokens;
+      final expandedManagerRail =
+          isManager && AppBreakpoints.isExpanded(context);
       final paths = isDriverOnly
           ? _driverPaths
           : isManager
@@ -158,15 +162,31 @@ class AppShell extends ConsumerWidget {
         child: Stack(
           children: [
             Scaffold(
+              backgroundColor: isManager
+                  ? tokens.commandBackground
+                  : Theme.of(context).scaffoldBackgroundColor,
               drawer: compact && !isDriverOnly
                   ? NavigationDrawer(
+                      backgroundColor: isManager ? tokens.commandSurface : null,
+                      indicatorColor: isManager
+                          ? tokens.commandAccent.withValues(alpha: .16)
+                          : null,
                       selectedIndex: safeIndex,
                       onDestinationSelected: (index) {
                         Navigator.of(context).pop();
                         context.go(paths[index]);
                       },
                       children: [
-                        const SizedBox(height: 12),
+                        if (isManager && authenticatedUser != null)
+                          _ManagerWorkspaceIdentity(
+                            companyName: authenticatedUser.companyName,
+                            roles: authenticatedUser.roles.isEmpty
+                                ? [authenticatedUser.role]
+                                : authenticatedUser.roles,
+                            compact: false,
+                          )
+                        else
+                          const SizedBox(height: 12),
                         ...destinations.map(
                           (item) => NavigationDrawerDestination(
                             icon: item.icon,
@@ -178,7 +198,18 @@ class AppShell extends ConsumerWidget {
                     )
                   : null,
               appBar: AppBar(
-                title: Text(context.l10n.appTitle),
+                backgroundColor: isManager ? tokens.commandSurface : null,
+                foregroundColor: isManager ? tokens.commandText : null,
+                surfaceTintColor: Colors.transparent,
+                title: isManager && authenticatedUser != null
+                    ? _ManagerWorkspaceIdentity(
+                        companyName: authenticatedUser.companyName,
+                        roles: authenticatedUser.roles.isEmpty
+                            ? [authenticatedUser.role]
+                            : authenticatedUser.roles,
+                        compact: compact,
+                      )
+                    : Text(context.l10n.appTitle),
                 actions: [
                   Badge(
                     isLabelVisible: unread > 0,
@@ -194,6 +225,7 @@ class AppShell extends ConsumerWidget {
                     AccountIdentityControl(
                       user: authenticatedUser,
                       wide: !compact,
+                      onDarkSurface: isManager,
                     ),
                 ],
               ),
@@ -201,11 +233,39 @@ class AppShell extends ConsumerWidget {
                   ? Row(
                       children: [
                         NavigationRail(
+                          key: isManager
+                              ? const Key('atlas-manager-navigation')
+                              : null,
+                          backgroundColor: isManager
+                              ? tokens.commandSurface
+                              : null,
+                          indicatorColor: isManager
+                              ? tokens.commandAccent.withValues(alpha: .16)
+                              : null,
+                          selectedIconTheme: isManager
+                              ? IconThemeData(color: tokens.commandAccent)
+                              : null,
+                          unselectedIconTheme: isManager
+                              ? IconThemeData(color: tokens.commandTextMuted)
+                              : null,
+                          selectedLabelTextStyle: isManager
+                              ? TextStyle(
+                                  color: tokens.commandAccent,
+                                  fontWeight: FontWeight.w700,
+                                )
+                              : null,
+                          unselectedLabelTextStyle: isManager
+                              ? TextStyle(color: tokens.commandTextMuted)
+                              : null,
+                          extended: expandedManagerRail,
+                          minExtendedWidth: 220,
                           scrollable: true,
                           selectedIndex: safeIndex,
                           onDestinationSelected: (index) =>
                               context.go(paths[index]),
-                          labelType: NavigationRailLabelType.all,
+                          labelType: expandedManagerRail
+                              ? NavigationRailLabelType.none
+                              : NavigationRailLabelType.all,
                           destinations: destinations
                               .map(
                                 (item) => NavigationRailDestination(
@@ -216,11 +276,26 @@ class AppShell extends ConsumerWidget {
                               )
                               .toList(),
                         ),
-                        const VerticalDivider(width: 1),
-                        Expanded(child: child),
+                        VerticalDivider(
+                          width: 1,
+                          color: isManager ? tokens.commandBorder : null,
+                        ),
+                        Expanded(
+                          child: ColoredBox(
+                            color: currentPath == '/dashboard' && isManager
+                                ? tokens.commandBackground
+                                : tokens.canvas,
+                            child: child,
+                          ),
+                        ),
                       ],
                     )
-                  : child,
+                  : ColoredBox(
+                      color: currentPath == '/dashboard' && isManager
+                          ? tokens.commandBackground
+                          : tokens.canvas,
+                      child: child,
+                    ),
               bottomNavigationBar: !compact || !isDriverOnly
                   ? null
                   : NavigationBar(
@@ -254,6 +329,88 @@ class AppShell extends ConsumerWidget {
       // standalone widget harnesses and embedders on their supplied index.
       return null;
     }
+  }
+}
+
+class _ManagerWorkspaceIdentity extends StatelessWidget {
+  const _ManagerWorkspaceIdentity({
+    required this.companyName,
+    required this.roles,
+    required this.compact,
+  });
+
+  final String companyName;
+  final List<String> roles;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final roleLabel = roles.map((role) => _role(context, role)).join(' / ');
+    return Padding(
+      key: const Key('atlas-workspace-identity'),
+      padding: EdgeInsetsDirectional.symmetric(
+        horizontal: compact ? 0 : tokens.space4,
+        vertical: compact ? 0 : tokens.space3,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: tokens.commandAccent.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(tokens.radiusSmall),
+              border: Border.all(color: tokens.commandBorder),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(tokens.space2),
+              child: Icon(
+                Icons.radar,
+                size: tokens.iconMedium,
+                color: tokens.commandAccent,
+              ),
+            ),
+          ),
+          SizedBox(width: tokens.space2),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  companyName.isEmpty ? context.l10n.appTitle : companyName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: tokens.commandText,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (!compact && roleLabel.isNotEmpty)
+                  Text(
+                    roleLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: tokens.commandTextMuted,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _role(BuildContext context, String role) {
+    final arabic = Localizations.localeOf(context).languageCode == 'ar';
+    return switch (role) {
+      'Owner' => arabic ? 'المالك' : 'Owner',
+      'Operations' => arabic ? 'العمليات' : 'Operations',
+      'Driver' => arabic ? 'السائق' : 'Driver',
+      _ => role,
+    };
   }
 }
 

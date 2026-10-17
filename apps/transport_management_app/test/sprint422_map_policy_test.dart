@@ -78,6 +78,37 @@ void main() {
       ]);
       expect((layers.last['layout'] as Map)['text-field'], ['get', 'ref']);
     });
+
+    test(
+      'a failed remote style load is evicted so retry can recover',
+      () async {
+        LocaleAwareMapStyle.clearCacheForTests();
+        var attempts = 0;
+        Future<dynamic> loader(String _) async {
+          attempts++;
+          if (attempts == 1) throw StateError('temporary style failure');
+          return source;
+        }
+
+        await expectLater(
+          LocaleAwareMapStyle.resolve(
+            'https://example.test/retry-style.json',
+            'en',
+            loader: loader,
+          ),
+          throwsStateError,
+        );
+        final recovered = await LocaleAwareMapStyle.resolve(
+          'https://example.test/retry-style.json',
+          'en',
+          loader: loader,
+        );
+
+        expect(attempts, 2);
+        expect(jsonDecode(recovered), isA<Map<String, dynamic>>());
+        LocaleAwareMapStyle.clearCacheForTests();
+      },
+    );
   });
 
   group('shared camera semantics', () {

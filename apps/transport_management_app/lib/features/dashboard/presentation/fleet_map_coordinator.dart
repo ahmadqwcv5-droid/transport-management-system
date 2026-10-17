@@ -182,6 +182,8 @@ final class MapOperationTelemetry {
   int interpolationCompletions = 0;
   int interpolationCancellations = 0;
   int interpolationSnaps = 0;
+  int followPreservingZooms = 0;
+  int manualPanFollowPauses = 0;
 
   Map<String, int> toJson() => {
     'mapInstancesCreated': mapInstancesCreated,
@@ -218,6 +220,8 @@ final class MapOperationTelemetry {
     'interpolationCompletions': interpolationCompletions,
     'interpolationCancellations': interpolationCancellations,
     'interpolationSnaps': interpolationSnaps,
+    'followPreservingZooms': followPreservingZooms,
+    'manualPanFollowPauses': manualPanFollowPauses,
   };
 }
 

@@ -1,0 +1,79 @@
+{
+  "generatedAt": "2026-10-17T09:54:34.118Z",
+  "owner": {
+    "engine": "Chromium",
+    "arabicRtl": true,
+    "uiLocaleSwitch": true,
+    "mapSelection": true,
+    "dockSelection": true,
+    "filtersExercised": [
+      "الكل",
+      "متصلة",
+      "متحركة",
+      "متوقفة",
+      "غير متصل",
+      "تحتاج الانتباه"
+    ],
+    "wheelDidNotScrollPage": true,
+    "updatesObservedInFreeExplore": 30,
+    "telemetry": {
+      "mapInstancesCreated": 1,
+      "mapInstancesDisposed": 0,
+      "styleLoads": 1,
+      "recoverableAnnotationErrors": 0,
+      "fatalRendererErrors": 0,
+      "imageRegistrations": 1,
+      "symbolAdditions": 20,
+      "symbolUpdates": 85,
+      "symbolRemovals": 10,
+      "statusAdditions": 20,
+      "statusUpdates": 85,
+      "statusRemovals": 10,
+      "plannedRouteAdditions": 4,
+      "plannedRouteUpdates": 0,
+      "plannedRouteRemovals": 3,
+      "approachRouteAdditions": 0,
+      "approachRouteUpdates": 0,
+      "approachRouteRemovals": 0,
+      "trailAdditions": 12,
+      "trailUpdates": 0,
+      "trailRemovals": 11,
+      "stopMarkerAdditions": 8,
+      "stopMarkerRemovals": 6,
+      "globalSymbolClears": 0,
+      "globalLineClears": 0,
+      "globalCircleClears": 0,
+      "cameraMoves": 7,
+      "cameraMovesCausedByPolling": 0,
+      "initialCameraMoves": 0,
+      "explicitCameraMoves": 7,
+      "interpolationStarts": 0,
+      "interpolationCompletions": 0,
+      "interpolationCancellations": 0,
+      "interpolationSnaps": 85,
+      "followPreservingZooms": 1,
+      "manualPanFollowPauses": 1
+    },
+    "productionMapInstances": 1,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "pageErrors": [],
+    "ownerPollingStoppedAfterLogout": true
+  },
+  "stateCoverage": {
+    "partial": true,
+    "empty": true
+  },
+  "mapFailureRetry": {
+    "failedStateVisible": true,
+    "recovered": true,
+    "styleAttempts": 2
+  },
+  "reducedMotion": {
+    "browserPreference": "reduce",
+    "renderedPublicUi": true,
+    "dashboardBehaviorProof": "widget test: reduced-motion disables nonessential transitions"
+  }
+}

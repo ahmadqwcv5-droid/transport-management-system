@@ -914,3 +914,38 @@ eligibility. Flutter uses compile-time `APP_PROFILE` capability constants so
 tree shaking removes simulator controls from restricted release bundles.
 Pilot/Production cannot be reopened by the simulator flag; absence of the
 simulator is not evidence that a real tracking provider is configured.
+
+## ADR-036: Atlas Pulse command surfaces and stable operational state
+
+**Status:** Accepted
+
+Atlas Pulse V2 is an application-owned presentation preset, not a second source
+of operational truth. Semantic command-surface colors, spacing, shape, type,
+motion, and breakpoint policy live in the design-system layer. Reusable Atlas
+components receive display values and callbacks only. A pure dashboard adapter
+maps existing dashboard, tracking, active-trip, notification, authentication,
+and locale state into KPI, filter, inspector, and rail presentation models; it
+does not fetch data, infer lifecycle transitions, or fabricate missing values.
+
+Map lifecycle and operational interaction remain owned by the existing fleet
+map coordinator and adapter. The MapLibre subtree keeps a stable identity while
+polling diffs annotations by truck ID, reconciles selection, and updates the
+dock, inspector, route/trail/stops, and lower rail independently. Camera changes
+remain explicit: wheel zoom preserves follow, manual pan pauses it, and polling
+does not move a free-explore camera. Failed style resolution is evicted from the
+locale-aware cache so an explicit retry can recover without recreating the
+dashboard or silently looping.
+
+The dark preset is scoped to authenticated Owner and Operations command routes.
+Driver and ordinary CRUD/detail flows retain the established light preset.
+Later screens should adopt Atlas Pulse incrementally only when they are dense,
+live operational surfaces; they should reuse semantic tokens and primitives
+rather than duplicate dashboard styling. Directional layout follows the active
+locale, while Latin identifiers use isolated text direction. Motion uses the
+central motion policy and settles nonessential transitions immediately when the
+platform requests reduced motion.
+
+Intentionally deferred are a global dark-mode conversion, redesign of Driver or
+CRUD surfaces, new backend/dashboard contracts, new operational semantics,
+SignalR, and advanced analytics. Those changes require separate product and
+architecture decisions rather than visual-layer expansion.

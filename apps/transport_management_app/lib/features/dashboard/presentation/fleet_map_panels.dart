@@ -66,13 +66,19 @@ class _SelectedTruckCard extends StatelessWidget {
     required this.onClose,
     required this.onRecenter,
     required this.detail,
+    required this.operation,
     required this.loading,
+    this.onOpenTruck,
+    this.onOpenTrip,
   });
   final TrackedTruck position;
   final FleetTripDetail? detail;
+  final ActiveOperation? operation;
   final bool loading;
   final VoidCallback onClose;
   final VoidCallback onRecenter;
+  final VoidCallback? onOpenTruck;
+  final VoidCallback? onOpenTrip;
   @override
   Widget build(BuildContext context) => Card(
     elevation: 6,
@@ -135,10 +141,16 @@ class _SelectedTruckCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             Text(
-              '${context.l10n.activeTrip}: ${position.currentTripId ?? context.l10n.notAssigned}',
+              '${context.l10n.activeTrip}: ${operation?.tripNumber ?? (position.currentTripId == null ? context.l10n.notAssigned : context.l10n.notAvailable)}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            if (operation != null)
+              Text(
+                localizedStatus(context.l10n, operation!.operationalPhase),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             Text(
               '${context.l10n.lastUpdate}: ${_compactTimestamp(position.recordedAt)}',
               maxLines: 1,
@@ -147,18 +159,21 @@ class _SelectedTruckCard extends StatelessWidget {
             if (loading) const LinearProgressIndicator(),
             if (detail != null) ...[
               const Divider(),
-              Text(
-                key: const Key('fleet-route-progress'),
-                '${context.l10n.routeProgress}: ${detail!.displayedProgress.progressPercent?.toStringAsFixed(1) ?? '—'}%',
-              ),
-              Text(
-                '${context.l10n.remainingDistance}: ${((detail!.displayedProgress.remainingDistanceMeters ?? 0) / 1000).toStringAsFixed(1)} km',
-              ),
-              Text(
-                '${context.l10n.eta}: ${detail!.displayedProgress.estimatedArrivalAt ?? '—'}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              if (detail!.displayedProgress.progressPercent != null)
+                Text(
+                  key: const Key('fleet-route-progress'),
+                  '${context.l10n.routeProgress}: ${detail!.displayedProgress.progressPercent!.toStringAsFixed(1)}%',
+                ),
+              if (detail!.displayedProgress.remainingDistanceMeters != null)
+                Text(
+                  '${context.l10n.remainingDistance}: ${(detail!.displayedProgress.remainingDistanceMeters! / 1000).toStringAsFixed(1)} km',
+                ),
+              if (detail!.displayedProgress.estimatedArrivalAt != null)
+                Text(
+                  '${context.l10n.eta}: ${detail!.displayedProgress.estimatedArrivalAt}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               Text(
                 detail!.displayedProgress.isOffRoute == true
                     ? context.l10n.offRoute
@@ -166,18 +181,34 @@ class _SelectedTruckCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 8),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: FilledButton.tonalIcon(
-                key: const Key('fleet-map-recenter'),
-                onPressed: onRecenter,
-                icon: const Icon(Icons.center_focus_strong),
-                label: Text(
-                  detail == null
-                      ? context.l10n.recenter
-                      : context.l10n.backToTruck,
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              alignment: WrapAlignment.end,
+              children: [
+                FilledButton.tonalIcon(
+                  key: const Key('fleet-map-recenter'),
+                  onPressed: onRecenter,
+                  icon: const Icon(Icons.center_focus_strong),
+                  label: Text(
+                    detail == null
+                        ? context.l10n.recenter
+                        : context.l10n.backToTruck,
+                  ),
                 ),
-              ),
+                if (onOpenTruck != null)
+                  OutlinedButton(
+                    key: const Key('atlas-open-truck'),
+                    onPressed: onOpenTruck,
+                    child: Text(context.l10n.openTruck),
+                  ),
+                if (onOpenTrip != null)
+                  OutlinedButton(
+                    key: const Key('atlas-open-trip'),
+                    onPressed: onOpenTrip,
+                    child: Text(context.l10n.openTrip),
+                  ),
+              ],
             ),
           ],
         ),
@@ -215,11 +246,15 @@ class _FleetPanel extends StatefulWidget {
     required this.positions,
     required this.selectedTruckId,
     required this.onTruckSelected,
+    required this.filter,
+    required this.onFilterChanged,
   });
 
   final List<TrackedTruck> positions;
   final String? selectedTruckId;
   final ValueChanged<TrackedTruck> onTruckSelected;
+  final FleetViewFilter filter;
+  final ValueChanged<FleetViewFilter> onFilterChanged;
 
   @override
   State<_FleetPanel> createState() => _FleetPanelState();
@@ -265,9 +300,31 @@ class _FleetPanelState extends State<_FleetPanel> {
               ],
             ),
             if (_expanded)
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  key: const Key('atlas-fleet-filters'),
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsetsDirectional.symmetric(horizontal: 6),
+                  children: [
+                    for (final filter in FleetViewFilter.values)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 4),
+                        child: FilterChip(
+                          key: Key('atlas-filter-${filter.name}'),
+                          label: Text(_filterLabel(context, filter)),
+                          selected: widget.filter == filter,
+                          onSelected: (_) => widget.onFilterChanged(filter),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            if (_expanded)
               Expanded(
                 child: widget.positions.isEmpty
-                    ? Center(child: Text(context.l10n.noTrackedTrucks))
+                    ? Center(child: Text(context.l10n.filteredFleetEmpty))
                     : ListView.builder(
                         padding: const EdgeInsetsDirectional.only(bottom: 6),
                         itemCount: widget.positions.length,
@@ -309,6 +366,16 @@ class _FleetPanelState extends State<_FleetPanel> {
       ),
     );
   }
+
+  String _filterLabel(BuildContext context, FleetViewFilter filter) =>
+      switch (filter) {
+        FleetViewFilter.all => context.l10n.all,
+        FleetViewFilter.connected => context.l10n.filterConnected,
+        FleetViewFilter.moving => context.l10n.moving,
+        FleetViewFilter.stationary => context.l10n.stationary,
+        FleetViewFilter.offline => context.l10n.offline,
+        FleetViewFilter.attention => context.l10n.filterAttention,
+      };
 }
 
 class _MessageState extends StatelessWidget {

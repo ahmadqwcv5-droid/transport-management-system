@@ -8,10 +8,13 @@ import '../../../core/maps/locale_aware_map_style.dart';
 import '../../../core/maps/map_camera_movement_classifier.dart';
 import '../../../core/maps/map_interaction_controller.dart';
 import '../../../design_system/app_breakpoints.dart';
+import '../../../design_system/app_design_tokens.dart';
 import '../../../design_system/app_motion.dart';
 import '../../../l10n/l10n_extensions.dart';
 import '../../../shared/widgets/truck_avatar.dart';
+import '../domain/active_operation.dart';
 import '../domain/dashboard_models.dart';
+import 'atlas_dashboard_view_model.dart';
 import 'dashboard_controller.dart';
 import 'fleet_map_coordinator.dart';
 import 'maplibre_fleet_adapter.dart';
@@ -41,6 +44,13 @@ class FleetMap extends ConsumerStatefulWidget {
     this.mapBuilder,
     this.telemetry,
     this.height,
+    this.activeOperations = const [],
+    this.selectedTruckId,
+    this.selectionManagedExternally = false,
+    this.onSelectionChanged,
+    this.onOpenTruck,
+    this.onOpenTrip,
+    this.onPointerHoverChanged,
     super.key,
   });
 
@@ -65,6 +75,13 @@ class FleetMap extends ConsumerStatefulWidget {
   final FleetMapBuilder? mapBuilder;
   final MapOperationTelemetry? telemetry;
   final double? height;
+  final List<ActiveOperation> activeOperations;
+  final String? selectedTruckId;
+  final bool selectionManagedExternally;
+  final ValueChanged<String?>? onSelectionChanged;
+  final ValueChanged<String>? onOpenTruck;
+  final ValueChanged<String>? onOpenTrip;
+  final ValueChanged<bool>? onPointerHoverChanged;
 
   @override
   ConsumerState<FleetMap> createState() => _FleetMapState();
@@ -75,8 +92,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   Timer? _loadingTimer;
   int _attempt = 0;
   int _rendererGeneration = 0;
-  bool _onlineOnly = false;
-  bool _movingOnly = false;
+  FleetViewFilter _filter = FleetViewFilter.all;
   bool _showTrail = true;
   String? _selectedTruckId;
   FleetTripDetail? _tripDetail;
@@ -93,14 +109,30 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   bool _fullScreen = false;
 
   List<TrackedTruck> get _visiblePositions => widget.positions.where((item) {
-    if (_onlineOnly && !item.isOnline) return false;
-    if (_movingOnly && item.speed <= 0) return false;
-    return true;
+    return switch (_filter) {
+      FleetViewFilter.all => true,
+      FleetViewFilter.connected => item.isOnline,
+      FleetViewFilter.moving => item.isOnline && item.speed > .5,
+      FleetViewFilter.stationary => item.isOnline && item.speed <= .5,
+      FleetViewFilter.offline => !item.isOnline,
+      FleetViewFilter.attention => widget.activeOperations.any(
+        (operation) =>
+            operation.truckId == item.truckId && operation.needsAttention,
+      ),
+    };
   }).toList();
 
   TrackedTruck? get _selected => widget.positions
       .where((item) => item.truckId == _selectedTruckId)
       .firstOrNull;
+
+  ActiveOperation? get _selectedOperation {
+    final truckId = _selectedTruckId;
+    if (truckId == null) return null;
+    return widget.activeOperations
+        .where((operation) => operation.truckId == truckId)
+        .firstOrNull;
+  }
 
   int get _outsideAreaCount {
     final area = widget.operationalArea;
@@ -127,6 +159,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   @override
   void initState() {
     super.initState();
+    _selectedTruckId = widget.selectedTruckId;
     _camera = MapInteractionController();
     _mode = _configuredStyle.trim().isEmpty
         ? FleetMapMode.unconfigured
@@ -166,6 +199,22 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   @override
   void didUpdateWidget(covariant FleetMap oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.selectionManagedExternally &&
+        widget.selectedTruckId != oldWidget.selectedTruckId &&
+        widget.selectedTruckId != _selectedTruckId) {
+      _selectedTruckId = widget.selectedTruckId;
+      _tripDetail = null;
+      final externallySelected = _selected;
+      _loadingDetail = externallySelected?.currentTripId != null;
+      if (externallySelected != null) {
+        _cameraRevision++;
+        _cameraRequest = FleetCameraRequest.selection;
+        _camera.followVehicle();
+        if (externallySelected.currentTripId != null) {
+          _queueDetailRefresh(externallySelected, fitCamera: true);
+        }
+      }
+    }
     final oldStyle = oldWidget.styleUrlOverride ?? FleetMap.configuredStyleUrl;
     if (oldStyle != _configuredStyle) {
       _resolvedStyle = null;
@@ -213,50 +262,50 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   }
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: SizedBox(
-      height: _fullScreen
-          ? MediaQuery.sizeOf(context).height - 96
-          : (widget.height ?? 430),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsetsDirectional.all(12),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  context.l10n.fleetMap,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                FilterChip(
-                  label: Text(context.l10n.onlineOnly),
-                  selected: _onlineOnly,
-                  onSelected: (value) => _setFilter(onlineOnly: value),
-                ),
-                FilterChip(
-                  label: Text(context.l10n.movingOnly),
-                  selected: _movingOnly,
-                  onSelected: (value) => _setFilter(movingOnly: value),
-                ),
-                IconButton(
-                  key: const Key('fleet-map-full-screen'),
-                  tooltip: _fullScreen
-                      ? context.l10n.exitFullScreen
-                      : context.l10n.enterFullScreen,
-                  onPressed: () => setState(() => _fullScreen = !_fullScreen),
-                  icon: Icon(
-                    _fullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
+  Widget build(BuildContext context) => MouseRegion(
+    onEnter: (_) => widget.onPointerHoverChanged?.call(true),
+    onExit: (_) => widget.onPointerHoverChanged?.call(false),
+    child: Card(
+      child: SizedBox(
+        height: _fullScreen
+            ? MediaQuery.sizeOf(context).height - 96
+            : (widget.height ?? 430),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.all(12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    context.l10n.fleetMap,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                ),
-              ],
+                  Text(
+                    context.l10n.mapStage,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: context.tokens.commandTextMuted,
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('fleet-map-full-screen'),
+                    tooltip: _fullScreen
+                        ? context.l10n.exitFullScreen
+                        : context.l10n.enterFullScreen,
+                    onPressed: () => setState(() => _fullScreen = !_fullScreen),
+                    icon: Icon(
+                      _fullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(child: _buildState(context)),
-        ],
+            Expanded(child: _buildState(context)),
+          ],
+        ),
       ),
     ),
   );
@@ -305,9 +354,17 @@ class _FleetMapState extends ConsumerState<FleetMap> {
             child: _SelectedTruckCard(
               position: _selected!,
               detail: _tripDetail,
+              operation: _selectedOperation,
               loading: _loadingDetail,
               onClose: _clearSelection,
               onRecenter: _recenter,
+              onOpenTruck: widget.onOpenTruck == null
+                  ? null
+                  : () => widget.onOpenTruck!(_selected!.truckId),
+              onOpenTrip:
+                  _selected!.currentTripId == null || widget.onOpenTrip == null
+                  ? null
+                  : () => widget.onOpenTrip!(_selected!.currentTripId!),
             ),
           ),
       ],
@@ -348,7 +405,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
             cameraRevision: _cameraRevision,
             cameraRequest: _cameraRequest,
             onManualCameraInteraction: _pauseFollow,
-            onManualCameraZoom: _camera.userZoom,
+            onManualCameraZoom: _recordZoom,
             thumbnailLoader: ref
                 .read(dashboardRepositoryProvider)
                 .authenticatedImage,
@@ -406,6 +463,8 @@ class _FleetMapState extends ConsumerState<FleetMap> {
               positions: _visiblePositions,
               selectedTruckId: _selectedTruckId,
               onTruckSelected: _selectTruck,
+              filter: _filter,
+              onFilterChanged: _setFilter,
             ),
           ),
         if (_mode == FleetMapMode.loaded && _annotationWarning)
@@ -440,9 +499,17 @@ class _FleetMapState extends ConsumerState<FleetMap> {
             child: _SelectedTruckCard(
               position: _selected!,
               detail: _tripDetail,
+              operation: _selectedOperation,
               loading: _loadingDetail,
               onClose: _clearSelection,
               onRecenter: _recenter,
+              onOpenTruck: widget.onOpenTruck == null
+                  ? null
+                  : () => widget.onOpenTruck!(_selected!.truckId),
+              onOpenTrip:
+                  _selected!.currentTripId == null || widget.onOpenTrip == null
+                  ? null
+                  : () => widget.onOpenTrip!(_selected!.currentTripId!),
             ),
           ),
         if (_selected != null && _mode == FleetMapMode.loaded)
@@ -510,6 +577,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
       _cameraRequest = FleetCameraRequest.selection;
       _camera.followVehicle();
     });
+    widget.onSelectionChanged?.call(position.truckId);
     if (position.currentTripId == null) return;
     _queueDetailRefresh(position, fitCamera: true);
   }
@@ -555,10 +623,9 @@ class _FleetMapState extends ConsumerState<FleetMap> {
     }
   }
 
-  void _setFilter({bool? onlineOnly, bool? movingOnly}) {
+  void _setFilter(FleetViewFilter filter) {
     setState(() {
-      if (onlineOnly != null) _onlineOnly = onlineOnly;
-      if (movingOnly != null) _movingOnly = movingOnly;
+      _filter = filter;
       _cameraRevision++;
       _cameraRequest = FleetCameraRequest.filteredFleet;
     });
@@ -572,6 +639,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
       _loadingDetail = false;
       _camera.userPan();
     });
+    widget.onSelectionChanged?.call(null);
   }
 
   void _showFleetOverview() {
@@ -600,7 +668,17 @@ class _FleetMapState extends ConsumerState<FleetMap> {
 
   void _pauseFollow() {
     if (_camera.mode == FleetInteractionMode.freeExplore) return;
+    if (_camera.followsVehicle) {
+      widget.telemetry?.manualPanFollowPauses++;
+    }
     setState(_camera.userPan);
+  }
+
+  void _recordZoom() {
+    if (_camera.followsVehicle) {
+      widget.telemetry?.followPreservingZooms++;
+    }
+    _camera.userZoom();
   }
 
   void _armTimeout() {
@@ -611,6 +689,10 @@ class _FleetMapState extends ConsumerState<FleetMap> {
 
   void _retry() {
     _loadingTimer?.cancel();
+    if (_resolvedStyle == null && widget.mapBuilder == null) {
+      _resolveStyle(_styleLocale ?? 'en');
+      return;
+    }
     setState(() {
       _rendererGeneration++;
       _attempt++;

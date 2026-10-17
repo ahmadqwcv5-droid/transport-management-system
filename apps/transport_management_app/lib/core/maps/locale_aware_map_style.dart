@@ -10,17 +10,36 @@ final class LocaleAwareMapStyle {
 
   static final Map<String, Future<String>> _cache = {};
 
-  static Future<String> resolve(String style, String languageCode) {
+  static Future<String> resolve(
+    String style,
+    String languageCode, {
+    Future<dynamic> Function(String url)? loader,
+  }) {
     final locale = languageCode.toLowerCase().startsWith('ar') ? 'ar' : 'en';
-    return _cache.putIfAbsent('$locale\u0000$style', () async {
+    final key = '$locale\u0000$style';
+    final cached = _cache[key];
+    if (cached != null) return cached;
+    final pending = () async {
       final dynamic document = style.trimLeft().startsWith('{')
           ? jsonDecode(style)
+          : loader != null
+          ? await loader(style)
           : (await Dio().get<dynamic>(style)).data;
       final map = document is String
           ? jsonDecode(document) as Map<String, dynamic>
           : Map<String, dynamic>.from(document as Map);
       return jsonEncode(transform(map, locale));
+    }();
+    late final Future<String> retryable;
+    retryable = pending.onError((error, stackTrace) {
+      if (identical(_cache[key], retryable)) _cache.remove(key);
+      Error.throwWithStackTrace(
+        error ?? StateError('Map style loading failed without an error.'),
+        stackTrace,
+      );
     });
+    _cache[key] = retryable;
+    return retryable;
   }
 
   static Map<String, dynamic> transform(
