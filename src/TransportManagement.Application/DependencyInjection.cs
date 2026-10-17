@@ -43,6 +43,7 @@ public static class DependencyInjection
         .AddScoped<NotificationService>()
         .AddScoped<DriverDepartureService>()
         .AddScoped<DriverWorkflowService>()
+        .AddScoped<DriverTripHistoryService>()
         .AddScoped<CompanyUserService>()
         .AddScoped<MembershipService>()
         .AddScoped<DashboardService>()

@@ -4495,6 +4495,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Driver'**
   String get roleDriver;
+
+  /// No description provided for @myTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'My trips'**
+  String get myTrips;
+
+  /// No description provided for @myTruck.
+  ///
+  /// In en, this message translates to:
+  /// **'My truck'**
+  String get myTruck;
+
+  /// No description provided for @todayWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get todayWork;
+
+  /// No description provided for @driverTripHistorySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Current, upcoming, completed, and cancelled work assigned to you'**
+  String get driverTripHistorySubtitle;
+
+  /// No description provided for @historyCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get historyCurrent;
+
+  /// No description provided for @historyUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get historyUpcoming;
+
+  /// No description provided for @noTripsInCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'No trips in this category'**
+  String get noTripsInCategory;
+
+  /// No description provided for @filterByDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by date'**
+  String get filterByDate;
+
+  /// No description provided for @clearDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear date range'**
+  String get clearDateRange;
+
+  /// No description provided for @tripRouteAndTrail.
+  ///
+  /// In en, this message translates to:
+  /// **'Route and authorized trail'**
+  String get tripRouteAndTrail;
+
+  /// No description provided for @routeAndTrailUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Route or tracking history is not available for this trip.'**
+  String get routeAndTrailUnavailable;
+
+  /// No description provided for @trailDownsampled.
+  ///
+  /// In en, this message translates to:
+  /// **'A bounded trail is shown for performance.'**
+  String get trailDownsampled;
+
+  /// No description provided for @tripParticipation.
+  ///
+  /// In en, this message translates to:
+  /// **'Your participation'**
+  String get tripParticipation;
+
+  /// No description provided for @cargoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Cargo'**
+  String get cargoDescription;
+
+  /// No description provided for @plannedDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned distance'**
+  String get plannedDistance;
+
+  /// No description provided for @plannedDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned duration'**
+  String get plannedDuration;
+
+  /// No description provided for @tripDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip details'**
+  String get tripDetails;
+
+  /// No description provided for @kilometersValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} km'**
+  String kilometersValue(String value);
+
+  /// No description provided for @minutesValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} min'**
+  String minutesValue(int value);
+
+  /// No description provided for @enterFullScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Full screen'**
+  String get enterFullScreen;
+
+  /// No description provided for @exitFullScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit full screen'**
+  String get exitFullScreen;
+
+  /// No description provided for @collapseFleetList.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse fleet list'**
+  String get collapseFleetList;
+
+  /// No description provided for @expandFleetList.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand fleet list'**
+  String get expandFleetList;
 }
 
 class _AppLocalizationsDelegate

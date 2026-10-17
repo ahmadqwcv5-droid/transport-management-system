@@ -7,6 +7,8 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import '../../../core/maps/locale_aware_map_style.dart';
 import '../../../core/maps/map_camera_movement_classifier.dart';
 import '../../../core/maps/map_interaction_controller.dart';
+import '../../../design_system/app_breakpoints.dart';
+import '../../../design_system/app_motion.dart';
 import '../../../l10n/l10n_extensions.dart';
 import '../../../shared/widgets/truck_avatar.dart';
 import '../domain/dashboard_models.dart';
@@ -38,6 +40,7 @@ class FleetMap extends ConsumerStatefulWidget {
     this.loadingTimeoutOverride,
     this.mapBuilder,
     this.telemetry,
+    this.height,
     super.key,
   });
 
@@ -61,6 +64,7 @@ class FleetMap extends ConsumerStatefulWidget {
   final Duration? loadingTimeoutOverride;
   final FleetMapBuilder? mapBuilder;
   final MapOperationTelemetry? telemetry;
+  final double? height;
 
   @override
   ConsumerState<FleetMap> createState() => _FleetMapState();
@@ -86,6 +90,7 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   String? _styleLocale;
   int _styleResolution = 0;
   bool _annotationWarning = false;
+  bool _fullScreen = false;
 
   List<TrackedTruck> get _visiblePositions => widget.positions.where((item) {
     if (_onlineOnly && !item.isOnline) return false;
@@ -210,30 +215,42 @@ class _FleetMapState extends ConsumerState<FleetMap> {
   @override
   Widget build(BuildContext context) => Card(
     child: SizedBox(
-      height: 430,
+      height: _fullScreen
+          ? MediaQuery.sizeOf(context).height - 96
+          : (widget.height ?? 430),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
             padding: const EdgeInsetsDirectional.all(12),
-            child: Row(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Expanded(
-                  child: Text(
-                    context.l10n.fleetMap,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                Text(
+                  context.l10n.fleetMap,
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
                 FilterChip(
                   label: Text(context.l10n.onlineOnly),
                   selected: _onlineOnly,
                   onSelected: (value) => _setFilter(onlineOnly: value),
                 ),
-                const SizedBox(width: 8),
                 FilterChip(
                   label: Text(context.l10n.movingOnly),
                   selected: _movingOnly,
                   onSelected: (value) => _setFilter(movingOnly: value),
+                ),
+                IconButton(
+                  key: const Key('fleet-map-full-screen'),
+                  tooltip: _fullScreen
+                      ? context.l10n.exitFullScreen
+                      : context.l10n.enterFullScreen,
+                  onPressed: () => setState(() => _fullScreen = !_fullScreen),
+                  icon: Icon(
+                    _fullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                  ),
                 ),
               ],
             ),

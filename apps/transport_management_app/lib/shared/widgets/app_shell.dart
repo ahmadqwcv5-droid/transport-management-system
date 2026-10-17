@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../design_system/app_breakpoints.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../l10n/l10n_extensions.dart';
 import '../../features/live_operations/presentation/live_operations_controller.dart';
@@ -23,7 +24,13 @@ class AppShell extends ConsumerWidget {
     '/settings',
     '/company-users',
   ];
-  static const _driverPaths = ['/my-trip', '/notifications', '/settings'];
+  static const _driverPaths = [
+    '/my-trip',
+    '/my-trips',
+    '/my-truck',
+    '/notifications',
+    '/settings',
+  ];
   List<NavigationDestination> _managerDestinations(BuildContext context) => [
     NavigationDestination(
       icon: Icon(Icons.dashboard_outlined, key: Key('nav-dashboard')),
@@ -67,9 +74,19 @@ class AppShell extends ConsumerWidget {
 
   List<NavigationDestination> _driverDestinations(BuildContext context) => [
     NavigationDestination(
-      icon: const Icon(Icons.route_outlined, key: Key('nav-my-trip')),
-      selectedIcon: const Icon(Icons.route),
-      label: context.l10n.myTrip,
+      icon: const Icon(Icons.today_outlined, key: Key('nav-my-trip')),
+      selectedIcon: const Icon(Icons.today),
+      label: context.l10n.todayWork,
+    ),
+    NavigationDestination(
+      icon: const Icon(Icons.history_outlined, key: Key('nav-my-trips')),
+      selectedIcon: const Icon(Icons.history),
+      label: context.l10n.myTrips,
+    ),
+    NavigationDestination(
+      icon: const Icon(Icons.local_shipping_outlined, key: Key('nav-my-truck')),
+      selectedIcon: const Icon(Icons.local_shipping),
+      label: context.l10n.myTruck,
     ),
     NavigationDestination(
       icon: const Icon(
@@ -89,26 +106,32 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => LayoutBuilder(
     builder: (context, constraints) {
-      final wide = constraints.maxWidth >= 720;
+      final compact = AppBreakpoints.isCompact(context);
       final authenticatedUser = ref.watch(authControllerProvider).value?.user;
       final isManager =
           authenticatedUser?.hasRole('Owner') == true ||
           authenticatedUser?.hasRole('Operations') == true;
-      final isDriverOnly =
-          authenticatedUser?.hasRole('Driver') == true && !isManager;
+      final hasDriver = authenticatedUser?.hasRole('Driver') == true;
+      final isDriverOnly = hasDriver && !isManager;
       final paths = isDriverOnly
           ? _driverPaths
           : isManager
-          ? _managerPaths
+          ? [..._managerPaths, if (hasDriver) ..._driverPaths.take(3)]
           : _managerPaths.take(6).toList();
       final destinations = isDriverOnly
           ? _driverDestinations(context)
           : isManager
-          ? _managerDestinations(context)
+          ? [
+              ..._managerDestinations(context),
+              if (hasDriver) ..._driverDestinations(context).take(3),
+            ]
           : _managerDestinations(context).take(6).toList();
-      final inferredIndex = selectedIndex < 0
-          ? paths.indexOf('/notifications')
-          : selectedIndex;
+      final currentPath = _currentPath(context);
+      final pathIndex = paths.indexWhere(
+        (path) =>
+            currentPath == path || currentPath?.startsWith('$path/') == true,
+      );
+      final inferredIndex = pathIndex >= 0 ? pathIndex : selectedIndex;
       final safeIndex = inferredIndex < 0 || inferredIndex >= paths.length
           ? 0
           : inferredIndex;
@@ -135,6 +158,25 @@ class AppShell extends ConsumerWidget {
         child: Stack(
           children: [
             Scaffold(
+              drawer: compact && !isDriverOnly
+                  ? NavigationDrawer(
+                      selectedIndex: safeIndex,
+                      onDestinationSelected: (index) {
+                        Navigator.of(context).pop();
+                        context.go(paths[index]);
+                      },
+                      children: [
+                        const SizedBox(height: 12),
+                        ...destinations.map(
+                          (item) => NavigationDrawerDestination(
+                            icon: item.icon,
+                            selectedIcon: item.selectedIcon,
+                            label: Text(item.label),
+                          ),
+                        ),
+                      ],
+                    )
+                  : null,
               appBar: AppBar(
                 title: Text(context.l10n.appTitle),
                 actions: [
@@ -149,13 +191,17 @@ class AppShell extends ConsumerWidget {
                     ),
                   ),
                   if (authenticatedUser != null)
-                    AccountIdentityControl(user: authenticatedUser, wide: wide),
+                    AccountIdentityControl(
+                      user: authenticatedUser,
+                      wide: !compact,
+                    ),
                 ],
               ),
-              body: wide
+              body: !compact
                   ? Row(
                       children: [
                         NavigationRail(
+                          scrollable: true,
                           selectedIndex: safeIndex,
                           onDestinationSelected: (index) =>
                               context.go(paths[index]),
@@ -175,7 +221,7 @@ class AppShell extends ConsumerWidget {
                       ],
                     )
                   : child,
-              bottomNavigationBar: wide
+              bottomNavigationBar: !compact || !isDriverOnly
                   ? null
                   : NavigationBar(
                       selectedIndex: safeIndex,
@@ -199,6 +245,16 @@ class AppShell extends ConsumerWidget {
       );
     },
   );
+
+  String? _currentPath(BuildContext context) {
+    try {
+      return GoRouterState.of(context).uri.path;
+    } on GoError {
+      // AppShell is mounted below GoRouter in production. A null path keeps
+      // standalone widget harnesses and embedders on their supplied index.
+      return null;
+    }
+  }
 }
 
 class _OperationalAlertCard extends ConsumerWidget {

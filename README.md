@@ -38,6 +38,14 @@ Driver–Truck session after delivery, adds self-service password change with
 refresh-token revocation, and standardizes responsive two-second live updates
 and shared map interaction behavior.
 
+Sprint 4.4 introduces a token-driven, locally fonted product design system, a
+map-first responsive operations dashboard, role-aware Driver navigation, and a
+tenant-safe **My Trips** history/detail experience. It also formalizes
+Development, Demo, Pilot, and Production capabilities so Pilot/Production do
+not map simulator mutation endpoints or include simulator controls in the Web
+bundle. See [the design-system guide](docs/design-system.md) and
+[Sprint 4.4 evidence](docs/evidence/sprint4_4/README.md).
+
 ## Architecture
 
 The backend is a modular monolith using Clean Architecture with lightweight DDD and CQRS principles:
@@ -167,6 +175,35 @@ trip, driver, truck, and telemetry rows remain unchanged; sessions are created
 only by a future Driver departure or audited manager handoff.
 
 ## Run Flutter Web
+
+### Sprint 4.4 build profiles
+
+Development keeps simulator controls when explicitly requested:
+
+```bash
+cd apps/transport_management_app
+../../.tooling/flutter/bin/flutter run -d web-server --web-port=3000 \
+  --dart-define=APP_PROFILE=development \
+  --dart-define=ENABLE_SIMULATOR_CONTROLS=true \
+  --dart-define=API_BASE_URL=http://localhost:5080 \
+  --dart-define=MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty
+```
+
+Pilot and Production builds must use a correspondingly restricted backend
+profile. `ENABLE_SIMULATOR_CONTROLS=true` cannot override either restricted
+profile:
+
+```bash
+../../.tooling/flutter/bin/flutter build web --release \
+  --dart-define=APP_PROFILE=pilot \
+  --dart-define=API_BASE_URL=https://pilot-api.example.com \
+  --dart-define=MAP_STYLE_URL=https://your-provider.example/style.json
+```
+
+Demo is explicit opt-in on both client and server. Do not describe Pilot or
+Production as real-GPS capable unless a real tracking provider is configured.
+Drivers open **My trips** at `/my-trips`; list responses are paginated and
+geometry-free, while route/trail data is loaded only for an authorized detail.
 
 ```bash
 cd apps/transport_management_app

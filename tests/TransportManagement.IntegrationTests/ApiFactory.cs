@@ -22,6 +22,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         $"tms-photo-tests-{Guid.NewGuid():N}");
     private readonly bool _useFailingRoutingProvider;
     private readonly bool _simulatorEnabled = true;
+    private readonly string _environmentName = "Testing";
+    private readonly string? _productProfile;
     public static readonly Guid CompanyAId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     public static readonly Guid CompanyBId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     public const string Password = "DemoPassword!123";
@@ -30,15 +32,21 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
     }
 
-    internal ApiFactory(bool useFailingRoutingProvider, bool simulatorEnabled = true)
+    internal ApiFactory(
+        bool useFailingRoutingProvider,
+        bool simulatorEnabled = true,
+        string environmentName = "Testing",
+        string? productProfile = null)
     {
         _useFailingRoutingProvider = useFailingRoutingProvider;
         _simulatorEnabled = simulatorEnabled;
+        _environmentName = environmentName;
+        _productProfile = productProfile;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Testing");
+        builder.UseEnvironment(_environmentName);
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
             new Dictionary<string, string?>
             {
@@ -54,6 +62,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 , ["Geofence:MinimumDwellSeconds"] = "0"
                 , ["Geofence:MinimumSamples"] = "2"
                 , ["TruckPhotos:RootPath"] = _photoRoot
+                , ["Product:Profile"] = _productProfile
+                , ["Frontend:PublicBaseUrl"] = _environmentName == "Production"
+                    ? "https://tms.example.test"
+                    : "http://localhost:3000"
             }));
         builder.ConfigureServices(services =>
         {

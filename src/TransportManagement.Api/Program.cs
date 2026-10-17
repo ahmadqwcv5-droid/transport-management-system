@@ -9,8 +9,16 @@ using TransportManagement.Api.Infrastructure;
 using TransportManagement.Application;
 using TransportManagement.Infrastructure;
 using TransportManagement.Infrastructure.Persistence;
+using TransportManagement.Application.Capabilities;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var productCapabilities = ProductCapabilities.Resolve(
+    builder.Environment.EnvironmentName,
+    builder.Configuration["Product:Profile"],
+    builder.Configuration.GetValue<bool>("Capabilities:DemoSimulatorEnabled"),
+    builder.Configuration.GetValue<bool>("Capabilities:DemoSeedEnabled"));
+builder.Services.AddSingleton(productCapabilities);
 
 builder.Host.UseSerilog((context, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
@@ -18,8 +26,10 @@ builder.Host.UseSerilog((context, configuration) => configuration
     .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture));
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
-builder.Services.AddControllers().AddJsonOptions(options =>
+builder.Services.AddInfrastructure(
+    builder.Configuration, builder.Environment, productCapabilities);
+builder.Services.AddControllers(options => options.Conventions.Add(
+    new CapabilityEndpointConvention(productCapabilities))).AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
@@ -68,9 +78,12 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference(options => options.WithTitle("Transport Management API"));
-    await DevelopmentDataSeeder.SeedAsync(app.Services, app.Configuration, app.Lifetime.ApplicationStopping);
+    if (productCapabilities.DemoSeed)
+        await DevelopmentDataSeeder.SeedAsync(app.Services, app.Configuration,
+            app.Lifetime.ApplicationStopping);
 }
 else if (app.Environment.IsEnvironment("Testing")
+    && productCapabilities.DemoSeed
     && app.Configuration.GetValue<bool>("AcceptanceEnvironment:Enabled"))
 {
     await DevelopmentDataSeeder.SeedAsync(app.Services, app.Configuration, app.Lifetime.ApplicationStopping);

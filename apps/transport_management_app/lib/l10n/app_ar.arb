@@ -99,659 +99,900 @@
   "edit": "تعديل",
   "deactivate": "تعطيل",
   "active": "نشط",
-  "inactive": "غير نشط"
-  ,"createClient": "إنشاء عميل"
-  ,"editClient": "تعديل العميل"
-  ,"createTruck": "إنشاء شاحنة"
-  ,"editTruck": "تعديل الشاحنة"
-  ,"createDriver": "إنشاء سائق"
-  ,"editDriver": "تعديل السائق"
-  ,"createTrip": "إنشاء رحلة"
-  ,"editDraftTrip": "تعديل مسودة الرحلة"
-  ,"editDraft": "تعديل المسودة"
-  ,"setAvailable": "تعيين كمتاح"
-  ,"setUnavailable": "تعيين كغير متاح"
-  ,"setMaintenance": "تعيين للصيانة"
-  ,"status": "الحالة"
-  ,"notes": "ملاحظات"
-  ,"license": "الرخصة"
-  ,"planned": "الموعد المخطط"
-  ,"client": "العميل"
-  ,"truck": "الشاحنة"
-  ,"unknownClient": "عميل غير معروف"
-  ,"unknown": "غير معروف"
-  ,"yes": "نعم"
-  ,"no": "لا"
-  ,"validYear": "أدخل سنة صحيحة."
-  ,"validDate": "أدخل تاريخًا صحيحًا."
-  ,"validPrice": "أدخل سعرًا صحيحًا."
-  ,"savedSuccessfully": "تم الحفظ بنجاح."
-  ,"clientDeactivated": "تم تعطيل العميل."
-  ,"tripStatusUpdated": "تم تحديث حالة الرحلة."
-  ,"resourcesAssigned": "تم تعيين الشاحنة والسائق."
-  ,"tripNotFound": "لم يتم العثور على الرحلة."
-  ,"backToTrips": "العودة إلى الرحلات"
-  ,"assignResources": "تعيين الموارد"
-  ,"authenticationFailed": "البريد الإلكتروني أو كلمة المرور غير صحيحة."
-  ,"mapNotConfigured": "نمط الخريطة غير مهيأ. أضف MAP_STYLE_URL لاستخدام الخريطة الجغرافية."
-  ,"loadingMap": "جارٍ تحميل نمط الخريطة…"
-  ,"mapStyleLoaded": "الخريطة جاهزة (تم تحميل النمط)"
-  ,"mapFailed": "تعذر تحميل نمط الخريطة. يمكنك إعادة المحاولة أو استخدام عرض التتبع المبسط."
-  ,"retryMap": "إعادة تحميل الخريطة"
-  ,"useFallback": "استخدام العرض المبسط"
-  ,"fallbackMode": "عرض تتبع مبسط — ليس خريطة جغرافية"
-  ,"step": "خطوة"
-  ,"simulationSpeed": "سرعة المحاكاة"
-  ,"applySpeed": "تطبيق السرعة"
-  ,"selectTruck": "اختيار الشاحنة"
-  ,"setOnline": "تعيين كمتصلة"
-  ,"setOffline": "تعيين كغير متصلة"
-  ,"simulatorCommandSucceeded": "تم تنفيذ أمر المحاكي."
-  ,"planTrip": "تخطيط رحلة"
-  ,"pickup": "الاستلام"
-  ,"delivery": "التسليم"
-  ,"locationName": "اسم الموقع"
-  ,"searchLocation": "البحث عن موقع"
-  ,"searchResults": "نتائج المواقع"
-  ,"noLocationResults": "لم يتم العثور على مواقع مطابقة. يمكنك إدخال الإحداثيات يدوياً."
-  ,"invalidCoordinate": "أدخل إحداثياً صالحاً."
-  ,"routePreview": "معاينة المسار"
-  ,"calculateRoute": "حساب المسار"
-  ,"calculatingRoute": "جارٍ حساب المسار…"
-  ,"calculateRouteHint": "اختر موقعي الاستلام والتسليم ثم احسب مسار الطريق."
-  ,"routeProviderUnavailable": "تعذر حساب المسار. تحقق من مزود التوجيه ثم حاول مجدداً."
-  ,"saveTrip": "حفظ الرحلة"
-  ,"onlineOnly": "المتصلة فقط"
-  ,"movingOnly": "المتحركة فقط"
-  ,"routeProgress": "تقدم المسار"
-  ,"remainingDistance": "المسافة المتبقية"
-  ,"eta": "وقت الوصول المتوقع"
-  ,"offRoute": "خارج المسار"
-  ,"onRoute": "على المسار"
-  ,"legacyTripRouteWarning": "تحتوي هذه الرحلة القديمة على أسماء المواقع فقط. اختر موقعي الاستلام والتسليم قبل الإسناد."
-  ,"routeDistance": "مسافة المسار"
-  ,"routeDuration": "المدة المقدرة"
-  ,"routeProvider": "مزود التوجيه"
-  ,"selectOnMap": "اختيار من الخريطة"
-  ,"tapMapToSelect": "اضغط على الخريطة لاختيار هذا الموقع"
-  ,"moving": "متحركة"
-  ,"stationary": "متوقفة"
-  ,"recenter": "إعادة التوسيط"
-  ,"fitRoute": "ملاءمة المسار"
-  ,"fleetList": "الأسطول"
-  ,"plannedRoute": "المسار المخطط"
-  ,"travelledTrail": "المسار المقطوع"
-  ,"enRouteToPickup": "في الطريق إلى الاستلام"
-  ,"atPickup": "عند موقع الاستلام"
-  ,"previewApproach": "معاينة المسار إلى الاستلام"
-  ,"dispatchToPickup": "إرسال إلى موقع الاستلام"
-  ,"confirmPickupArrival": "تأكيد الوصول إلى الاستلام"
-  ,"alreadyAtPickup": "الشاحنة موجودة بالفعل ضمن نطاق موقع الاستلام."
-  ,"approachDistance": "مسافة الوصول إلى الاستلام"
-  ,"approachDuration": "مدة الوصول إلى الاستلام"
-  ,"dispatchStarted": "تم إرسال الشاحنة إلى موقع الاستلام."
-  ,"truckPositionRequired": "سجّل موقع الشاحنة الحالي قبل الإرسال."
-  ,"truckPositionStale": "موقع الشاحنة قديم. حدّث التتبع ثم حاول مرة أخرى."
-  ,"truckOfflineForDispatch": "يجب أن تكون الشاحنة متصلة قبل الإرسال."
-  ,"repositioningRouteRequired": "عاين مساراً حديثاً إلى الاستلام قبل الإرسال."
-  ,"repositioningRouteStale": "تحركت الشاحنة بعد المعاينة. احسب المسار مرة أخرى."
-  ,"truckNotAtPickup": "لم تصل الشاحنة إلى نطاق موقع الاستلام بعد."
-  ,"approachRoute": "المسار إلى الاستلام"
-  ,"cargoRoute": "مسار الحمولة"
-  ,"proposed": "مقترح"
-  ,"expired": "منتهي الصلاحية"
-  ,"confirmLocation": "تأكيد الموقع"
-  ,"setSimulatedLocation": "تعيين موقع محاكى"
-  ,"moveSimulatedTruck": "نقل الشاحنة المحاكاة"
-  ,"refreshLocation": "تحديث الموقع نفسه"
-  ,"noLocation": "لا يوجد موقع"
-  ,"currentLocation": "حالي"
-  ,"staleLocation": "قديم"
-  ,"noActiveTrucks": "لا توجد شاحنات نشطة متاحة."
-  ,"noLocationHelp": "لم ترسل هذه الشاحنة موقعاً بعد. عيّن موقعاً محاكى لإظهارها على الخريطة."
-  ,"currentLocationHelp": "موقع GPS المحاكى حديث وتحافظ عليه نبضات دورية محدودة."
-  ,"staleLocationHelp": "حدّث الإحداثيات نفسها أو اختر موقعاً محاكى جديداً قبل الإرسال."
-  ,"offlineLocationHelp": "هذه الشاحنة غير متصلة صراحةً. عيّنها كمتصلة قبل التحديث أو الإرسال."
-  ,"locationAgeSeconds": "آخر تحديث منذ {seconds} ثانية"
-  ,"@locationAgeSeconds": {"placeholders": {"seconds": {"type": "int"}}}
-  ,"locationForTruck": "الموقع المحاكى للشاحنة {plateNumber}"
-  ,"@locationForTruck": {"placeholders": {"plateNumber": {"type": "String"}}}
-  ,"fixTruckLocation": "تصحيح موقع الشاحنة"
-  ,"locationCorrectedRetry": "تم تحديث موقع الشاحنة. أعد معاينة المسار عندما تكون جاهزاً."
-  ,"pickupMarker": "علامة الاستلام"
-  ,"deliveryMarker": "علامة التسليم"
-  ,"tripTabActive": "نشطة"
-  ,"tripTabPlanned": "مخططة"
-  ,"tripTabCompleted": "مكتملة"
-  ,"tripTabCancelled": "ملغاة"
-  ,"tripTabArchived": "مؤرشفة"
-  ,"searchTrips": "ابحث برقم الرحلة أو العميل أو الموقع أو اللوحة"
-  ,"tripFilters": "مرشحات الرحلات"
-  ,"clearFilters": "مسح المرشحات"
-  ,"previousPage": "الصفحة السابقة"
-  ,"nextPage": "الصفحة التالية"
-  ,"pageOf": "الصفحة {page} من {pages} · {total} رحلة"
-  ,"@pageOf": {"placeholders": {"page": {"type": "int"}, "pages": {"type": "int"}, "total": {"type": "int"}}}
-  ,"incompleteDraft": "مسودة غير مكتملة"
-  ,"draftIncomplete": "تحتاج تفاصيل التخطيط"
-  ,"saveDraft": "حفظ المسودة"
-  ,"next": "التالي"
-  ,"back": "رجوع"
-  ,"tripBasics": "أساسيات الرحلة"
-  ,"pickupAndDelivery": "الاستلام والتسليم"
-  ,"scheduleAndCommercial": "الجدول والتفاصيل التجارية"
-  ,"routeNotCalculated": "احفظ المواقع ثم احسب المسار المعتمد."
-  ,"assignmentOptional": "التعيين (اختياري)"
-  ,"assignmentAfterDraft": "أكمل قائمة التخطيط ثم عيّن الموارد المتاحة من تفاصيل الرحلة."
-  ,"review": "المراجعة"
-  ,"saveDraftReview": "راجع قائمة الجاهزية واحفظ هذه المسودة."
-  ,"delete": "حذف"
-  ,"reassign": "إعادة تعيين"
-  ,"unassign": "إلغاء التعيين"
-  ,"archive": "أرشفة"
-  ,"unarchive": "إلغاء الأرشفة"
-  ,"duplicateAsDraft": "نسخ كمسودة"
-  ,"cancelTrip": "إلغاء الرحلة"
-  ,"cancellationReason": "سبب الإلغاء"
-  ,"confirm": "تأكيد"
-  ,"timeline": "الخط الزمني"
-  ,"deleteDraftWarning": "حذف {tripNumber} نهائياً؟ لا يمكن التراجع عن ذلك."
-  ,"@deleteDraftWarning": {"placeholders": {"tripNumber": {"type": "String"}}}
-  ,"confirmTripAction": "تطبيق هذا الإجراء على {tripNumber}؟"
-  ,"@confirmTripAction": {"placeholders": {"tripNumber": {"type": "String"}}}
-  ,"tripNotReadyForRoute": "أضف إحداثيات صحيحة للاستلام والتسليم قبل حساب المسار."
-  ,"tripNotReadyForAssignment": "أكمل قائمة التخطيط واحسب المسار الحالي قبل التعيين."
-  ,"tripDeleteNotAllowed": "يمكن حذف مسودة لم يبدأ إرسالها فقط حذفاً نهائياً."
-  ,"tripCancelReasonRequired": "أدخل سبب إلغاء لا يتجاوز 500 حرف."
-  ,"tripArchiveNotAllowed": "يمكن أرشفة أو استعادة الرحلات المكتملة أو الملغاة فقط."
-  ,"tripReassignNotAllowed": "لا يمكن إعادة تعيين هذه الرحلة بعد بدء الإرسال."
-  ,"tripUnassignNotAllowed": "لا يمكن إلغاء تعيين هذه الرحلة بعد بدء الإرسال."
-  ,"tripConcurrencyConflict": "عدّل مستخدم آخر هذه الرحلة. أعد تحميلها ثم حاول مجدداً."
-  ,"eventTripCreated": "تم إنشاء الرحلة"
-  ,"eventDraftUpdated": "تم تحديث المسودة"
-  ,"eventStopsUpdated": "تم تحديث المواقع"
-  ,"eventRouteCalculated": "تم حساب المسار"
-  ,"eventAssigned": "تم تعيين الموارد"
-  ,"eventReassigned": "تمت إعادة تعيين الموارد"
-  ,"eventUnassigned": "تم إلغاء تعيين الموارد"
-  ,"eventDispatchedToPickup": "تم الإرسال إلى الاستلام"
-  ,"eventArrivedAtPickup": "تم الوصول إلى الاستلام"
-  ,"eventTripStarted": "بدأت الرحلة"
-  ,"eventMarkedInTransit": "تم تحديدها قيد النقل"
-  ,"eventDelivered": "تم التسليم"
-  ,"eventCompleted": "اكتملت الرحلة"
-  ,"eventCancelled": "ألغيت الرحلة"
-  ,"eventArchived": "تمت الأرشفة"
-  ,"eventUnarchived": "تم إلغاء الأرشفة"
-  ,"eventImportedBaseline": "سجل الاستيراد الأساسي"
-  ,"eventRouteInvalidated": "تم إبطال المسار"
-  ,"identicalStops": "يجب أن يكون موقعا الاستلام والتسليم مختلفين."
-  ,"routeStale": "تغيرت المواقع. أعد حساب المسار قبل المتابعة."
-  ,"routeRequired": "احسب المسار قبل المتابعة."
-  ,"assignmentSelectionRequired": "اختر شاحنة وسائقاً مؤهلين أو تجاوز التعيين الآن."
-  ,"tripCreatedAndAssigned": "تم حفظ الرحلة وتعيين الموارد."
-  ,"draftSaved": "تم حفظ المسودة."
-  ,"tripDetailsStep": "تفاصيل الرحلة"
-  ,"tripNumber": "رقم الرحلة"
-  ,"locationsAndRouteStep": "الاستلام والتسليم والمسار"
-  ,"truckAndDriverStep": "الشاحنة والسائق"
-  ,"reviewAndConfirmStep": "المراجعة والتأكيد"
-  ,"invalidNumber": "أدخل رقماً صحيحاً غير سالب."
-  ,"recalculateRoute": "إعادة حساب المسار"
-  ,"refreshAvailability": "تحديث التوفر"
-  ,"skipForNow": "تجاوز التعيين الآن"
-  ,"keepAsUnassignedDraft": "احتفظ بهذه الرحلة كمسودة غير معيّنة."
-  ,"noEligibleTruck": "لا توجد شاحنة مؤهلة متاحة حالياً."
-  ,"noEligibleDriver": "لا يوجد سائق مؤهل متاح حالياً."
-  ,"allocatedAfterSave": "يُخصّص بعد الحفظ"
-  ,"notAvailable": "غير متوفر"
-  ,"distance": "المسافة"
-  ,"estimatedDuration": "المدة المقدرة"
-  ,"readiness": "الجاهزية"
-  ,"ready": "جاهزة"
-  ,"editTripDetails": "تعديل تفاصيل الرحلة"
-  ,"editLocationsAndRoute": "تعديل المواقع والمسار"
-  ,"editAssignment": "تعديل التعيين"
-  ,"createAndAssignTrip": "إنشاء الرحلة وتعيينها"
-  ,"assignTrip": "تعيين الرحلة"
-  ,"routeSummary": "ملخص المسار"
-  ,"resourceInactive": "غير نشط"
-  ,"truckInMaintenance": "قيد الصيانة"
-  ,"truckOutOfServiceReason": "خارج الخدمة"
-  ,"resourceAssignedToTrip": "محجوز للرحلة {tripNumber}"
-  ,"@resourceAssignedToTrip": {"placeholders": {"tripNumber": {"type": "String"}}}
-  ,"details": "التفاصيل"
-  ,"legalName": "الاسم القانوني"
-  ,"lifecycle": "دورة الحالة"
-  ,"all": "الكل"
-  ,"suspended": "موقوف"
-  ,"reserved": "محجوز"
-  ,"archived": "مؤرشف"
-  ,"contacts": "جهات الاتصال"
-  ,"sites": "المواقع المحفوظة"
-  ,"addContact": "إضافة جهة اتصال"
-  ,"jobTitle": "المسمى الوظيفي"
-  ,"whatsApp": "واتساب"
-  ,"primaryContact": "جهة الاتصال الرئيسية"
-  ,"addSite": "إضافة موقع"
-  ,"siteType": "نوع الموقع"
-  ,"latitude": "خط العرض"
-  ,"longitude": "خط الطول"
-  ,"instructions": "التعليمات"
-  ,"restore": "استعادة"
-  ,"suspend": "إيقاف"
-  ,"reactivate": "إعادة تنشيط"
-  ,"plannedTrips": "الرحلات المخططة"
-  ,"completedTrips": "الرحلات المكتملة"
-  ,"cancelledTrips": "الرحلات الملغاة"
-  ,"activity": "النشاط"
-  ,"noActivity": "لا يوجد نشاط بعد"
-  ,"fleetCode": "رمز الأسطول"
-  ,"searchTrucks": "البحث عن الشاحنات"
-  ,"vin": "رقم الهيكل"
-  ,"truckType": "نوع الشاحنة"
-  ,"payloadCapacity": "سعة الحمولة"
-  ,"payloadUnit": "وحدة الحمولة"
-  ,"fuelType": "نوع الوقود"
-  ,"odometer": "عداد المسافة (كم)"
-  ,"correctOdometer": "تصحيح عداد المسافة"
-  ,"correctionReason": "سبب التصحيح"
-  ,"defaultDriver": "السائق الافتراضي"
-  ,"baseStatus": "الحالة الأساسية"
-  ,"operationalState": "الحالة التشغيلية"
-  ,"currentTrip": "الرحلة الحالية"
-  ,"latestPosition": "آخر موقع"
-  ,"noPosition": "لم يتم الإبلاغ عن موقع"
-  ,"clientArchived": "تمت أرشفة العميل."
-  ,"clientRestored": "تمت استعادة العميل."
-  ,"truckArchived": "تمت أرشفة الشاحنة."
-  ,"truckRestored": "تمت استعادة الشاحنة."
-  ,"factory": "مصنع"
-  ,"warehouse": "مستودع"
-  ,"office": "مكتب"
-  ,"other": "أخرى"
-  ,"kilograms": "كيلوغرام"
-  ,"tonnes": "طن"
-  ,"diesel": "ديزل"
-  ,"petrol": "بنزين"
-  ,"electric": "كهربائي"
-  ,"hybrid": "هجين"
-  ,"boxTruck": "شاحنة صندوقية"
-  ,"flatbed": "سطحة"
-  ,"refrigerated": "مبردة"
-  ,"tanker": "صهريج"
-  ,"tractorTrailer": "قاطرة ومقطورة"
-  ,"dumpTruck": "شاحنة قلابة"
-  ,"savedSite": "موقع عميل محفوظ"
-  ,"siteSaved": "تم حفظ موقع العميل."
-  ,"defaultDriverSuggested": "تم اقتراح السائق الافتراضي"
-  ,"eventClientCreated": "تم إنشاء العميل"
-  ,"eventClientProfileUpdated": "تم تحديث ملف العميل"
-  ,"eventClientSuspended": "تم إيقاف العميل"
-  ,"eventClientReactivated": "تمت إعادة تنشيط العميل"
-  ,"eventClientArchived": "تمت أرشفة العميل"
-  ,"eventClientContactAdded": "تمت إضافة جهة اتصال"
-  ,"eventClientContactUpdated": "تم تحديث جهة الاتصال"
-  ,"eventClientContactRemoved": "تم حذف جهة الاتصال"
-  ,"eventClientPrimaryContactChanged": "تم تغيير جهة الاتصال الرئيسية"
-  ,"eventClientSiteAdded": "تمت إضافة موقع"
-  ,"eventClientSiteUpdated": "تم تحديث الموقع"
-  ,"eventClientSiteArchived": "تمت أرشفة الموقع"
-  ,"eventClientSiteRestored": "تمت استعادة الموقع"
-  ,"eventTruckCreated": "تم إنشاء الشاحنة"
-  ,"eventTruckProfileUpdated": "تم تحديث ملف الشاحنة"
-  ,"eventTruckDefaultDriverChanged": "تم تغيير السائق الافتراضي"
-  ,"eventTruckOdometerUpdated": "تم تحديث عداد المسافة"
-  ,"eventTruckOdometerCorrected": "تم تصحيح عداد المسافة"
-  ,"eventTruckBaseStatusChanged": "تم تغيير الحالة الأساسية"
-  ,"eventTruckArchived": "تمت أرشفة الشاحنة"
-  ,"eventTruckRestored": "تمت استعادة الشاحنة"
-  ,"clientArchiveRequired": "أرشف العميل قبل حذفه."
-  ,"deleteClientWarning": "حذف هذا العميل غير المستخدم نهائياً؟ لا يمكن التراجع عن ذلك."
-  ,"clientHasHistory": "لهذا العميل سجل رحلات ولا يمكن حذفه."
-  ,"truckArchiveRequired": "أرشف الشاحنة قبل حذفها."
-  ,"deleteTruckWarning": "حذف هذه الشاحنة غير المستخدمة نهائياً؟ لا يمكن التراجع عن ذلك."
-  ,"truckHasHistory": "لهذه الشاحنة سجل رحلات أو تتبع ولا يمكن حذفها."
-  ,"truckReserved": "هذه الشاحنة محجوزة لرحلة نشطة."
-  ,"odometerCorrectionRequired": "استخدم مسار التصحيح وأدخل سبباً لتخفيض عداد المسافة."
-  ,"defaultDriverInactive": "يجب أن يكون السائق الافتراضي نشطاً."
-  ,"duplicateTruckIdentity": "رقم اللوحة أو الهيكل أو رمز الأسطول مستخدم بالفعل."
-  ,"uploadTruckPhoto": "رفع صورة الشاحنة"
-  ,"removeTruckPhoto": "إزالة صورة الشاحنة"
-  ,"notifications": "الإشعارات"
-  ,"markAllRead": "تعليم الكل كمقروء"
-  ,"noNotifications": "لا توجد إشعارات بعد"
-  ,"markRead": "تعليم كمقروء"
-  ,"notificationArrivedPickup": "وصلت الشاحنة إلى موقع الاستلام"
-  ,"notificationArrivedDelivery": "وصلت الشاحنة إلى موقع التسليم"
-  ,"notificationDepartureConfirmed": "تم تأكيد تحميل الشحنة والمغادرة"
-  ,"notificationDeliveryConfirmed": "تم تأكيد التسليم"
-  ,"operationalUpdate": "تحديث تشغيلي"
-  ,"myTrip": "رحلتي"
-  ,"noAssignedTrip": "لا توجد رحلة نشطة مسندة إليك"
-  ,"confirmLoaded": "تأكيد التحميل وبدء الرحلة"
-  ,"confirmLoadedWarning": "هل تؤكد تحميل الشحنة والمغادرة من موقع الاستلام؟"
-  ,"confirmDelivery": "تأكيد التسليم"
-  ,"confirmDeliveryWarning": "هل تؤكد اكتمال تسليم الشحنة؟ سيؤدي ذلك إلى إكمال الرحلة."
-  ,"atDelivery": "عند موقع التسليم"
-  ,"managerOverrideDeparture": "تجاوز تأكيد المغادرة"
-  ,"managerOverrideDelivery": "تجاوز تأكيد التسليم"
-  ,"managerOverride": "تجاوز المدير"
-  ,"managerOverrideWarning": "استخدم هذا فقط عندما يتعذر على السائق المرتبط التأكيد. سيتم تدقيق السبب وهويتك."
-  ,"overrideReason": "سبب التجاوز"
-  ,"resumeFollow": "استئناف التتبع"
-  ,"showFullRoute": "عرض المسار بالكامل"
-  ,"actionConfirmed": "تم حفظ التأكيد."
-  ,"backToTruck": "العودة إلى الشاحنة"
-  ,"companyUsers": "مستخدمو الشركة"
-  ,"allUsers": "جميع المستخدمين"
-  ,"activeUsers": "المستخدمون النشطون"
-  ,"inactiveUsers": "المستخدمون غير النشطين"
-  ,"createDriverAccount": "إنشاء حساب سائق"
-  ,"noCompanyUsers": "لا يوجد مستخدمون يطابقون هذا الفلتر."
-  ,"noDriverLinked": "غير مرتبط بسجل سائق"
-  ,"resetTemporaryPassword": "إعادة تعيين كلمة المرور المؤقتة"
-  ,"unlinkDriverAccount": "إلغاء ربط حساب السائق"
-  ,"unlinkDriverAccountConfirmation": "هل تريد إلغاء ربط حساب التطبيق بسجل السائق؟ لن يتمكن السائق بعد ذلك من استلام الرحلات أو تأكيدها في وضع السائق."
-  ,"displayName": "اسم العرض"
-  ,"linkDriver": "ربط سجل السائق (اختياري)"
-  ,"temporaryPassword": "كلمة المرور المؤقتة"
-  ,"temporaryPasswordOnce": "تظهر كلمة المرور الآن فقط. انسخها وشاركها مع السائق بطريقة آمنة."
-  ,"copy": "نسخ"
-  ,"done": "تم"
-  ,"create": "إنشاء"
-  ,"noAppAccount": "لا يوجد حساب تطبيق"
-  ,"appAccountLinked": "حساب التطبيق مرتبط"
-  ,"accountInactive": "الحساب غير نشط"
-  ,"accountInactiveWarning": "حساب التطبيق المرتبط غير نشط؛ لا يمكن لهذا السائق استخدام وضع السائق."
-  ,"noAppAccountWarning": "لا يملك هذا السائق حساب تطبيق ولا يمكنه استلام الرحلة أو تأكيدها في وضع السائق."
-  ,"driverAppAccountWarning": "تحذير حساب تطبيق السائق"
-  ,"accountInactiveAssignmentConfirmation": "هل تريد إسناد الرحلة رغم أن حساب السائق المرتبط غير نشط؟"
-  ,"unlinkedAssignmentConfirmation": "هل تريد إسناد الرحلة رغم أن السائق لا يملك حساب تطبيق؟"
-  ,"continueLabel": "متابعة"
-  ,"driverAppAccount": "حساب تطبيق السائق"
-  ,"createAndLinkAccount": "إنشاء الحساب وربطه"
-  ,"linkExistingAccount": "ربط حساب موجود"
-  ,"noUnlinkedDriverAccounts": "لا توجد حسابات سائق نشطة وغير مرتبطة."
-  ,"loadingSavedSites": "جارٍ تحميل المواقع المحفوظة…"
-  ,"savedSitesLoadFailed": "تعذر تحميل المواقع المحفوظة"
-  ,"noSavedSites": "لا توجد مواقع محفوظة لهذا العميل"
-  ,"driverAccountNotLinked": "حسابك غير مرتبط بسجل سائق"
-  ,"contactOwnerToLinkDriver": "تواصل مع مالك الشركة لربط تسجيل الدخول بسجل السائق الخاص بك."
-  ,"noAssignedTripExplanation": "سيظهر أي إسناد جديد هنا تلقائياً. يمكنك السحب للتحديث في أي وقت."
-  ,"nextStop": "المحطة التالية"
-  ,"estimatedArrival": "وقت الوصول المتوقع"
-  ,"lastPositionUpdate": "آخر تحديث للموقع"
-  ,"allowedDriverAction": "الإجراء المتاح للسائق"
-  ,"noActionAvailable": "لا يوجد إجراء متاح حالياً"
-  ,"trackingNotStarted": "لم يبدأ التتبع"
-  ,"trackingStale": "الموقع قديم"
-  ,"trackingOffline": "الشاحنة غير متصلة"
-  ,"trackingCurrent": "الموقع محدّث"
-  ,"nonProductionEnvironment": "بيئة غير إنتاجية: {environment}"
-  ,"@nonProductionEnvironment": {"placeholders": {"environment": {"type": "String"}}}
-  ,"accountIdentity": "الحساب والبيئة"
-  ,"signedInEmail": "البريد المسجل"
-  ,"companyName": "اسم الشركة"
-  ,"role": "الدور"
-  ,"environment": "البيئة"
-  ,"notificationSounds": "أصوات الإشعارات"
-  ,"notificationSoundsDescription": "تشغيل صوت قصير واحد للتنبيهات التشغيلية الجديدة أثناء فتح التطبيق."
-  ,"soundTestPlayed": "تم طلب تشغيل صوت الاختبار."
-  ,"testSound": "اختبار الصوت"
-  ,"enableNotificationSound": "تفعيل صوت الإشعارات"
-  ,"dismiss": "إغلاق"
-  ,"view": "عرض"
-  ,"notificationTripAssigned": "تم إسناد رحلة جديدة"
-  ,"notificationTruckOffline": "انقطع اتصال الشاحنة"
-  ,"notificationPositionStale": "أصبح موقع الشاحنة قديماً"
-  ,"operationalAlertMessage": "يوجد حدث تشغيلي جديد يحتاج إلى انتباهك."
-  ,"operationalTripAlertMessage": "يوجد حدث تشغيلي متعلق برحلة يحتاج إلى انتباهك."
-  ,"departToPickup": "الانطلاق إلى الاستلام"
-  ,"departToPickupWarning": "هل تريد بدء مسار التوجه إلى موقع الاستلام الآن؟"
-  ,"confirmLoadedAndDepart": "تم التحميل — الانطلاق إلى التسليم"
-  ,"endVehicleSession": "إنهاء جلسة المركبة"
-  ,"endVehicleSessionWarning": "هل تريد إزالة هذه الشاحنة من مساحة عمل السائق؟"
-  ,"changePassword": "تغيير كلمة المرور"
-  ,"currentPassword": "كلمة المرور الحالية"
-  ,"newPassword": "كلمة المرور الجديدة"
-  ,"confirmNewPassword": "تأكيد كلمة المرور الجديدة"
-  ,"passwordChangedLoginAgain": "تم تغيير كلمة المرور. سجّل الدخول مجدداً بكلمة المرور الجديدة."
-  ,"passwordMinimumLength": "استخدم 12 حرفاً على الأقل."
-  ,"tripAssignedTitle": "تم إسناد الرحلة إليك"
-  ,"departureRequiredMessage": "لن تبدأ الشاحنة بالحركة قبل تأكيد انطلاقك."
-  ,"confirmDepartureToPickup": "تأكيد الانطلاق إلى موقع الاستلام"
-  ,"preparingApproachRoute": "جارٍ تجهيز المسار إلى موقع الاستلام…"
-  ,"openTrip": "فتح الرحلة"
-  ,"assignmentRequiresDeparture": "افتح الرحلة وأكد الانطلاق قبل أن تبدأ الشاحنة بالحركة."
-  ,"truckPositionRequiredGuidance": "لم يتم استلام موقع الشاحنة بعد. اطلب من المدير ضبط أو تحديث موقع المحاكي، أو انتظر إشارة GPS."
-  ,"truckPositionStaleGuidance": "موقع الشاحنة قديم ولا يمكن بدء الرحلة بأمان. حدّث بيانات التتبع ثم أعد المحاولة."
-  ,"truckOfflineGuidance": "نظام تتبع الشاحنة غير متصل. أعده إلى وضع الاتصال ثم حاول مجدداً."
-  ,"pickupCoordinatesRequiredGuidance": "إحداثيات موقع الاستلام مفقودة. اطلب من فريق العمليات تصحيح الرحلة."
-  ,"routePreparationFailed": "تعذر تجهيز المسار إلى موقع الاستلام. أعد المحاولة دون فقدان الإسناد."
-  ,"departureAlreadyInProgress": "جارٍ تجهيز الانطلاق بالفعل. يرجى الانتظار."
-  ,"workspaceConnectionWarning": "التحديثات المباشرة غير متاحة مؤقتاً. يتم عرض آخر حالة رحلة مستلمة."
-  ,"mapUpdateWarning": "تعذر رسم آخر تحديث للخريطة. لا تزال بيانات الرحلة المباشرة متاحة."
-  ,"mapLoading": "جارٍ تحميل الخريطة…"
-  ,"activeOperationsRetry": "إعادة محاولة تحميل العمليات النشطة"
-  ,"activeOperationsTitle": "العمليات النشطة"
-  ,"viewAll": "عرض الكل"
-  ,"activeOperationsStale": "التحديث المباشر غير متاح مؤقتاً. يتم عرض آخر تحديث."
-  ,"activeOperationsCount": "العمليات النشطة: {count}"
-  ,"@activeOperationsCount": {"placeholders": {"count": {"type": "int"}}}
-  ,"noActiveOperations": "لا توجد عمليات نشطة."
-  ,"phaseAwaitingDeparture": "بانتظار الانطلاق"
-  ,"phaseToPickup": "في الطريق إلى الاستلام"
-  ,"phaseAwaitingLoading": "بانتظار التحميل"
-  ,"phaseToDelivery": "في الطريق إلى التسليم"
-  ,"phaseAwaitingDeliveryConfirmation": "بانتظار تأكيد التسليم"
-  ,"phaseAwaitingCompletion": "بانتظار الإكمال"
-  ,"waitingDriverDeparture": "بانتظار انطلاق السائق"
-  ,"waitingLoadingConfirmation": "بانتظار تأكيد التحميل"
-  ,"waitingDeliveryConfirmation": "بانتظار تأكيد التسليم"
-  ,"progressUnavailable": "بيانات التقدم غير متاحة"
-  ,"trackingMissing": "بيانات التتبع مفقودة"
-  ,"actionDriverDeparture": "إجراء مطلوب: انطلاق السائق"
-  ,"actionLoadingConfirmation": "إجراء مطلوب: تأكيد التحميل"
-  ,"actionDeliveryConfirmation": "إجراء مطلوب: تأكيد التسليم"
-  ,"remainingKilometers": "متبقي {value} كم"
-  ,"@remainingKilometers": {"placeholders": {"value": {"type": "String"}}}
-  ,"remainingMeters": "متبقي {value} م"
-  ,"@remainingMeters": {"placeholders": {"value": {"type": "String"}}}
-  ,"etaShort": "الوصول المتوقع {time}"
-  ,"@etaShort": {"placeholders": {"time": {"type": "String"}}}
-  ,"driverSelection": "اختيار السائق"
-  ,"selectionNone": "لا يوجد"
-  ,"selectionManual": "يدوي"
-  ,"selectionTruckDefault": "السائق الافتراضي للشاحنة"
-  ,"selectionExistingAssignment": "الإسناد الحالي"
-  ,"selectTruckFirst": "اختر شاحنة أولاً."
-  ,"truckHasNoDefaultDriver": "لا يوجد سائق افتراضي لهذه الشاحنة. اختر سائقاً يدوياً."
-  ,"truckDefaultDriverUnavailable": "السائق الافتراضي للشاحنة غير متاح. اختر سائقاً مؤهلاً يدوياً."
-  ,"driverSelectedFromTruckDefault": "تم اختيار السائق لأنه مرتبط بهذه الشاحنة."
-  ,"notificationAssignedSnapshot": "تم إسناد الشاحنة {truck} إلى الرحلة {trip}. الاستلام: {location}. الوقت: {time}."
-  ,"@notificationAssignedSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
-  ,"notificationPickupSnapshot": "وصلت الشاحنة {truck} للرحلة {trip} إلى موقع الاستلام: {location}. الوقت: {time}."
-  ,"@notificationPickupSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
-  ,"notificationDepartureSnapshot": "تم تأكيد تحميل الشاحنة {truck} للرحلة {trip} وانطلقت نحو {location}. الوقت: {time}."
-  ,"@notificationDepartureSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
-  ,"notificationDeliverySnapshot": "وصلت الشاحنة {truck} للرحلة {trip} إلى موقع التسليم: {location}. الوقت: {time}."
-  ,"@notificationDeliverySnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
-  ,"notificationCompletedSnapshot": "تم تأكيد التسليم وإكمال الرحلة {trip} بالشاحنة {truck} في {location}. الوقت: {time}."
-  ,"@notificationCompletedSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
-  ,"notificationHealthSnapshot": "تحتاج الشاحنة {truck} في الرحلة {trip} إلى متابعة التتبع قرب {location}. الوقت: {time}."
-  ,"@notificationHealthSnapshot": {"placeholders": {"truck": {"type": "String"}, "trip": {"type": "String"}, "location": {"type": "String"}, "time": {"type": "String"}}}
-  ,"legacyNotificationFallback": "تفاصيل التحديث التشغيلي غير متاحة لهذا الإشعار القديم."
-  ,"notificationClient": "العميل: {value}"
-  ,"@notificationClient": {"placeholders": {"value": {"type": "String"}}}
-  ,"notificationDriver": "السائق: {value}"
-  ,"@notificationDriver": {"placeholders": {"value": {"type": "String"}}}
-  ,"notificationCargo": "الحمولة: {value}"
-  ,"@notificationCargo": {"placeholders": {"value": {"type": "String"}}}
-  ,"operationalArea": "بلد / منطقة التشغيل"
-  ,"operationalAreaDescription": "تحدد عرض الأسطول الافتراضي، مع إبقاء الشاحنات خارج المنطقة ظاهرة."
-  ,"noOperationalArea": "غير مضبوطة. تستخدم الخريطة الشاحنات المتصلة أو المنطقة الاحتياطية."
-  ,"configureOperationalArea": "ضبط المنطقة"
-  ,"clearOperationalArea": "مسح المنطقة"
-  ,"operationalAreaSaved": "تم حفظ منطقة التشغيل."
-  ,"countryCode": "رمز البلد ISO"
-  ,"countryCodeHint": "حرفان، مثل TR أو SY"
-  ,"selectAreaWithBounds": "أدخل رمز بلد صحيحاً من حرفين واختر نتيجة بحث ذات حدود جغرافية."
-  ,"fleetOverview": "عرض الأسطول"
-  ,"trucksOutsideOperationalArea": "عدد الشاحنات خارج منطقة التشغيل: {count}"
-  ,"@trucksOutsideOperationalArea": {"placeholders": {"count": {"type": "int"}}}
-  ,"noVehicleAssigned": "لا توجد مركبة مسندة"
-  ,"noVehicleAssignedExplanation": "اطلب من المالك ربط شاحنة نشطة واحدة بملف السائق الخاص بك."
-  ,"vehicleAssignmentAmbiguous": "إسناد المركبة يحتاج إلى مراجعة"
-  ,"vehicleAssignmentAmbiguousExplanation": "ترتبط أكثر من شاحنة بملف السائق. اطلب من المالك إبقاء شاحنة افتراضية واحدة."
-  ,"heading": "الاتجاه"
-  ,"workspaceChooser": "اختيار مساحة العمل"
-  ,"chooseWorkspace": "اختر مساحة الشركة التي تريد استخدامها."
-  ,"noWorkspace": "ليس لديك مساحة عمل نشطة بعد."
-  ,"joinCompany": "الانضمام إلى شركة"
-  ,"companyCode": "رمز الشركة الخاص"
-  ,"exactCodePrivacy": "لا يظهر اسم الشركة إلا عند إدخال الرمز الخاص المطابق تماماً."
-  ,"resolveCompany": "التحقق من الرمز"
-  ,"requestConnection": "طلب الاتصال"
-  ,"pendingRequests": "الطلبات المعلقة"
-  ,"switchWorkspace": "تبديل مساحة العمل"
-  ,"roles": "الأدوار"
-  ,"invitationAccept": "دعوة شركة"
-  ,"invitationFor": "دعوة إلى"
-  ,"expiresAt": "تنتهي"
-  ,"createAccount": "إنشاء حسابك"
-  ,"acceptInvitation": "قبول الدعوة"
-  ,"declineInvitation": "رفض الدعوة"
-  ,"invitationAccepted": "تم قبول الدعوة. سجّل الدخول أو بدّل مساحة العمل للمتابعة."
-  ,"loginToAccept": "سجّل الدخول بالبريد المدعو، أو أنشئ حسابك الشخصي أدناه."
-  ,"googleSignIn": "المتابعة باستخدام Google"
-  ,"googleNotConfigured": "تسجيل الدخول عبر Google غير مهيأ لهذه البيئة."
-  ,"signInMethods": "طرق تسجيل الدخول"
-  ,"linked": "مرتبط"
-  ,"unlink": "إلغاء الربط"
-  ,"phoneComingSoon": "تسجيل الدخول بالهاتف مخطط له لكنه غير متاح حالياً."
-  ,"invitations": "الدعوات"
-  ,"invitePerson": "دعوة شخص"
-  ,"invitationLink": "رابط الدعوة"
-  ,"copyInvitationLink": "نسخ رابط الدعوة"
-  ,"revoke": "إلغاء"
-  ,"connectionRequests": "طلبات الاتصال"
-  ,"approve": "موافقة"
-  ,"reject": "رفض"
-  ,"companyConnectionCode": "رمز اتصال الشركة"
-  ,"rotateCode": "تغيير الرمز"
-  ,"qrCode": "رمز QR للشاحنة"
-  ,"regenerateTruckQr": "إنشاء / إعادة إنشاء QR للشاحنة"
-  ,"truckQrExplanation": "يعرّف هذا الرمز الشاحنة وليس الرحلة. إعادة الإنشاء تلغي الملصق السابق."
-  ,"scanTruckQr": "مسح QR للشاحنة"
-  ,"manualCode": "إدخال الرمز يدوياً"
-  ,"previewTruck": "مراجعة الشاحنة"
-  ,"confirmTruckSwitch": "تأكيد تبديل الشاحنة"
-  ,"handoverApprovalRequired": "لهذه الشاحنة رحلة نشطة لسائق آخر. يجب الحصول على موافقة قبل أي تغيير."
-  ,"requestSent": "تم إرسال الطلب"
-  ,"handoverRequests": "طلبات تسليم القيادة"
-  ,"currentDriver": "السائق الحالي"
-  ,"requestingDriver": "السائق الطالب"
-  ,"approveHandover": "الموافقة على التسليم"
-  ,"rejectHandover": "رفض التسليم"
-  ,"reason": "السبب"
-  ,"selectDriver": "اختيار السائق"
-  ,"copied": "تم النسخ"
-  ,"invitationPending": "الدعوة معلقة"
-  ,"accountConnected": "الحساب متصل"
-  ,"driverRecordOnly": "سجل سائق بلا وصول للتطبيق"
-  ,"googleLinkRequiresProvider": "استخدم نتيجة مصادقة Google موثقة لربط هذه الطريقة."
-  ,"refresh": "تحديث"
-  ,"accountEmailConflict": "يوجد حساب يستخدم هذا البريد بالفعل."
-  ,"externalLoginAlreadyLinked": "هوية Google هذه مرتبطة بالفعل."
-  ,"externalLoginConfirmationRequired": "سجّل الدخول إلى الحساب الحالي قبل ربط Google."
-  ,"googleTokenInvalid": "تعذر على Google التحقق من تسجيل الدخول."
-  ,"membershipNotActive": "عضوية الشركة هذه غير نشطة."
-  ,"workspaceAccessDenied": "ليس لديك وصول إلى مساحة العمل هذه."
-  ,"invitationInvalid": "هذه الدعوة غير صالحة."
-  ,"invitationExpired": "انتهت صلاحية هذه الدعوة."
-  ,"invitationAlreadyUsed": "تم استخدام هذه الدعوة بالفعل."
-  ,"invitationEmailMismatch": "سجّل الدخول بالبريد الذي استلم الدعوة."
-  ,"companyCodeInvalid": "رمز الشركة غير صالح."
-  ,"connectionAlreadyPending": "يوجد طلب اتصال معلّق بالفعل."
-  ,"driverAccountAlreadyLinked": "سجل السائق هذا مرتبط بحساب بالفعل."
-  ,"driverLinkRequired": "اختر سجل السائق المحدد قبل الموافقة."
-  ,"truckQrInvalid": "رمز QR للشاحنة غير صالح أو غير متاح."
-  ,"truckQrRevoked": "تم استبدال رمز QR هذا. امسح الملصق الجديد."
-  ,"truckSessionConflict": "لدى السائق أو الشاحنة جلسة نشطة متعارضة."
-  ,"handoverRequestStale": "لم يعد طلب التسليم مطابقاً لتعيين الرحلة الحالي."
-  ,"handoverAlreadyResolved": "تمت معالجة طلب التسليم بالفعل."
-  ,"tripAssignmentChanged": "تغير تعيين الرحلة. حدّث وراجعه مجدداً."
-  ,"noData": "لا توجد سجلات بعد."
-  ,"useCamera": "استخدام الكاميرا"
-  ,"externalAccountLinkRequired": "سجّل الدخول بكلمة المرور الحالية ثم اربط Google من الإعدادات."
-  ,"ownerRoleRequiresOwner": "يمكن للمالك فقط منح دور المالك."
-  ,"lastActiveOwnerRequired": "يجب أن تحتفظ الشركة بمالك نشط واحد على الأقل."
-  ,"selfOwnerRemovalForbidden": "لا يمكنك إزالة دور المالك عن حسابك."
-  ,"driverRoleLinked": "افصل ملف السائق قبل إزالة دور السائق."
-  ,"driverUnlinkActiveTrip": "أكمل الرحلة النشطة أو سلّمها قبل فصل هذا السائق."
-  ,"driverUnlinkActiveSession": "أنه جلسة الشاحنة النشطة قبل فصل هذا السائق."
-  ,"driverUnlinkPendingHandover": "عالج طلب التسليم المعلق قبل فصل هذا السائق."
-  ,"truckQrStatus": "بيانات QR للشاحنة"
-  ,"truckQrNotGenerated": "لم يتم إنشاء بيانات QR نشطة."
-  ,"truckQrActiveHint": "بيانات نشطة تنتهي بـ {hint}"
-  ,"@truckQrActiveHint": {"placeholders":{"hint":{"type":"String"}}}
-  ,"generatedBy": "أنشأه"
-  ,"generateTruckQr": "إنشاء QR للشاحنة"
-  ,"downloadPng": "تنزيل PNG"
-  ,"truckQrRegenerationConflict": "تغير QR للشاحنة في الوقت نفسه. حدّث الصفحة وأنشئه مجدداً."
-  ,"showPassword": "إظهار كلمة المرور"
-  ,"hidePassword": "إخفاء كلمة المرور"
-  ,"pendingInvitations": "الدعوات المعلقة"
-  ,"invitationHistory": "سجل الدعوات"
-  ,"qrPreparing": "جارٍ تجهيز صورة QR…"
-  ,"qrRenderFailed": "تم إنشاء بيانات الاعتماد، لكن تعذر تجهيز صورة QR. انسخ الرمز اليدوي أو أعد محاولة العرض."
-  ,"retryQrDisplay": "إعادة محاولة عرض QR"
-  ,"qrOneTimeRecovery": "يبقى هذا الرمز اليدوي المعروض مرة واحدة متاحاً في هذه الصفحة حتى إغلاقها أو نجاح عرضه."
-  ,"truckQrManualCode": "رمز الشاحنة اليدوي"
-  ,"notificationCategoryTrip": "الرحلة"
-  ,"notificationCategoryFleet": "الأسطول"
-  ,"notificationCategoryPeopleAccess": "الأشخاص والوصول"
-  ,"notificationCategorySecurity": "الأمان"
-  ,"notificationCategorySystem": "النظام"
-  ,"notificationInvitationCreated": "تم إنشاء دعوة شركة"
-  ,"notificationInvitationAccepted": "تم قبول دعوة الشركة"
-  ,"notificationInvitationDeclined": "تم رفض دعوة الشركة"
-  ,"notificationInvitationRevoked": "تم إلغاء دعوة الشركة"
-  ,"notificationInvitationExpired": "انتهت صلاحية دعوة الشركة"
-  ,"notificationConnectionRequested": "تم طلب الاتصال بالشركة"
-  ,"notificationConnectionApproved": "تمت الموافقة على الاتصال بالشركة"
-  ,"notificationConnectionRejected": "تم رفض الاتصال بالشركة"
-  ,"notificationConnectionCancelled": "تم إلغاء طلب الاتصال بالشركة"
-  ,"notificationMembershipActivated": "تم تفعيل العضوية"
-  ,"notificationMembershipSuspended": "تم تعليق العضوية"
-  ,"notificationMembershipRevoked": "تم إلغاء العضوية"
-  ,"notificationMembershipRolesUpdated": "تم تحديث أدوار العضوية"
-  ,"notificationDriverLinked": "تم ربط حساب السائق"
-  ,"notificationDriverUnlinked": "تم فصل حساب السائق"
-  ,"notificationQrGenerated": "تم إنشاء QR للشاحنة"
-  ,"notificationQrRegenerated": "تم إعادة إنشاء QR للشاحنة"
-  ,"notificationSessionStarted": "بدأت جلسة الشاحنة"
-  ,"notificationSessionEnded": "انتهت جلسة الشاحنة"
-  ,"notificationSessionSwitched": "تم تبديل جلسة الشاحنة"
-  ,"notificationDefaultDriverChanged": "تم تغيير السائق الافتراضي"
-  ,"notificationHandoverRequested": "تم طلب تسليم السائق"
-  ,"notificationHandoverPending": "طلب تسليم السائق معلق"
-  ,"notificationHandoverApproved": "تمت الموافقة على تسليم السائق"
-  ,"notificationHandoverRejected": "تم رفض تسليم السائق"
-  ,"notificationExternalLoginLinked": "تم ربط تسجيل الدخول الخارجي"
-  ,"notificationExternalLoginUnlinked": "تم فصل تسجيل الدخول الخارجي"
-  ,"notificationPasswordChanged": "تم تغيير كلمة المرور"
-  ,"notificationSystemEvent": "إشعار نظام"
-  ,"notificationEventDetail": "{action}: {identity}."
-  ,"@notificationEventDetail": {"placeholders":{"action":{"type":"String"},"identity":{"type":"String"}}}
-  ,"notificationUnknownType": "تم تسجيل حدث في النظام ({type})."
-  ,"@notificationUnknownType": {"placeholders":{"type":{"type":"String"}}}
-
-  ,"roleOwner": "المالك"
-  ,"roleOperations": "العمليات"
-  ,"roleAccountant": "المحاسب"
-  ,"roleEmployee": "الموظف"
-  ,"roleDriver": "السائق"
-
+  "inactive": "غير نشط",
+  "createClient": "إنشاء عميل",
+  "editClient": "تعديل العميل",
+  "createTruck": "إنشاء شاحنة",
+  "editTruck": "تعديل الشاحنة",
+  "createDriver": "إنشاء سائق",
+  "editDriver": "تعديل السائق",
+  "createTrip": "إنشاء رحلة",
+  "editDraftTrip": "تعديل مسودة الرحلة",
+  "editDraft": "تعديل المسودة",
+  "setAvailable": "تعيين كمتاح",
+  "setUnavailable": "تعيين كغير متاح",
+  "setMaintenance": "تعيين للصيانة",
+  "status": "الحالة",
+  "notes": "ملاحظات",
+  "license": "الرخصة",
+  "planned": "الموعد المخطط",
+  "client": "العميل",
+  "truck": "الشاحنة",
+  "unknownClient": "عميل غير معروف",
+  "unknown": "غير معروف",
+  "yes": "نعم",
+  "no": "لا",
+  "validYear": "أدخل سنة صحيحة.",
+  "validDate": "أدخل تاريخًا صحيحًا.",
+  "validPrice": "أدخل سعرًا صحيحًا.",
+  "savedSuccessfully": "تم الحفظ بنجاح.",
+  "clientDeactivated": "تم تعطيل العميل.",
+  "tripStatusUpdated": "تم تحديث حالة الرحلة.",
+  "resourcesAssigned": "تم تعيين الشاحنة والسائق.",
+  "tripNotFound": "لم يتم العثور على الرحلة.",
+  "backToTrips": "العودة إلى الرحلات",
+  "assignResources": "تعيين الموارد",
+  "authenticationFailed": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+  "mapNotConfigured": "نمط الخريطة غير مهيأ. أضف MAP_STYLE_URL لاستخدام الخريطة الجغرافية.",
+  "loadingMap": "جارٍ تحميل نمط الخريطة…",
+  "mapStyleLoaded": "الخريطة جاهزة (تم تحميل النمط)",
+  "mapFailed": "تعذر تحميل نمط الخريطة. يمكنك إعادة المحاولة أو استخدام عرض التتبع المبسط.",
+  "retryMap": "إعادة تحميل الخريطة",
+  "useFallback": "استخدام العرض المبسط",
+  "fallbackMode": "عرض تتبع مبسط — ليس خريطة جغرافية",
+  "step": "خطوة",
+  "simulationSpeed": "سرعة المحاكاة",
+  "applySpeed": "تطبيق السرعة",
+  "selectTruck": "اختيار الشاحنة",
+  "setOnline": "تعيين كمتصلة",
+  "setOffline": "تعيين كغير متصلة",
+  "simulatorCommandSucceeded": "تم تنفيذ أمر المحاكي.",
+  "planTrip": "تخطيط رحلة",
+  "pickup": "الاستلام",
+  "delivery": "التسليم",
+  "locationName": "اسم الموقع",
+  "searchLocation": "البحث عن موقع",
+  "searchResults": "نتائج المواقع",
+  "noLocationResults": "لم يتم العثور على مواقع مطابقة. يمكنك إدخال الإحداثيات يدوياً.",
+  "invalidCoordinate": "أدخل إحداثياً صالحاً.",
+  "routePreview": "معاينة المسار",
+  "calculateRoute": "حساب المسار",
+  "calculatingRoute": "جارٍ حساب المسار…",
+  "calculateRouteHint": "اختر موقعي الاستلام والتسليم ثم احسب مسار الطريق.",
+  "routeProviderUnavailable": "تعذر حساب المسار. تحقق من مزود التوجيه ثم حاول مجدداً.",
+  "saveTrip": "حفظ الرحلة",
+  "onlineOnly": "المتصلة فقط",
+  "movingOnly": "المتحركة فقط",
+  "routeProgress": "تقدم المسار",
+  "remainingDistance": "المسافة المتبقية",
+  "eta": "وقت الوصول المتوقع",
+  "offRoute": "خارج المسار",
+  "onRoute": "على المسار",
+  "legacyTripRouteWarning": "تحتوي هذه الرحلة القديمة على أسماء المواقع فقط. اختر موقعي الاستلام والتسليم قبل الإسناد.",
+  "routeDistance": "مسافة المسار",
+  "routeDuration": "المدة المقدرة",
+  "routeProvider": "مزود التوجيه",
+  "selectOnMap": "اختيار من الخريطة",
+  "tapMapToSelect": "اضغط على الخريطة لاختيار هذا الموقع",
+  "moving": "متحركة",
+  "stationary": "متوقفة",
+  "recenter": "إعادة التوسيط",
+  "fitRoute": "ملاءمة المسار",
+  "fleetList": "الأسطول",
+  "plannedRoute": "المسار المخطط",
+  "travelledTrail": "المسار المقطوع",
+  "enRouteToPickup": "في الطريق إلى الاستلام",
+  "atPickup": "عند موقع الاستلام",
+  "previewApproach": "معاينة المسار إلى الاستلام",
+  "dispatchToPickup": "إرسال إلى موقع الاستلام",
+  "confirmPickupArrival": "تأكيد الوصول إلى الاستلام",
+  "alreadyAtPickup": "الشاحنة موجودة بالفعل ضمن نطاق موقع الاستلام.",
+  "approachDistance": "مسافة الوصول إلى الاستلام",
+  "approachDuration": "مدة الوصول إلى الاستلام",
+  "dispatchStarted": "تم إرسال الشاحنة إلى موقع الاستلام.",
+  "truckPositionRequired": "سجّل موقع الشاحنة الحالي قبل الإرسال.",
+  "truckPositionStale": "موقع الشاحنة قديم. حدّث التتبع ثم حاول مرة أخرى.",
+  "truckOfflineForDispatch": "يجب أن تكون الشاحنة متصلة قبل الإرسال.",
+  "repositioningRouteRequired": "عاين مساراً حديثاً إلى الاستلام قبل الإرسال.",
+  "repositioningRouteStale": "تحركت الشاحنة بعد المعاينة. احسب المسار مرة أخرى.",
+  "truckNotAtPickup": "لم تصل الشاحنة إلى نطاق موقع الاستلام بعد.",
+  "approachRoute": "المسار إلى الاستلام",
+  "cargoRoute": "مسار الحمولة",
+  "proposed": "مقترح",
+  "expired": "منتهي الصلاحية",
+  "confirmLocation": "تأكيد الموقع",
+  "setSimulatedLocation": "تعيين موقع محاكى",
+  "moveSimulatedTruck": "نقل الشاحنة المحاكاة",
+  "refreshLocation": "تحديث الموقع نفسه",
+  "noLocation": "لا يوجد موقع",
+  "currentLocation": "حالي",
+  "staleLocation": "قديم",
+  "noActiveTrucks": "لا توجد شاحنات نشطة متاحة.",
+  "noLocationHelp": "لم ترسل هذه الشاحنة موقعاً بعد. عيّن موقعاً محاكى لإظهارها على الخريطة.",
+  "currentLocationHelp": "موقع GPS المحاكى حديث وتحافظ عليه نبضات دورية محدودة.",
+  "staleLocationHelp": "حدّث الإحداثيات نفسها أو اختر موقعاً محاكى جديداً قبل الإرسال.",
+  "offlineLocationHelp": "هذه الشاحنة غير متصلة صراحةً. عيّنها كمتصلة قبل التحديث أو الإرسال.",
+  "locationAgeSeconds": "آخر تحديث منذ {seconds} ثانية",
+  "@locationAgeSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "locationForTruck": "الموقع المحاكى للشاحنة {plateNumber}",
+  "@locationForTruck": {
+    "placeholders": {
+      "plateNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "fixTruckLocation": "تصحيح موقع الشاحنة",
+  "locationCorrectedRetry": "تم تحديث موقع الشاحنة. أعد معاينة المسار عندما تكون جاهزاً.",
+  "pickupMarker": "علامة الاستلام",
+  "deliveryMarker": "علامة التسليم",
+  "tripTabActive": "نشطة",
+  "tripTabPlanned": "مخططة",
+  "tripTabCompleted": "مكتملة",
+  "tripTabCancelled": "ملغاة",
+  "tripTabArchived": "مؤرشفة",
+  "searchTrips": "ابحث برقم الرحلة أو العميل أو الموقع أو اللوحة",
+  "tripFilters": "مرشحات الرحلات",
+  "clearFilters": "مسح المرشحات",
+  "previousPage": "الصفحة السابقة",
+  "nextPage": "الصفحة التالية",
+  "pageOf": "الصفحة {page} من {pages} · {total} رحلة",
+  "@pageOf": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "pages": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "incompleteDraft": "مسودة غير مكتملة",
+  "draftIncomplete": "تحتاج تفاصيل التخطيط",
+  "saveDraft": "حفظ المسودة",
+  "next": "التالي",
+  "back": "رجوع",
+  "tripBasics": "أساسيات الرحلة",
+  "pickupAndDelivery": "الاستلام والتسليم",
+  "scheduleAndCommercial": "الجدول والتفاصيل التجارية",
+  "routeNotCalculated": "احفظ المواقع ثم احسب المسار المعتمد.",
+  "assignmentOptional": "التعيين (اختياري)",
+  "assignmentAfterDraft": "أكمل قائمة التخطيط ثم عيّن الموارد المتاحة من تفاصيل الرحلة.",
+  "review": "المراجعة",
+  "saveDraftReview": "راجع قائمة الجاهزية واحفظ هذه المسودة.",
+  "delete": "حذف",
+  "reassign": "إعادة تعيين",
+  "unassign": "إلغاء التعيين",
+  "archive": "أرشفة",
+  "unarchive": "إلغاء الأرشفة",
+  "duplicateAsDraft": "نسخ كمسودة",
+  "cancelTrip": "إلغاء الرحلة",
+  "cancellationReason": "سبب الإلغاء",
+  "confirm": "تأكيد",
+  "timeline": "الخط الزمني",
+  "deleteDraftWarning": "حذف {tripNumber} نهائياً؟ لا يمكن التراجع عن ذلك.",
+  "@deleteDraftWarning": {
+    "placeholders": {
+      "tripNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmTripAction": "تطبيق هذا الإجراء على {tripNumber}؟",
+  "@confirmTripAction": {
+    "placeholders": {
+      "tripNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "tripNotReadyForRoute": "أضف إحداثيات صحيحة للاستلام والتسليم قبل حساب المسار.",
+  "tripNotReadyForAssignment": "أكمل قائمة التخطيط واحسب المسار الحالي قبل التعيين.",
+  "tripDeleteNotAllowed": "يمكن حذف مسودة لم يبدأ إرسالها فقط حذفاً نهائياً.",
+  "tripCancelReasonRequired": "أدخل سبب إلغاء لا يتجاوز 500 حرف.",
+  "tripArchiveNotAllowed": "يمكن أرشفة أو استعادة الرحلات المكتملة أو الملغاة فقط.",
+  "tripReassignNotAllowed": "لا يمكن إعادة تعيين هذه الرحلة بعد بدء الإرسال.",
+  "tripUnassignNotAllowed": "لا يمكن إلغاء تعيين هذه الرحلة بعد بدء الإرسال.",
+  "tripConcurrencyConflict": "عدّل مستخدم آخر هذه الرحلة. أعد تحميلها ثم حاول مجدداً.",
+  "eventTripCreated": "تم إنشاء الرحلة",
+  "eventDraftUpdated": "تم تحديث المسودة",
+  "eventStopsUpdated": "تم تحديث المواقع",
+  "eventRouteCalculated": "تم حساب المسار",
+  "eventAssigned": "تم تعيين الموارد",
+  "eventReassigned": "تمت إعادة تعيين الموارد",
+  "eventUnassigned": "تم إلغاء تعيين الموارد",
+  "eventDispatchedToPickup": "تم الإرسال إلى الاستلام",
+  "eventArrivedAtPickup": "تم الوصول إلى الاستلام",
+  "eventTripStarted": "بدأت الرحلة",
+  "eventMarkedInTransit": "تم تحديدها قيد النقل",
+  "eventDelivered": "تم التسليم",
+  "eventCompleted": "اكتملت الرحلة",
+  "eventCancelled": "ألغيت الرحلة",
+  "eventArchived": "تمت الأرشفة",
+  "eventUnarchived": "تم إلغاء الأرشفة",
+  "eventImportedBaseline": "سجل الاستيراد الأساسي",
+  "eventRouteInvalidated": "تم إبطال المسار",
+  "identicalStops": "يجب أن يكون موقعا الاستلام والتسليم مختلفين.",
+  "routeStale": "تغيرت المواقع. أعد حساب المسار قبل المتابعة.",
+  "routeRequired": "احسب المسار قبل المتابعة.",
+  "assignmentSelectionRequired": "اختر شاحنة وسائقاً مؤهلين أو تجاوز التعيين الآن.",
+  "tripCreatedAndAssigned": "تم حفظ الرحلة وتعيين الموارد.",
+  "draftSaved": "تم حفظ المسودة.",
+  "tripDetailsStep": "تفاصيل الرحلة",
+  "tripNumber": "رقم الرحلة",
+  "locationsAndRouteStep": "الاستلام والتسليم والمسار",
+  "truckAndDriverStep": "الشاحنة والسائق",
+  "reviewAndConfirmStep": "المراجعة والتأكيد",
+  "invalidNumber": "أدخل رقماً صحيحاً غير سالب.",
+  "recalculateRoute": "إعادة حساب المسار",
+  "refreshAvailability": "تحديث التوفر",
+  "skipForNow": "تجاوز التعيين الآن",
+  "keepAsUnassignedDraft": "احتفظ بهذه الرحلة كمسودة غير معيّنة.",
+  "noEligibleTruck": "لا توجد شاحنة مؤهلة متاحة حالياً.",
+  "noEligibleDriver": "لا يوجد سائق مؤهل متاح حالياً.",
+  "allocatedAfterSave": "يُخصّص بعد الحفظ",
+  "notAvailable": "غير متوفر",
+  "distance": "المسافة",
+  "estimatedDuration": "المدة المقدرة",
+  "readiness": "الجاهزية",
+  "ready": "جاهزة",
+  "editTripDetails": "تعديل تفاصيل الرحلة",
+  "editLocationsAndRoute": "تعديل المواقع والمسار",
+  "editAssignment": "تعديل التعيين",
+  "createAndAssignTrip": "إنشاء الرحلة وتعيينها",
+  "assignTrip": "تعيين الرحلة",
+  "routeSummary": "ملخص المسار",
+  "resourceInactive": "غير نشط",
+  "truckInMaintenance": "قيد الصيانة",
+  "truckOutOfServiceReason": "خارج الخدمة",
+  "resourceAssignedToTrip": "محجوز للرحلة {tripNumber}",
+  "@resourceAssignedToTrip": {
+    "placeholders": {
+      "tripNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "details": "التفاصيل",
+  "legalName": "الاسم القانوني",
+  "lifecycle": "دورة الحالة",
+  "all": "الكل",
+  "suspended": "موقوف",
+  "reserved": "محجوز",
+  "archived": "مؤرشف",
+  "contacts": "جهات الاتصال",
+  "sites": "المواقع المحفوظة",
+  "addContact": "إضافة جهة اتصال",
+  "jobTitle": "المسمى الوظيفي",
+  "whatsApp": "واتساب",
+  "primaryContact": "جهة الاتصال الرئيسية",
+  "addSite": "إضافة موقع",
+  "siteType": "نوع الموقع",
+  "latitude": "خط العرض",
+  "longitude": "خط الطول",
+  "instructions": "التعليمات",
+  "restore": "استعادة",
+  "suspend": "إيقاف",
+  "reactivate": "إعادة تنشيط",
+  "plannedTrips": "الرحلات المخططة",
+  "completedTrips": "الرحلات المكتملة",
+  "cancelledTrips": "الرحلات الملغاة",
+  "activity": "النشاط",
+  "noActivity": "لا يوجد نشاط بعد",
+  "fleetCode": "رمز الأسطول",
+  "searchTrucks": "البحث عن الشاحنات",
+  "vin": "رقم الهيكل",
+  "truckType": "نوع الشاحنة",
+  "payloadCapacity": "سعة الحمولة",
+  "payloadUnit": "وحدة الحمولة",
+  "fuelType": "نوع الوقود",
+  "odometer": "عداد المسافة (كم)",
+  "correctOdometer": "تصحيح عداد المسافة",
+  "correctionReason": "سبب التصحيح",
+  "defaultDriver": "السائق الافتراضي",
+  "baseStatus": "الحالة الأساسية",
+  "operationalState": "الحالة التشغيلية",
+  "currentTrip": "الرحلة الحالية",
+  "latestPosition": "آخر موقع",
+  "noPosition": "لم يتم الإبلاغ عن موقع",
+  "clientArchived": "تمت أرشفة العميل.",
+  "clientRestored": "تمت استعادة العميل.",
+  "truckArchived": "تمت أرشفة الشاحنة.",
+  "truckRestored": "تمت استعادة الشاحنة.",
+  "factory": "مصنع",
+  "warehouse": "مستودع",
+  "office": "مكتب",
+  "other": "أخرى",
+  "kilograms": "كيلوغرام",
+  "tonnes": "طن",
+  "diesel": "ديزل",
+  "petrol": "بنزين",
+  "electric": "كهربائي",
+  "hybrid": "هجين",
+  "boxTruck": "شاحنة صندوقية",
+  "flatbed": "سطحة",
+  "refrigerated": "مبردة",
+  "tanker": "صهريج",
+  "tractorTrailer": "قاطرة ومقطورة",
+  "dumpTruck": "شاحنة قلابة",
+  "savedSite": "موقع عميل محفوظ",
+  "siteSaved": "تم حفظ موقع العميل.",
+  "defaultDriverSuggested": "تم اقتراح السائق الافتراضي",
+  "eventClientCreated": "تم إنشاء العميل",
+  "eventClientProfileUpdated": "تم تحديث ملف العميل",
+  "eventClientSuspended": "تم إيقاف العميل",
+  "eventClientReactivated": "تمت إعادة تنشيط العميل",
+  "eventClientArchived": "تمت أرشفة العميل",
+  "eventClientContactAdded": "تمت إضافة جهة اتصال",
+  "eventClientContactUpdated": "تم تحديث جهة الاتصال",
+  "eventClientContactRemoved": "تم حذف جهة الاتصال",
+  "eventClientPrimaryContactChanged": "تم تغيير جهة الاتصال الرئيسية",
+  "eventClientSiteAdded": "تمت إضافة موقع",
+  "eventClientSiteUpdated": "تم تحديث الموقع",
+  "eventClientSiteArchived": "تمت أرشفة الموقع",
+  "eventClientSiteRestored": "تمت استعادة الموقع",
+  "eventTruckCreated": "تم إنشاء الشاحنة",
+  "eventTruckProfileUpdated": "تم تحديث ملف الشاحنة",
+  "eventTruckDefaultDriverChanged": "تم تغيير السائق الافتراضي",
+  "eventTruckOdometerUpdated": "تم تحديث عداد المسافة",
+  "eventTruckOdometerCorrected": "تم تصحيح عداد المسافة",
+  "eventTruckBaseStatusChanged": "تم تغيير الحالة الأساسية",
+  "eventTruckArchived": "تمت أرشفة الشاحنة",
+  "eventTruckRestored": "تمت استعادة الشاحنة",
+  "clientArchiveRequired": "أرشف العميل قبل حذفه.",
+  "deleteClientWarning": "حذف هذا العميل غير المستخدم نهائياً؟ لا يمكن التراجع عن ذلك.",
+  "clientHasHistory": "لهذا العميل سجل رحلات ولا يمكن حذفه.",
+  "truckArchiveRequired": "أرشف الشاحنة قبل حذفها.",
+  "deleteTruckWarning": "حذف هذه الشاحنة غير المستخدمة نهائياً؟ لا يمكن التراجع عن ذلك.",
+  "truckHasHistory": "لهذه الشاحنة سجل رحلات أو تتبع ولا يمكن حذفها.",
+  "truckReserved": "هذه الشاحنة محجوزة لرحلة نشطة.",
+  "odometerCorrectionRequired": "استخدم مسار التصحيح وأدخل سبباً لتخفيض عداد المسافة.",
+  "defaultDriverInactive": "يجب أن يكون السائق الافتراضي نشطاً.",
+  "duplicateTruckIdentity": "رقم اللوحة أو الهيكل أو رمز الأسطول مستخدم بالفعل.",
+  "uploadTruckPhoto": "رفع صورة الشاحنة",
+  "removeTruckPhoto": "إزالة صورة الشاحنة",
+  "notifications": "الإشعارات",
+  "markAllRead": "تعليم الكل كمقروء",
+  "noNotifications": "لا توجد إشعارات بعد",
+  "markRead": "تعليم كمقروء",
+  "notificationArrivedPickup": "وصلت الشاحنة إلى موقع الاستلام",
+  "notificationArrivedDelivery": "وصلت الشاحنة إلى موقع التسليم",
+  "notificationDepartureConfirmed": "تم تأكيد تحميل الشحنة والمغادرة",
+  "notificationDeliveryConfirmed": "تم تأكيد التسليم",
+  "operationalUpdate": "تحديث تشغيلي",
+  "myTrip": "رحلتي",
+  "noAssignedTrip": "لا توجد رحلة نشطة مسندة إليك",
+  "confirmLoaded": "تأكيد التحميل وبدء الرحلة",
+  "confirmLoadedWarning": "هل تؤكد تحميل الشحنة والمغادرة من موقع الاستلام؟",
+  "confirmDelivery": "تأكيد التسليم",
+  "confirmDeliveryWarning": "هل تؤكد اكتمال تسليم الشحنة؟ سيؤدي ذلك إلى إكمال الرحلة.",
+  "atDelivery": "عند موقع التسليم",
+  "managerOverrideDeparture": "تجاوز تأكيد المغادرة",
+  "managerOverrideDelivery": "تجاوز تأكيد التسليم",
+  "managerOverride": "تجاوز المدير",
+  "managerOverrideWarning": "استخدم هذا فقط عندما يتعذر على السائق المرتبط التأكيد. سيتم تدقيق السبب وهويتك.",
+  "overrideReason": "سبب التجاوز",
+  "resumeFollow": "استئناف التتبع",
+  "showFullRoute": "عرض المسار بالكامل",
+  "actionConfirmed": "تم حفظ التأكيد.",
+  "backToTruck": "العودة إلى الشاحنة",
+  "companyUsers": "مستخدمو الشركة",
+  "allUsers": "جميع المستخدمين",
+  "activeUsers": "المستخدمون النشطون",
+  "inactiveUsers": "المستخدمون غير النشطين",
+  "createDriverAccount": "إنشاء حساب سائق",
+  "noCompanyUsers": "لا يوجد مستخدمون يطابقون هذا الفلتر.",
+  "noDriverLinked": "غير مرتبط بسجل سائق",
+  "resetTemporaryPassword": "إعادة تعيين كلمة المرور المؤقتة",
+  "unlinkDriverAccount": "إلغاء ربط حساب السائق",
+  "unlinkDriverAccountConfirmation": "هل تريد إلغاء ربط حساب التطبيق بسجل السائق؟ لن يتمكن السائق بعد ذلك من استلام الرحلات أو تأكيدها في وضع السائق.",
+  "displayName": "اسم العرض",
+  "linkDriver": "ربط سجل السائق (اختياري)",
+  "temporaryPassword": "كلمة المرور المؤقتة",
+  "temporaryPasswordOnce": "تظهر كلمة المرور الآن فقط. انسخها وشاركها مع السائق بطريقة آمنة.",
+  "copy": "نسخ",
+  "done": "تم",
+  "create": "إنشاء",
+  "noAppAccount": "لا يوجد حساب تطبيق",
+  "appAccountLinked": "حساب التطبيق مرتبط",
+  "accountInactive": "الحساب غير نشط",
+  "accountInactiveWarning": "حساب التطبيق المرتبط غير نشط؛ لا يمكن لهذا السائق استخدام وضع السائق.",
+  "noAppAccountWarning": "لا يملك هذا السائق حساب تطبيق ولا يمكنه استلام الرحلة أو تأكيدها في وضع السائق.",
+  "driverAppAccountWarning": "تحذير حساب تطبيق السائق",
+  "accountInactiveAssignmentConfirmation": "هل تريد إسناد الرحلة رغم أن حساب السائق المرتبط غير نشط؟",
+  "unlinkedAssignmentConfirmation": "هل تريد إسناد الرحلة رغم أن السائق لا يملك حساب تطبيق؟",
+  "continueLabel": "متابعة",
+  "driverAppAccount": "حساب تطبيق السائق",
+  "createAndLinkAccount": "إنشاء الحساب وربطه",
+  "linkExistingAccount": "ربط حساب موجود",
+  "noUnlinkedDriverAccounts": "لا توجد حسابات سائق نشطة وغير مرتبطة.",
+  "loadingSavedSites": "جارٍ تحميل المواقع المحفوظة…",
+  "savedSitesLoadFailed": "تعذر تحميل المواقع المحفوظة",
+  "noSavedSites": "لا توجد مواقع محفوظة لهذا العميل",
+  "driverAccountNotLinked": "حسابك غير مرتبط بسجل سائق",
+  "contactOwnerToLinkDriver": "تواصل مع مالك الشركة لربط تسجيل الدخول بسجل السائق الخاص بك.",
+  "noAssignedTripExplanation": "سيظهر أي إسناد جديد هنا تلقائياً. يمكنك السحب للتحديث في أي وقت.",
+  "nextStop": "المحطة التالية",
+  "estimatedArrival": "وقت الوصول المتوقع",
+  "lastPositionUpdate": "آخر تحديث للموقع",
+  "allowedDriverAction": "الإجراء المتاح للسائق",
+  "noActionAvailable": "لا يوجد إجراء متاح حالياً",
+  "trackingNotStarted": "لم يبدأ التتبع",
+  "trackingStale": "الموقع قديم",
+  "trackingOffline": "الشاحنة غير متصلة",
+  "trackingCurrent": "الموقع محدّث",
+  "nonProductionEnvironment": "بيئة غير إنتاجية: {environment}",
+  "@nonProductionEnvironment": {
+    "placeholders": {
+      "environment": {
+        "type": "String"
+      }
+    }
+  },
+  "accountIdentity": "الحساب والبيئة",
+  "signedInEmail": "البريد المسجل",
+  "companyName": "اسم الشركة",
+  "role": "الدور",
+  "environment": "البيئة",
+  "notificationSounds": "أصوات الإشعارات",
+  "notificationSoundsDescription": "تشغيل صوت قصير واحد للتنبيهات التشغيلية الجديدة أثناء فتح التطبيق.",
+  "soundTestPlayed": "تم طلب تشغيل صوت الاختبار.",
+  "testSound": "اختبار الصوت",
+  "enableNotificationSound": "تفعيل صوت الإشعارات",
+  "dismiss": "إغلاق",
+  "view": "عرض",
+  "notificationTripAssigned": "تم إسناد رحلة جديدة",
+  "notificationTruckOffline": "انقطع اتصال الشاحنة",
+  "notificationPositionStale": "أصبح موقع الشاحنة قديماً",
+  "operationalAlertMessage": "يوجد حدث تشغيلي جديد يحتاج إلى انتباهك.",
+  "operationalTripAlertMessage": "يوجد حدث تشغيلي متعلق برحلة يحتاج إلى انتباهك.",
+  "departToPickup": "الانطلاق إلى الاستلام",
+  "departToPickupWarning": "هل تريد بدء مسار التوجه إلى موقع الاستلام الآن؟",
+  "confirmLoadedAndDepart": "تم التحميل — الانطلاق إلى التسليم",
+  "endVehicleSession": "إنهاء جلسة المركبة",
+  "endVehicleSessionWarning": "هل تريد إزالة هذه الشاحنة من مساحة عمل السائق؟",
+  "changePassword": "تغيير كلمة المرور",
+  "currentPassword": "كلمة المرور الحالية",
+  "newPassword": "كلمة المرور الجديدة",
+  "confirmNewPassword": "تأكيد كلمة المرور الجديدة",
+  "passwordChangedLoginAgain": "تم تغيير كلمة المرور. سجّل الدخول مجدداً بكلمة المرور الجديدة.",
+  "passwordMinimumLength": "استخدم 12 حرفاً على الأقل.",
+  "tripAssignedTitle": "تم إسناد الرحلة إليك",
+  "departureRequiredMessage": "لن تبدأ الشاحنة بالحركة قبل تأكيد انطلاقك.",
+  "confirmDepartureToPickup": "تأكيد الانطلاق إلى موقع الاستلام",
+  "preparingApproachRoute": "جارٍ تجهيز المسار إلى موقع الاستلام…",
+  "openTrip": "فتح الرحلة",
+  "assignmentRequiresDeparture": "افتح الرحلة وأكد الانطلاق قبل أن تبدأ الشاحنة بالحركة.",
+  "truckPositionRequiredGuidance": "لم يتم استلام موقع الشاحنة بعد. اطلب من المدير ضبط أو تحديث موقع المحاكي، أو انتظر إشارة GPS.",
+  "truckPositionStaleGuidance": "موقع الشاحنة قديم ولا يمكن بدء الرحلة بأمان. حدّث بيانات التتبع ثم أعد المحاولة.",
+  "truckOfflineGuidance": "نظام تتبع الشاحنة غير متصل. أعده إلى وضع الاتصال ثم حاول مجدداً.",
+  "pickupCoordinatesRequiredGuidance": "إحداثيات موقع الاستلام مفقودة. اطلب من فريق العمليات تصحيح الرحلة.",
+  "routePreparationFailed": "تعذر تجهيز المسار إلى موقع الاستلام. أعد المحاولة دون فقدان الإسناد.",
+  "departureAlreadyInProgress": "جارٍ تجهيز الانطلاق بالفعل. يرجى الانتظار.",
+  "workspaceConnectionWarning": "التحديثات المباشرة غير متاحة مؤقتاً. يتم عرض آخر حالة رحلة مستلمة.",
+  "mapUpdateWarning": "تعذر رسم آخر تحديث للخريطة. لا تزال بيانات الرحلة المباشرة متاحة.",
+  "mapLoading": "جارٍ تحميل الخريطة…",
+  "activeOperationsRetry": "إعادة محاولة تحميل العمليات النشطة",
+  "activeOperationsTitle": "العمليات النشطة",
+  "viewAll": "عرض الكل",
+  "activeOperationsStale": "التحديث المباشر غير متاح مؤقتاً. يتم عرض آخر تحديث.",
+  "activeOperationsCount": "العمليات النشطة: {count}",
+  "@activeOperationsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noActiveOperations": "لا توجد عمليات نشطة.",
+  "phaseAwaitingDeparture": "بانتظار الانطلاق",
+  "phaseToPickup": "في الطريق إلى الاستلام",
+  "phaseAwaitingLoading": "بانتظار التحميل",
+  "phaseToDelivery": "في الطريق إلى التسليم",
+  "phaseAwaitingDeliveryConfirmation": "بانتظار تأكيد التسليم",
+  "phaseAwaitingCompletion": "بانتظار الإكمال",
+  "waitingDriverDeparture": "بانتظار انطلاق السائق",
+  "waitingLoadingConfirmation": "بانتظار تأكيد التحميل",
+  "waitingDeliveryConfirmation": "بانتظار تأكيد التسليم",
+  "progressUnavailable": "بيانات التقدم غير متاحة",
+  "trackingMissing": "بيانات التتبع مفقودة",
+  "actionDriverDeparture": "إجراء مطلوب: انطلاق السائق",
+  "actionLoadingConfirmation": "إجراء مطلوب: تأكيد التحميل",
+  "actionDeliveryConfirmation": "إجراء مطلوب: تأكيد التسليم",
+  "remainingKilometers": "متبقي {value} كم",
+  "@remainingKilometers": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "remainingMeters": "متبقي {value} م",
+  "@remainingMeters": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "etaShort": "الوصول المتوقع {time}",
+  "@etaShort": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "driverSelection": "اختيار السائق",
+  "selectionNone": "لا يوجد",
+  "selectionManual": "يدوي",
+  "selectionTruckDefault": "السائق الافتراضي للشاحنة",
+  "selectionExistingAssignment": "الإسناد الحالي",
+  "selectTruckFirst": "اختر شاحنة أولاً.",
+  "truckHasNoDefaultDriver": "لا يوجد سائق افتراضي لهذه الشاحنة. اختر سائقاً يدوياً.",
+  "truckDefaultDriverUnavailable": "السائق الافتراضي للشاحنة غير متاح. اختر سائقاً مؤهلاً يدوياً.",
+  "driverSelectedFromTruckDefault": "تم اختيار السائق لأنه مرتبط بهذه الشاحنة.",
+  "notificationAssignedSnapshot": "تم إسناد الشاحنة {truck} إلى الرحلة {trip}. الاستلام: {location}. الوقت: {time}.",
+  "@notificationAssignedSnapshot": {
+    "placeholders": {
+      "truck": {
+        "type": "String"
+      },
+      "trip": {
+        "type": "String"
+      },
+      "location": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationPickupSnapshot": "وصلت الشاحنة {truck} للرحلة {trip} إلى موقع الاستلام: {location}. الوقت: {time}.",
+  "@notificationPickupSnapshot": {
+    "placeholders": {
+      "truck": {
+        "type": "String"
+      },
+      "trip": {
+        "type": "String"
+      },
+      "location": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationDepartureSnapshot": "تم تأكيد تحميل الشاحنة {truck} للرحلة {trip} وانطلقت نحو {location}. الوقت: {time}.",
+  "@notificationDepartureSnapshot": {
+    "placeholders": {
+      "truck": {
+        "type": "String"
+      },
+      "trip": {
+        "type": "String"
+      },
+      "location": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationDeliverySnapshot": "وصلت الشاحنة {truck} للرحلة {trip} إلى موقع التسليم: {location}. الوقت: {time}.",
+  "@notificationDeliverySnapshot": {
+    "placeholders": {
+      "truck": {
+        "type": "String"
+      },
+      "trip": {
+        "type": "String"
+      },
+      "location": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationCompletedSnapshot": "تم تأكيد التسليم وإكمال الرحلة {trip} بالشاحنة {truck} في {location}. الوقت: {time}.",
+  "@notificationCompletedSnapshot": {
+    "placeholders": {
+      "truck": {
+        "type": "String"
+      },
+      "trip": {
+        "type": "String"
+      },
+      "location": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationHealthSnapshot": "تحتاج الشاحنة {truck} في الرحلة {trip} إلى متابعة التتبع قرب {location}. الوقت: {time}.",
+  "@notificationHealthSnapshot": {
+    "placeholders": {
+      "truck": {
+        "type": "String"
+      },
+      "trip": {
+        "type": "String"
+      },
+      "location": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "legacyNotificationFallback": "تفاصيل التحديث التشغيلي غير متاحة لهذا الإشعار القديم.",
+  "notificationClient": "العميل: {value}",
+  "@notificationClient": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationDriver": "السائق: {value}",
+  "@notificationDriver": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationCargo": "الحمولة: {value}",
+  "@notificationCargo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "operationalArea": "بلد / منطقة التشغيل",
+  "operationalAreaDescription": "تحدد عرض الأسطول الافتراضي، مع إبقاء الشاحنات خارج المنطقة ظاهرة.",
+  "noOperationalArea": "غير مضبوطة. تستخدم الخريطة الشاحنات المتصلة أو المنطقة الاحتياطية.",
+  "configureOperationalArea": "ضبط المنطقة",
+  "clearOperationalArea": "مسح المنطقة",
+  "operationalAreaSaved": "تم حفظ منطقة التشغيل.",
+  "countryCode": "رمز البلد ISO",
+  "countryCodeHint": "حرفان، مثل TR أو SY",
+  "selectAreaWithBounds": "أدخل رمز بلد صحيحاً من حرفين واختر نتيجة بحث ذات حدود جغرافية.",
+  "fleetOverview": "عرض الأسطول",
+  "trucksOutsideOperationalArea": "عدد الشاحنات خارج منطقة التشغيل: {count}",
+  "@trucksOutsideOperationalArea": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noVehicleAssigned": "لا توجد مركبة مسندة",
+  "noVehicleAssignedExplanation": "اطلب من المالك ربط شاحنة نشطة واحدة بملف السائق الخاص بك.",
+  "vehicleAssignmentAmbiguous": "إسناد المركبة يحتاج إلى مراجعة",
+  "vehicleAssignmentAmbiguousExplanation": "ترتبط أكثر من شاحنة بملف السائق. اطلب من المالك إبقاء شاحنة افتراضية واحدة.",
+  "heading": "الاتجاه",
+  "workspaceChooser": "اختيار مساحة العمل",
+  "chooseWorkspace": "اختر مساحة الشركة التي تريد استخدامها.",
+  "noWorkspace": "ليس لديك مساحة عمل نشطة بعد.",
+  "joinCompany": "الانضمام إلى شركة",
+  "companyCode": "رمز الشركة الخاص",
+  "exactCodePrivacy": "لا يظهر اسم الشركة إلا عند إدخال الرمز الخاص المطابق تماماً.",
+  "resolveCompany": "التحقق من الرمز",
+  "requestConnection": "طلب الاتصال",
+  "pendingRequests": "الطلبات المعلقة",
+  "switchWorkspace": "تبديل مساحة العمل",
+  "roles": "الأدوار",
+  "invitationAccept": "دعوة شركة",
+  "invitationFor": "دعوة إلى",
+  "expiresAt": "تنتهي",
+  "createAccount": "إنشاء حسابك",
+  "acceptInvitation": "قبول الدعوة",
+  "declineInvitation": "رفض الدعوة",
+  "invitationAccepted": "تم قبول الدعوة. سجّل الدخول أو بدّل مساحة العمل للمتابعة.",
+  "loginToAccept": "سجّل الدخول بالبريد المدعو، أو أنشئ حسابك الشخصي أدناه.",
+  "googleSignIn": "المتابعة باستخدام Google",
+  "googleNotConfigured": "تسجيل الدخول عبر Google غير مهيأ لهذه البيئة.",
+  "signInMethods": "طرق تسجيل الدخول",
+  "linked": "مرتبط",
+  "unlink": "إلغاء الربط",
+  "phoneComingSoon": "تسجيل الدخول بالهاتف مخطط له لكنه غير متاح حالياً.",
+  "invitations": "الدعوات",
+  "invitePerson": "دعوة شخص",
+  "invitationLink": "رابط الدعوة",
+  "copyInvitationLink": "نسخ رابط الدعوة",
+  "revoke": "إلغاء",
+  "connectionRequests": "طلبات الاتصال",
+  "approve": "موافقة",
+  "reject": "رفض",
+  "companyConnectionCode": "رمز اتصال الشركة",
+  "rotateCode": "تغيير الرمز",
+  "qrCode": "رمز QR للشاحنة",
+  "regenerateTruckQr": "إنشاء / إعادة إنشاء QR للشاحنة",
+  "truckQrExplanation": "يعرّف هذا الرمز الشاحنة وليس الرحلة. إعادة الإنشاء تلغي الملصق السابق.",
+  "scanTruckQr": "مسح QR للشاحنة",
+  "manualCode": "إدخال الرمز يدوياً",
+  "previewTruck": "مراجعة الشاحنة",
+  "confirmTruckSwitch": "تأكيد تبديل الشاحنة",
+  "handoverApprovalRequired": "لهذه الشاحنة رحلة نشطة لسائق آخر. يجب الحصول على موافقة قبل أي تغيير.",
+  "requestSent": "تم إرسال الطلب",
+  "handoverRequests": "طلبات تسليم القيادة",
+  "currentDriver": "السائق الحالي",
+  "requestingDriver": "السائق الطالب",
+  "approveHandover": "الموافقة على التسليم",
+  "rejectHandover": "رفض التسليم",
+  "reason": "السبب",
+  "selectDriver": "اختيار السائق",
+  "copied": "تم النسخ",
+  "invitationPending": "الدعوة معلقة",
+  "accountConnected": "الحساب متصل",
+  "driverRecordOnly": "سجل سائق بلا وصول للتطبيق",
+  "googleLinkRequiresProvider": "استخدم نتيجة مصادقة Google موثقة لربط هذه الطريقة.",
+  "accountEmailConflict": "يوجد حساب يستخدم هذا البريد بالفعل.",
+  "externalLoginAlreadyLinked": "هوية Google هذه مرتبطة بالفعل.",
+  "externalLoginConfirmationRequired": "سجّل الدخول إلى الحساب الحالي قبل ربط Google.",
+  "googleTokenInvalid": "تعذر على Google التحقق من تسجيل الدخول.",
+  "membershipNotActive": "عضوية الشركة هذه غير نشطة.",
+  "workspaceAccessDenied": "ليس لديك وصول إلى مساحة العمل هذه.",
+  "invitationInvalid": "هذه الدعوة غير صالحة.",
+  "invitationExpired": "انتهت صلاحية هذه الدعوة.",
+  "invitationAlreadyUsed": "تم استخدام هذه الدعوة بالفعل.",
+  "invitationEmailMismatch": "سجّل الدخول بالبريد الذي استلم الدعوة.",
+  "companyCodeInvalid": "رمز الشركة غير صالح.",
+  "connectionAlreadyPending": "يوجد طلب اتصال معلّق بالفعل.",
+  "driverAccountAlreadyLinked": "سجل السائق هذا مرتبط بحساب بالفعل.",
+  "driverLinkRequired": "اختر سجل السائق المحدد قبل الموافقة.",
+  "truckQrInvalid": "رمز QR للشاحنة غير صالح أو غير متاح.",
+  "truckQrRevoked": "تم استبدال رمز QR هذا. امسح الملصق الجديد.",
+  "truckSessionConflict": "لدى السائق أو الشاحنة جلسة نشطة متعارضة.",
+  "handoverRequestStale": "لم يعد طلب التسليم مطابقاً لتعيين الرحلة الحالي.",
+  "handoverAlreadyResolved": "تمت معالجة طلب التسليم بالفعل.",
+  "tripAssignmentChanged": "تغير تعيين الرحلة. حدّث وراجعه مجدداً.",
+  "noData": "لا توجد سجلات بعد.",
+  "useCamera": "استخدام الكاميرا",
+  "externalAccountLinkRequired": "سجّل الدخول بكلمة المرور الحالية ثم اربط Google من الإعدادات.",
+  "ownerRoleRequiresOwner": "يمكن للمالك فقط منح دور المالك.",
+  "lastActiveOwnerRequired": "يجب أن تحتفظ الشركة بمالك نشط واحد على الأقل.",
+  "selfOwnerRemovalForbidden": "لا يمكنك إزالة دور المالك عن حسابك.",
+  "driverRoleLinked": "افصل ملف السائق قبل إزالة دور السائق.",
+  "driverUnlinkActiveTrip": "أكمل الرحلة النشطة أو سلّمها قبل فصل هذا السائق.",
+  "driverUnlinkActiveSession": "أنه جلسة الشاحنة النشطة قبل فصل هذا السائق.",
+  "driverUnlinkPendingHandover": "عالج طلب التسليم المعلق قبل فصل هذا السائق.",
+  "truckQrStatus": "بيانات QR للشاحنة",
+  "truckQrNotGenerated": "لم يتم إنشاء بيانات QR نشطة.",
+  "truckQrActiveHint": "بيانات نشطة تنتهي بـ {hint}",
+  "@truckQrActiveHint": {
+    "placeholders": {
+      "hint": {
+        "type": "String"
+      }
+    }
+  },
+  "generatedBy": "أنشأه",
+  "generateTruckQr": "إنشاء QR للشاحنة",
+  "downloadPng": "تنزيل PNG",
+  "truckQrRegenerationConflict": "تغير QR للشاحنة في الوقت نفسه. حدّث الصفحة وأنشئه مجدداً.",
+  "showPassword": "إظهار كلمة المرور",
+  "hidePassword": "إخفاء كلمة المرور",
+  "pendingInvitations": "الدعوات المعلقة",
+  "invitationHistory": "سجل الدعوات",
+  "qrPreparing": "جارٍ تجهيز صورة QR…",
+  "qrRenderFailed": "تم إنشاء بيانات الاعتماد، لكن تعذر تجهيز صورة QR. انسخ الرمز اليدوي أو أعد محاولة العرض.",
+  "retryQrDisplay": "إعادة محاولة عرض QR",
+  "qrOneTimeRecovery": "يبقى هذا الرمز اليدوي المعروض مرة واحدة متاحاً في هذه الصفحة حتى إغلاقها أو نجاح عرضه.",
+  "truckQrManualCode": "رمز الشاحنة اليدوي",
+  "notificationCategoryTrip": "الرحلة",
+  "notificationCategoryFleet": "الأسطول",
+  "notificationCategoryPeopleAccess": "الأشخاص والوصول",
+  "notificationCategorySecurity": "الأمان",
+  "notificationCategorySystem": "النظام",
+  "notificationInvitationCreated": "تم إنشاء دعوة شركة",
+  "notificationInvitationAccepted": "تم قبول دعوة الشركة",
+  "notificationInvitationDeclined": "تم رفض دعوة الشركة",
+  "notificationInvitationRevoked": "تم إلغاء دعوة الشركة",
+  "notificationInvitationExpired": "انتهت صلاحية دعوة الشركة",
+  "notificationConnectionRequested": "تم طلب الاتصال بالشركة",
+  "notificationConnectionApproved": "تمت الموافقة على الاتصال بالشركة",
+  "notificationConnectionRejected": "تم رفض الاتصال بالشركة",
+  "notificationConnectionCancelled": "تم إلغاء طلب الاتصال بالشركة",
+  "notificationMembershipActivated": "تم تفعيل العضوية",
+  "notificationMembershipSuspended": "تم تعليق العضوية",
+  "notificationMembershipRevoked": "تم إلغاء العضوية",
+  "notificationMembershipRolesUpdated": "تم تحديث أدوار العضوية",
+  "notificationDriverLinked": "تم ربط حساب السائق",
+  "notificationDriverUnlinked": "تم فصل حساب السائق",
+  "notificationQrGenerated": "تم إنشاء QR للشاحنة",
+  "notificationQrRegenerated": "تم إعادة إنشاء QR للشاحنة",
+  "notificationSessionStarted": "بدأت جلسة الشاحنة",
+  "notificationSessionEnded": "انتهت جلسة الشاحنة",
+  "notificationSessionSwitched": "تم تبديل جلسة الشاحنة",
+  "notificationDefaultDriverChanged": "تم تغيير السائق الافتراضي",
+  "notificationHandoverRequested": "تم طلب تسليم السائق",
+  "notificationHandoverPending": "طلب تسليم السائق معلق",
+  "notificationHandoverApproved": "تمت الموافقة على تسليم السائق",
+  "notificationHandoverRejected": "تم رفض تسليم السائق",
+  "notificationExternalLoginLinked": "تم ربط تسجيل الدخول الخارجي",
+  "notificationExternalLoginUnlinked": "تم فصل تسجيل الدخول الخارجي",
+  "notificationPasswordChanged": "تم تغيير كلمة المرور",
+  "notificationSystemEvent": "إشعار نظام",
+  "notificationEventDetail": "{action}: {identity}.",
+  "@notificationEventDetail": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "identity": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationUnknownType": "تم تسجيل حدث في النظام ({type}).",
+  "@notificationUnknownType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "roleOwner": "المالك",
+  "roleOperations": "العمليات",
+  "roleAccountant": "المحاسب",
+  "roleEmployee": "الموظف",
+  "roleDriver": "السائق",
+  "myTrips": "رحلاتي",
+  "myTruck": "شاحنتي",
+  "todayWork": "اليوم",
+  "driverTripHistorySubtitle": "أعمالك الحالية والقادمة والمكتملة والملغاة",
+  "historyCurrent": "الحالية",
+  "historyUpcoming": "القادمة",
+  "noTripsInCategory": "لا توجد رحلات في هذه الفئة",
+  "filterByDate": "تصفية حسب التاريخ",
+  "clearDateRange": "مسح نطاق التاريخ",
+  "tripRouteAndTrail": "المسار وسجل التتبع المصرح",
+  "routeAndTrailUnavailable": "لا يتوفر مسار أو سجل تتبع لهذه الرحلة.",
+  "trailDownsampled": "يُعرض مسار محدود للحفاظ على الأداء.",
+  "tripParticipation": "فترة مشاركتك",
+  "cargoDescription": "الحمولة",
+  "plannedDistance": "المسافة المخططة",
+  "plannedDuration": "المدة المخططة",
+  "tripDetails": "تفاصيل الرحلة",
+  "kilometersValue": "{value} كم",
+  "@kilometersValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "minutesValue": "{value} دقيقة",
+  "@minutesValue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "enterFullScreen": "ملء الشاشة",
+  "exitFullScreen": "الخروج من ملء الشاشة",
+  "collapseFleetList": "طي قائمة الأسطول",
+  "expandFleetList": "توسيع قائمة الأسطول"
 }

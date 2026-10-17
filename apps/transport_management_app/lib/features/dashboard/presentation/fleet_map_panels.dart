@@ -210,7 +210,7 @@ String _compactTimestamp(String value) {
       '${two(utc.hour)}:${two(utc.minute)}:${two(utc.second)}Z';
 }
 
-class _FleetPanel extends StatelessWidget {
+class _FleetPanel extends StatefulWidget {
   const _FleetPanel({
     required this.positions,
     required this.selectedTruckId,
@@ -222,62 +222,93 @@ class _FleetPanel extends StatelessWidget {
   final ValueChanged<TrackedTruck> onTruckSelected;
 
   @override
-  Widget build(BuildContext context) => Card(
-    key: const Key('map-annotations-ready'),
-    elevation: 5,
-    child: SizedBox(
-      width: 220,
-      height: 150,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 12, 4),
-            child: Text(
-              context.l10n.fleetList,
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-          ),
-          Expanded(
-            child: positions.isEmpty
-                ? Center(child: Text(context.l10n.noTrackedTrucks))
-                : ListView.builder(
-                    padding: const EdgeInsetsDirectional.only(bottom: 6),
-                    itemCount: positions.length,
-                    itemBuilder: (context, index) {
-                      final position = positions[index];
-                      final selected = position.truckId == selectedTruckId;
-                      return Material(
-                        color: selected
-                            ? Theme.of(context).colorScheme.secondaryContainer
-                            : Colors.transparent,
-                        child: ListTile(
-                          key: Key('real-map-truck-${position.truckId}'),
-                          dense: true,
-                          selected: selected,
-                          leading: TruckAvatar(
-                            photoUrl: position.photoThumbnailUrl,
-                            photoVersion: position.photoVersion,
-                            radius: 18,
-                          ),
-                          title: Text(position.plateNumber),
-                          subtitle: Text(
-                            !position.isOnline
-                                ? context.l10n.offline
-                                : position.speed > 0.5
-                                ? context.l10n.moving
-                                : context.l10n.stationary,
-                          ),
-                          onTap: () => onTruckSelected(position),
-                        ),
-                      );
-                    },
+  State<_FleetPanel> createState() => _FleetPanelState();
+}
+
+class _FleetPanelState extends State<_FleetPanel> {
+  bool _expanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = AppBreakpoints.isCompact(context);
+    final width = compact ? MediaQuery.sizeOf(context).width - 24 : 240.0;
+    return Card(
+      key: const Key('map-annotations-ready'),
+      elevation: 5,
+      child: AnimatedContainer(
+        duration: context.motion.effective(context, context.motion.standard),
+        curve: context.motion.standardCurve,
+        width: width.clamp(220, 320),
+        height: _expanded ? (compact ? 180 : 210) : 52,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 4, 8),
+                    child: Text(
+                      context.l10n.fleetList,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
                   ),
-          ),
-        ],
+                ),
+                IconButton(
+                  key: const Key('fleet-list-toggle'),
+                  tooltip: _expanded
+                      ? context.l10n.collapseFleetList
+                      : context.l10n.expandFleetList,
+                  onPressed: () => setState(() => _expanded = !_expanded),
+                  icon: Icon(_expanded ? Icons.expand_more : Icons.expand_less),
+                ),
+              ],
+            ),
+            if (_expanded)
+              Expanded(
+                child: widget.positions.isEmpty
+                    ? Center(child: Text(context.l10n.noTrackedTrucks))
+                    : ListView.builder(
+                        padding: const EdgeInsetsDirectional.only(bottom: 6),
+                        itemCount: widget.positions.length,
+                        itemBuilder: (context, index) {
+                          final position = widget.positions[index];
+                          final selected =
+                              position.truckId == widget.selectedTruckId;
+                          return Material(
+                            color: selected
+                                ? Theme.of(
+                                    context,
+                                  ).colorScheme.secondaryContainer
+                                : Colors.transparent,
+                            child: ListTile(
+                              key: Key('real-map-truck-${position.truckId}'),
+                              dense: true,
+                              selected: selected,
+                              leading: TruckAvatar(
+                                photoUrl: position.photoThumbnailUrl,
+                                photoVersion: position.photoVersion,
+                                radius: 18,
+                              ),
+                              title: Text(position.plateNumber),
+                              subtitle: Text(
+                                !position.isOnline
+                                    ? context.l10n.offline
+                                    : position.speed > 0.5
+                                    ? context.l10n.moving
+                                    : context.l10n.stationary,
+                              ),
+                              onTap: () => widget.onTruckSelected(position),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _MessageState extends StatelessWidget {

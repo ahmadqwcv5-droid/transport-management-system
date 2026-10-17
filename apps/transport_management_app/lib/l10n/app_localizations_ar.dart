@@ -2361,4 +2361,79 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get roleDriver => 'السائق';
+
+  @override
+  String get myTrips => 'رحلاتي';
+
+  @override
+  String get myTruck => 'شاحنتي';
+
+  @override
+  String get todayWork => 'اليوم';
+
+  @override
+  String get driverTripHistorySubtitle =>
+      'أعمالك الحالية والقادمة والمكتملة والملغاة';
+
+  @override
+  String get historyCurrent => 'الحالية';
+
+  @override
+  String get historyUpcoming => 'القادمة';
+
+  @override
+  String get noTripsInCategory => 'لا توجد رحلات في هذه الفئة';
+
+  @override
+  String get filterByDate => 'تصفية حسب التاريخ';
+
+  @override
+  String get clearDateRange => 'مسح نطاق التاريخ';
+
+  @override
+  String get tripRouteAndTrail => 'المسار وسجل التتبع المصرح';
+
+  @override
+  String get routeAndTrailUnavailable =>
+      'لا يتوفر مسار أو سجل تتبع لهذه الرحلة.';
+
+  @override
+  String get trailDownsampled => 'يُعرض مسار محدود للحفاظ على الأداء.';
+
+  @override
+  String get tripParticipation => 'فترة مشاركتك';
+
+  @override
+  String get cargoDescription => 'الحمولة';
+
+  @override
+  String get plannedDistance => 'المسافة المخططة';
+
+  @override
+  String get plannedDuration => 'المدة المخططة';
+
+  @override
+  String get tripDetails => 'تفاصيل الرحلة';
+
+  @override
+  String kilometersValue(String value) {
+    return '$value كم';
+  }
+
+  @override
+  String minutesValue(int value) {
+    return '$value دقيقة';
+  }
+
+  @override
+  String get enterFullScreen => 'ملء الشاشة';
+
+  @override
+  String get exitFullScreen => 'الخروج من ملء الشاشة';
+
+  @override
+  String get collapseFleetList => 'طي قائمة الأسطول';
+
+  @override
+  String get expandFleetList => 'توسيع قائمة الأسطول';
 }

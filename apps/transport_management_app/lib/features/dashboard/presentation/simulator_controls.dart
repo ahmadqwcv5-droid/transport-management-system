@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/app_capabilities.dart';
+
 import '../../../l10n/l10n_extensions.dart';
 import '../../locations/presentation/location_picker_dialog.dart';
 import '../../operations/presentation/operations_controller.dart';
@@ -10,10 +12,7 @@ import 'dashboard_controller.dart';
 class SimulatorControls extends ConsumerStatefulWidget {
   const SimulatorControls({required this.trucks, super.key});
 
-  static const enabled = bool.fromEnvironment(
-    'ENABLE_SIMULATOR_CONTROLS',
-    defaultValue: false,
-  );
+  static const enabled = AppCapabilities.simulatorUi;
 
   final List<SimulatorTruck> trucks;
 

@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'design_system/app_design_preset.dart';
+
 import 'features/auth/presentation/auth_controller.dart';
 import 'features/auth/presentation/anonymous_locale_controller.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/clients/presentation/clients_screen.dart';
 import 'features/clients/presentation/client_details_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
+import 'features/driver_history/presentation/driver_trip_history_detail_screen.dart';
+import 'features/driver_history/presentation/driver_trips_screen.dart';
 import 'features/fleet/drivers/presentation/drivers_screen.dart';
 import 'features/fleet/trucks/presentation/trucks_screen.dart';
 import 'features/fleet/trucks/presentation/truck_details_screen.dart';
@@ -59,6 +63,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (path == '/login') return hasWorkspace ? home() : '/workspaces';
       final driverRoute =
           path == '/my-trip' ||
+          path == '/my-truck' ||
+          path.startsWith('/my-trips') ||
           path == '/notifications' ||
           path == '/settings' ||
           path == '/workspaces' ||
@@ -103,6 +109,27 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/my-trip',
         builder: (_, _) =>
             const AppShell(selectedIndex: 0, child: DriverMyTripScreen()),
+      ),
+      GoRoute(
+        path: '/my-trips',
+        builder: (_, _) =>
+            const AppShell(selectedIndex: 1, child: DriverTripsScreen()),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (_, state) => AppShell(
+              selectedIndex: 1,
+              child: DriverTripHistoryDetailScreen(
+                tripId: state.pathParameters['id']!,
+              ),
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/my-truck',
+        builder: (_, _) =>
+            const AppShell(selectedIndex: 2, child: DriverMyTripScreen()),
       ),
       GoRoute(
         path: '/clients',
@@ -189,19 +216,15 @@ class TransportManagementApp extends ConsumerWidget {
           WidgetsBinding.instance.platformDispatcher.locales,
         );
     final preferredLocale = accountLocale ?? anonymousLocale;
+    final locale = Locale(preferredLocale);
+    final design = ref.watch(appDesignPresetProvider);
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       debugShowCheckedModeBanner: false,
-      locale: Locale(preferredLocale),
+      locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF175CD3)),
-        useMaterial3: true,
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
-        ),
-      ),
+      theme: design.theme(locale),
       routerConfig: ref.watch(routerProvider),
     );
   }

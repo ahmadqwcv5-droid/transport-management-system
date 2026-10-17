@@ -2386,4 +2386,79 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roleDriver => 'Driver';
+
+  @override
+  String get myTrips => 'My trips';
+
+  @override
+  String get myTruck => 'My truck';
+
+  @override
+  String get todayWork => 'Today';
+
+  @override
+  String get driverTripHistorySubtitle =>
+      'Current, upcoming, completed, and cancelled work assigned to you';
+
+  @override
+  String get historyCurrent => 'Current';
+
+  @override
+  String get historyUpcoming => 'Upcoming';
+
+  @override
+  String get noTripsInCategory => 'No trips in this category';
+
+  @override
+  String get filterByDate => 'Filter by date';
+
+  @override
+  String get clearDateRange => 'Clear date range';
+
+  @override
+  String get tripRouteAndTrail => 'Route and authorized trail';
+
+  @override
+  String get routeAndTrailUnavailable =>
+      'Route or tracking history is not available for this trip.';
+
+  @override
+  String get trailDownsampled => 'A bounded trail is shown for performance.';
+
+  @override
+  String get tripParticipation => 'Your participation';
+
+  @override
+  String get cargoDescription => 'Cargo';
+
+  @override
+  String get plannedDistance => 'Planned distance';
+
+  @override
+  String get plannedDuration => 'Planned duration';
+
+  @override
+  String get tripDetails => 'Trip details';
+
+  @override
+  String kilometersValue(String value) {
+    return '$value km';
+  }
+
+  @override
+  String minutesValue(int value) {
+    return '$value min';
+  }
+
+  @override
+  String get enterFullScreen => 'Full screen';
+
+  @override
+  String get exitFullScreen => 'Exit full screen';
+
+  @override
+  String get collapseFleetList => 'Collapse fleet list';
+
+  @override
+  String get expandFleetList => 'Expand fleet list';
 }

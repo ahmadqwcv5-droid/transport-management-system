@@ -17,6 +17,7 @@ using TransportManagement.Application.Trips;
 using TransportManagement.Application.Fleet;
 using TransportManagement.Infrastructure.Routing;
 using TransportManagement.Infrastructure.Photos;
+using TransportManagement.Application.Capabilities;
 
 namespace TransportManagement.Infrastructure;
 
@@ -29,7 +30,8 @@ public static class DependencyInjection
             "JWT validation failed: {Reason}");
 
     public static IServiceCollection AddInfrastructure(
-        this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
+        this IServiceCollection services, IConfiguration configuration,
+        IHostEnvironment environment, ProductCapabilities capabilities)
     {
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
@@ -72,6 +74,7 @@ public static class DependencyInjection
         services.AddScoped<IFleetStore>(provider => provider.GetRequiredService<OperationsStore>());
         services.AddScoped<ITripStore>(provider => provider.GetRequiredService<OperationsStore>());
         services.AddScoped<ITripQueryStore>(provider => provider.GetRequiredService<OperationsStore>());
+        services.AddScoped<IDriverTripHistoryStore, DriverTripHistoryStore>();
         services.AddScoped<IActiveOperationsStore>(provider => provider.GetRequiredService<OperationsStore>());
         services.AddScoped<ITrackingStore, TrackingStore>();
         services.AddScoped<ITruckPhotoStore, TruckPhotoStore>();
@@ -153,8 +156,8 @@ public static class DependencyInjection
                 Math.Max(10, configuration.GetValue<decimal>(
                     "Dispatch:SimulatorRestoreProjectionToleranceMeters", 500)),
                 TimeSpan.FromSeconds(simulatorHeartbeatSeconds)));
-        var simulatorEnabled = configuration.GetValue<bool>("Tracking:SimulatorEnabled")
-            && (environment.IsDevelopment() || environment.IsEnvironment("Testing"))
+        var simulatorEnabled = capabilities.SimulatorWorker
+            && configuration.GetValue<bool>("Tracking:SimulatorEnabled")
             && configuration["Tracking:Provider"]?.Equals("Simulator", StringComparison.OrdinalIgnoreCase) == true;
         if (simulatorEnabled)
         {

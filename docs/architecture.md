@@ -884,3 +884,33 @@ Membership lifecycle notification keys include the membership version. This
 preserves durable idempotency for one transition while allowing later valid
 suspend/reactivate cycles without violating the company/event-key uniqueness
 constraint.
+
+## ADR-035: Replaceable presentation, Driver history boundary, and product capabilities
+
+**Status:** Accepted
+
+Flutter visual policy is composed at the application boundary through an
+injectable `AppDesignPreset`, Material 3 theme, semantic token extension,
+central breakpoint policy, and reduced-motion-aware motion extension. Shared
+presentation components accept display data and callbacks only. API access,
+authorization, polling, mutations, map lifecycle, and trip behavior remain in
+feature controllers/services, allowing a future visual preset to change without
+changing contracts or domain rules. Latin and Arabic Noto fonts are shipped
+locally with their license notice.
+
+Driver history is a dedicated authenticated query boundary. The server resolves
+the linked Driver from the active membership/company and never accepts a Driver
+ID. List projections are deterministic, paginated, and geometry-free. Detail
+authorization derives from immutable participation rows; handover participants
+retain history while telemetry is filtered to their own participation intervals
+and downsampled only for rendering. Missing and unauthorized trip IDs share the
+same not-found behavior. Existing tenant query filters remain authoritative and
+no schema migration or off-duty location history is introduced.
+
+`ProductCapabilities` resolves Development, Demo, Pilot, or Production once at
+startup. One MVC convention removes simulator actions before endpoint mapping,
+and the same capability object controls simulator provider/worker and seed
+eligibility. Flutter uses compile-time `APP_PROFILE` capability constants so
+tree shaking removes simulator controls from restricted release bundles.
+Pilot/Production cannot be reopened by the simulator flag; absence of the
+simulator is not evidence that a real tracking provider is configured.

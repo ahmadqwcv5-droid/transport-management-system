@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransportManagement.Application.Tracking;
+using TransportManagement.Api.Infrastructure;
 
 namespace TransportManagement.Api.Controllers;
 
@@ -29,12 +30,14 @@ public sealed class TrackingController(TrackingService service) : ControllerBase
         service.TripHistoryAsync(tripId, limit, cancellationToken);
 
     [HttpPost("simulator/control")]
+    [SimulatorCapability]
     [Authorize(Roles = "Owner")]
     public Task<SimulatorStateResponse> Control(
         SimulatorControlRequest request, CancellationToken cancellationToken) =>
         service.ControlAsync(request, cancellationToken);
 
     [HttpGet("simulator/trucks")]
+    [SimulatorCapability]
     [Authorize(Roles = "Owner")]
     public Task<IReadOnlyList<SimulatorTruckResponse>> SimulatorTrucks(
         CancellationToken cancellationToken) =>

@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../design_system/app_design_tokens.dart';
+import '../../../design_system/components/app_page_header.dart';
+import '../../../design_system/components/app_state_panel.dart';
 import '../../../l10n/l10n_extensions.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../../dashboard/presentation/dashboard_controller.dart';
 import '../../trips/domain/trip_models.dart';
 import '../domain/live_operations_models.dart';
@@ -20,9 +24,18 @@ class DriverMyTripScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => ref
       .watch(driverTripControllerProvider)
       .when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => Center(child: Text(context.l10n.genericError)),
+        loading: () => AppStatePanel(
+          kind: AppStateKind.loading,
+          title: context.l10n.loading,
+        ),
+        error: (_, _) => AppStatePanel(
+          kind: AppStateKind.error,
+          title: context.l10n.genericError,
+          actionLabel: context.l10n.retry,
+          onAction: ref.read(driverTripControllerProvider.notifier).refresh,
+        ),
         data: (workspace) {
+          final user = ref.watch(authControllerProvider).value?.user;
           if (workspace.state == 'ACCOUNT_NOT_LINKED') {
             return _WorkspaceEmptyState(
               icon: Icons.link_off,
@@ -60,11 +73,13 @@ class DriverMyTripScreen extends ConsumerWidget {
             onRefresh: ref.read(driverTripControllerProvider.notifier).refresh,
             child: ListView(
               key: const Key('driver-my-trip'),
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.tokens.space4),
               children: [
-                Text(
-                  context.l10n.myTrip,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                AppPageHeader(
+                  title: context.l10n.myTrip,
+                  subtitle: user == null
+                      ? null
+                      : '${user.displayName} · ${user.companyName}',
                 ),
                 if (workspace.connectionWarning) ...[
                   const SizedBox(height: 12),
